@@ -1,0 +1,68 @@
+// app/(dashboard)/components/sidebar/CreatePostPrompt.tsx
+
+import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
+import { useProfileData } from '@/features/profile/hooks/useProfileData';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { transformToProfileData } from '@/shared/utils/profileTransformers';
+import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+
+interface CreatePostPromptProps {
+  isDarkMode: boolean;
+  setIsPostCreatorOpen: (open: boolean) => void;
+}
+
+const CreatePostPrompt: React.FC<CreatePostPromptProps> = ({ isDarkMode, setIsPostCreatorOpen }) => {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const {
+    userProfileData,
+    profileImageUrl,
+    headlineId,
+    fetchUserProfile
+  } = useProfileData();
+
+  const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
+
+  useEffect(() => {
+    if (headlineId) {
+      fetchHeadlineData();
+    }
+  }, [headlineId, fetchHeadlineData]);
+
+  // console.log('👤 [PROFILE_CARD] User Profile Data:', headlineData);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user, fetchUserProfile]);
+
+  const profileData = transformToProfileData(
+    userProfileData,
+    profileImageUrl,
+    headlineData
+  );
+
+  return (
+    <div
+      onClick={() => setIsPostCreatorOpen(true)}
+      className={`flex items-center gap-4 p-5 rounded-3xl cursor-pointer border transition-all duration-300 mb-4 ${isDarkMode
+          ? 'bg-slate-700/40 border-slate-600/40 hover:bg-slate-700/60'
+          : 'bg-white/40 border-[#4a3728]/30 hover:bg-white/60'
+        }`}
+    >
+      <img
+        src={profileData.profileImage}
+        className="w-14 h-14 rounded-2xl object-cover border-2 border-[#6b5643]"
+        alt="Profile"
+      />
+      <div className={`text-lg font-semibold ${isDarkMode ? 'text-slate-400' : 'text-[#4a3728]/70'}`}>
+        Create a post...
+      </div>
+    </div>
+  );
+};
+
+export default CreatePostPrompt;

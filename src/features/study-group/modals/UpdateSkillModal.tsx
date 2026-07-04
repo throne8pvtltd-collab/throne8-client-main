@@ -1,0 +1,269 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+
+interface Skill {
+    skillId: string;
+    skillName: string;
+    category: string;
+    skillStrength: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    yearsOfExperience: number;
+    isPinned: boolean;
+    isDeleted: boolean;
+    isArchived: boolean;
+    createdAt: string;
+}
+
+export interface UpdateSkillFormData {
+    skillName: string;
+    category: string;
+    skillStrength: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    yearsOfExperience: number;
+}
+
+interface UpdateSkillModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onUpdateSkill: (skillId: string, skillData: UpdateSkillFormData) => void;
+    skill?: Skill;
+}
+
+const UpdateSkillModal: React.FC<UpdateSkillModalProps> = ({ isOpen, onClose, onUpdateSkill, skill }) => {
+    const [formData, setFormData] = useState<UpdateSkillFormData>({
+        skillName: '',
+        category: '',
+        skillStrength: 'intermediate',
+        yearsOfExperience: 1,
+    });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const categories = [
+        'Programming',
+        'Backend Development',
+        'Frontend Development',
+        'Full Stack Development',
+        'Mobile Development',
+        'DevOps',
+        'Cloud Computing',
+        'Database Management',
+        'Data Science',
+        'Machine Learning',
+        'Design',
+        'Project Management',
+        'Business Strategy',
+        'Other',
+    ];
+
+    // Update form when skill data is provided
+    useEffect(() => {
+        if (isOpen && skill) {
+            setFormData({
+                skillName: skill.skillName || '',
+                category: skill.category || '',
+                skillStrength: skill.skillStrength || 'intermediate',
+                yearsOfExperience: skill.yearsOfExperience || 1,
+            });
+        }
+    }, [isOpen, skill]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        if (name === 'yearsOfExperience') {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: Math.max(1, Math.min(50, parseInt(value) || 1)),
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.skillName.trim() || !formData.category.trim()) {
+            alert('Please fill all required fields');
+            return;
+        }
+
+        if (!skill) {
+            alert('No skill selected for update');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // ✅ Call the parent handler (which calls API)
+            await onUpdateSkill(skill.skillId, formData);
+
+            // ✅ Close modal after successful update
+            onClose();
+        } catch (error) {
+            console.error('Failed to update:', error);
+            alert('Failed to update skill');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen || !skill) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Transparent Overlay Background */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={onClose}
+            ></div>
+
+            {/* Modal Content */}
+            <div className="relative z-10 w-full max-w-2xl mx-auto max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between sticky top-0 bg-gradient-to-r from-[#4a3728] to-[#6a5748] px-6 py-5 z-10">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white">Update Skill</h2>
+                        <p className="text-white/70 text-sm mt-1">Modify your skill details below</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                        className="p-2 hover:bg-white/10 rounded-full transition-colors duration-200 disabled:opacity-50"
+                    >
+                        <X className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+
+                {/* Form Body */}
+                <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                    <div className="space-y-6">
+                        {/* Skill Information Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-[#4a3728] flex items-center gap-2">
+                                <span className="text-2xl">⚡</span> Skill Information
+                            </h3>
+
+                            <div>
+                                <label className="block text-sm font-medium text-[#4a3728] mb-2">
+                                    Skill Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="skillName"
+                                    value={formData.skillName}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., React.js, Node.js"
+                                    className="w-full px-4 py-2 rounded-xl border-2 border-[#e0d8cf] bg-white/50 focus:outline-none focus:border-[#4a3728] transition-colors duration-200 text-[#4a3728]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-[#4a3728] mb-2">
+                                    Category <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2 rounded-xl border-2 border-[#e0d8cf] bg-white/50 focus:outline-none focus:border-[#4a3728] transition-colors duration-200 text-[#4a3728]"
+                                >
+                                    <option value="">Select a category</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Skill Level Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-[#4a3728] flex items-center gap-2">
+                                <span className="text-2xl">📊</span> Skill Level & Experience
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-[#4a3728] mb-2">
+                                        Skill Strength
+                                    </label>
+                                    <select
+                                        name="skillStrength"
+                                        value={formData.skillStrength}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 rounded-xl border-2 border-[#e0d8cf] bg-white/50 focus:outline-none focus:border-[#4a3728] transition-colors duration-200 text-[#4a3728]"
+                                    >
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                        <option value="expert">Expert</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-[#4a3728] mb-2">
+                                        Years of Experience
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="yearsOfExperience"
+                                        value={formData.yearsOfExperience}
+                                        onChange={handleInputChange}
+                                        min="1"
+                                        max="50"
+                                        className="w-full px-4 py-2 rounded-xl border-2 border-[#e0d8cf] bg-white/50 focus:outline-none focus:border-[#4a3728] transition-colors duration-200 text-[#4a3728]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Strength Indicator */}
+                        <div className="bg-[#f6ede8]/30 rounded-xl p-4 border-2 border-[#e0d8cf]">
+                            <p className="text-sm font-semibold text-[#4a3728] mb-3">Strength Level Preview</p>
+                            <div className="flex items-center gap-2">
+                                {[...Array(5)].map((_, i) => {
+                                    const strengths = { beginner: 2, intermediate: 3, advanced: 4, expert: 5 };
+                                    const level = strengths[formData.skillStrength as keyof typeof strengths] || 3;
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={`w-3 h-3 rounded-full transition-all duration-200 ${i < level ? 'bg-[#4a3728]' : 'bg-[#e0d8cf]'
+                                                }`}
+                                        ></div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="sticky bottom-0 flex gap-3 mt-8 pt-6 border-t border-[#e0d8cf] bg-white">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="flex-1 px-6 py-3 rounded-full border-2 border-[#e0d8cf] text-[#4a3728] font-semibold hover:bg-[#f6ede8]/50 transition-colors duration-200 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 px-6 py-3 rounded-full bg-gradient-to-r from-[#4a3728] to-[#6a5748] text-white font-semibold hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                        >
+                            {isSubmitting ? 'Updating...' : 'Update Skill'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default UpdateSkillModal;

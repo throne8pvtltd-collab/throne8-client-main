@@ -1,0 +1,234 @@
+'use client';
+
+import { useParams, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+
+// Import components
+import ProfileNavbar from '../../../features/profile/components/home/ProfileNavbar';
+import ProfileBanner from '../../../features/profile/components/home/ProfileBanner';
+import ProfileHeader from '../../../features/profile/components/home/ProfileHeader';
+import ProfessionalJourney from '../../../features/profile/components/home/ProfessionalJourney';
+import AboutSection from '../../../features/profile/components/home/AboutSection';
+import EducationSection from '../../../features/profile/components/home/EducationSection';
+import ExperienceSection from '../../../features/profile/components/home/ExperienceSection';
+import ActivitySection from '../../../features/profile/components/home/ActivitySection';
+import SkillsSection from '../../../features/profile/components/home/SkillsSection';
+import InterestsSection from '../../../features/profile/components/home/InterestsSection';
+import PeopleYouMayKnow from '../../../features/profile/components/home/PeopleYouMayKnow';
+import { transformToProfileData } from '@/shared/utils/profileTransformers';
+
+// ✅ Import custom hooks - SEARCH USER KE LIYE
+import { useSearchUserProfileData } from '@/features/profile/hooks/useSearchUserProfileData';
+import { usePostsData } from '@/features/profile/hooks/usePostsData';
+import { useAboutData } from '@/features/profile/hooks/useAboutData';
+import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
+import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
+
+// ✅ Import transformer
+
+export default function SearchUserProfilePage() {
+    const params = useParams();
+    const userId = params.userId as string;
+    const { user } = useAuth();
+    const {
+        userProfileData,
+        profileImageUrl,
+        bannerUrl,
+        coverPhotoId,
+        aboutId,
+        headlineId,
+        isLoadingProfile,
+        profileError,
+        fetchUserProfileById,
+    } = useSearchUserProfileData(userId);
+
+    const {
+        followingList,
+        followersList,
+        totalConnections,
+        isLoadingConnections,
+        fetchConnectionsData,
+    } = useConnectionsData();
+
+    useEffect(() => {
+        if (userId) {
+            fetchConnectionsData(userId);
+        }
+    }, [userId, fetchConnectionsData]);
+
+    const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData();
+
+    const {
+        aboutData,
+        videoUrl,
+        isLoadingAbout,
+        fetchAboutData,
+    } = useAboutData(aboutId);
+
+    const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
+
+
+    // ✅ Transform data
+    const profileData = transformToProfileData(userProfileData, profileImageUrl, headlineData);
+
+    const fullName = userProfileData
+        ? `${userProfileData.firstName} ${userProfileData.lastName}`.trim()
+        : 'Loading...';
+
+
+    useEffect(() => {
+        if (userId) {
+            fetchUserProfileById();
+        }
+    }, [userId, fetchUserProfileById]);
+
+    // ✅ Fetch about data
+    useEffect(() => {
+        if (aboutId) {
+            fetchAboutData();
+        }
+    }, [aboutId, fetchAboutData]);
+
+    // ✅ Fetch headline data
+    useEffect(() => {
+        if (headlineId) {
+            fetchHeadlineData();
+        }
+    }, [headlineId, fetchHeadlineData]);
+
+    // ✅ Fetch posts (optional - agar chahiye to)
+    useEffect(() => {
+        if (userId) {
+            // fetchUserPosts(); // Agar posts API me userId pass kar sakte ho
+        }
+    }, [userId]);
+
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section) {
+            setTimeout(() => {
+                const el = document.getElementById(section);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 3000); // wait for DOM to load
+        }
+    }, [searchParams]);
+
+    // 🎨 Loading state
+    if (isLoadingProfile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-[#4a3728] mx-auto" />
+                    <p className="mt-4 text-gray-600">Loading profile...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // 🚨 Error state
+    if (profileError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
+                <div className="text-center">
+                    <p className="text-red-600 text-lg">{profileError}</p>
+                    <button
+                        onClick={() => window.history.back()}
+                        className="mt-4 px-6 py-2 bg-[#4a3728] text-white rounded-lg"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+                {/* Navbar */}
+                <ProfileNavbar
+                    profileImage={profileData.profileImage}
+                    userName={profileData.userName}
+                    currentUserId={user?.userId}
+                />
+
+                <div className="flex-1 pt-20">
+                    {/* ✅ Uncomment all components */}
+                    <ProfileBanner
+                        bannerImage={bannerUrl}
+                        onBannerUpdate={() => { }} // Disabled
+                        onDataRefresh={() => { }} // Disabled
+                        coverId={coverPhotoId}
+                    />
+
+                    <ProfileHeader
+                        currentUserId={userId}
+                        profileImage={profileImageUrl}
+                        name={profileData.name}
+                        pronouns={profileData.pronouns}
+                        headline={headlineData?.title || profileData.headline}
+                        headlineId={headlineId}
+                        onHeadlineCreated={() => { }}
+                        company={profileData.company}
+                        description={profileData.description}
+                        location={profileData.location}
+                        followers={followersList.length}
+                        connections={totalConnections.toString()}
+                        firstName={userProfileData?.firstName || ''}
+                        lastName={userProfileData?.lastName || ''}
+                        currentPosition={userProfileData?.currentPosition || ''}
+                        education={userProfileData?.education || ''}
+                        contactInfo={userProfileData?.contactInfo || ''}
+                        onDataRefresh={() => { }}
+                        onProfileImageUpdate={() => { }}
+                    />
+
+                    <ProfessionalJourney userProfileData={userProfileData} />
+
+                    <AboutSection
+                        aboutData={aboutData}
+                        isLoading={isLoadingAbout}
+                        onAboutCreated={() => { }}
+                        aboutId={aboutId}
+                        videoUrl={videoUrl}
+                        isUploadingVideo={false}
+                    />
+
+                    <EducationSection
+                        collegeName={profileData.education.collegeName}
+                        degree={profileData.education.degree}
+                        fieldOfStudy={profileData.education.fieldOfStudy}
+                        graduationYear={profileData.education.graduationYear}
+                    />
+
+                    <ExperienceSection
+                        experienceIds={userProfileData?.experienceIds || []}
+                    />
+
+                    <div id="activity">
+                        <ActivitySection
+                            posts={userPosts as any}
+                            onPostCreated={() => { }}
+                            isLoading={isLoadingPosts}
+                            profileImage={profileImageUrl}
+                            fullName={fullName}
+                            headline={profileData.headline}
+                        />
+                    </div>
+
+                    <SkillsSection />
+                    <InterestsSection />
+                </div>
+
+                {/* Sidebar (Right) */}
+                <div className="w-full md:w-80 md:min-w-[20rem]">
+                    <PeopleYouMayKnow />
+                </div>
+            </div>
+        </div>
+    );
+}

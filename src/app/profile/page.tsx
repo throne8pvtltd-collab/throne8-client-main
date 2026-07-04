@@ -1,0 +1,257 @@
+
+'use client';
+
+import { useAuth, useProtectedRoute } from '@/features/auth/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+
+
+import ProfileNavbar from '../../features/profile/components/home/ProfileNavbar';
+import ProfileBanner from '../../features/profile/components/home/ProfileBanner';
+import ProfileHeader from '../../features/profile/components/home/ProfileHeader';
+import ProfileActions from '../../features/profile/components/home/ProfileActions';
+import ProfessionalJourney from '../../features/profile/components/home/ProfessionalJourney';
+import AboutSection from '../../features/profile/components/home/AboutSection';
+import ExperienceSection from '../../features/profile/components/home/ExperienceSection';
+import EducationSection from '../../features/profile/components/home/EducationSection';
+import PremiumFeatures from '../../features/profile/components/home/PremiumFeatures';
+import ActivitySection from '../../features/profile/components/home/ActivitySection';
+import SkillsSection from '../../features/profile/components/home/SkillsSection';
+import InterestsSection from '../../features/profile/components/home/InterestsSection';
+import AnalyticsDashboard from '../../features/profile/components/home/AnalyticsDashboard';
+import ProfileProgress from '../../features/profile/components/home/ProfileProgress';
+import PeopleYouMayKnow from '../../features/profile/components/home/PeopleYouMayKnow';
+
+// ✅ Import custom hooks
+import { useProfileData } from '@/features/profile/hooks/useProfileData';
+import { usePostsData } from '@/features/profile/hooks/usePostsData';
+import { useAboutData } from '@/features/profile/hooks/useAboutData';
+import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
+
+// ✅ Import transformer
+import { transformToProfileData } from '@/shared/utils/profileTransformers';
+import { useEducationData } from '@/features/profile/hooks/useEducationData';
+import { useExperienceData } from '@/features/profile/hooks/useExperienceData';
+import { useProfile } from '@/features/profile/hooks/useProfile';
+import { useEducation } from '@/features/profile/hooks/useEducation';
+
+export default function ProfilePage() {
+    const { isChecking } = useProtectedRoute();
+    const { user, isLoading } = useAuth();
+    const {
+        userProfileData,
+        profileImageUrl,
+        bannerUrl,
+        coverPhotoId,
+        aboutId,
+        headlineId,
+        isLoadingProfile,
+        profileError,
+        userPosts,
+        isLoadingPosts,
+        loadProfile,
+        loadPosts,
+        updateProfileImage,
+        updateBanner,
+        userReposts,
+        isLoadingReposts,
+        loadMyReposts,
+        createRepost,
+        removeRepost,
+    } = useProfile();
+    const {
+        aboutData,
+        videoUrl,
+        isLoadingAbout,
+        isUploadingVideo,
+        fetchAboutData,
+        handleVideoUpload,
+    } = useAboutData(aboutId);
+
+    const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
+    const { experienceList, isLoadingExperience, fetchExperienceData } = useExperienceData();
+    const { educationList, isLoadingEducation, loadEducation } = useEducation();
+
+    // ✅ Fetch data on mount
+    useEffect(() => {
+        if (user) {
+            loadProfile();   // ← Redux action
+            loadPosts();
+            loadEducation();
+            loadMyReposts();
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (aboutId) {
+            fetchAboutData();
+        }
+    }, [aboutId, fetchAboutData]);
+
+    useEffect(() => {
+        if (headlineId) {
+            fetchHeadlineData();
+        }
+    }, [headlineId, fetchHeadlineData]);
+
+    useEffect(() => {
+        if (userProfileData?.experienceIds && userProfileData.experienceIds.length > 0) {
+            fetchExperienceData(userProfileData.experienceIds);
+        }
+    }, [userProfileData?.experienceIds, fetchExperienceData]);
+
+    // ✅ Transform profile data using utility function
+    const profileData = transformToProfileData(userProfileData, profileImageUrl, headlineData);
+
+
+    const fullName = userProfileData
+        ? `${userProfileData.firstName} ${userProfileData.lastName}`.trim()
+        : 'Loading...';
+
+    // 🎨 Loading state
+    if (isChecking || isLoading || isLoadingProfile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-[#4a3728] mx-auto" />
+                    <p className="mt-4 text-gray-600">
+                        {isLoadingProfile ? 'Loading profile data...' : 'Loading your profile...'}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
+    }
+
+    return (
+        <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+                {/* Navbar */}
+                <ProfileNavbar
+                    // profileImage={profileData.profileImage}
+                    profileImage={profileImageUrl}
+                    userName={profileData.userName}
+                    currentUserId={user?.userId}
+                    companyId={profileData?.companyId}
+                />
+
+                {/* Main Content (Left) */}
+                <div className="flex-1 pt-20">
+                    {/* Banner */}
+                    <ProfileBanner
+                        bannerImage={bannerUrl}
+                        onBannerUpdate={(newUrl) => {
+                            updateBanner(newUrl);  
+                        }}
+                        onDataRefresh={loadProfile}  
+                        coverId={coverPhotoId}
+                    />
+
+                    {/* Profile Header */}
+                    <ProfileHeader
+                        currentUserId={user?.userId}
+                        profileImage={profileImageUrl}
+                        name={profileData.name}
+                        pronouns={profileData.pronouns}
+                        headline={headlineData?.title || profileData.headline}
+                        headlineId={headlineId}
+                        onHeadlineCreated={fetchHeadlineData}
+                        company={profileData.company}
+                        description={profileData.description}
+                        location={profileData.location}
+                        followers={profileData.followers}
+                        connections={profileData.connections}
+                        firstName={userProfileData?.firstName || ''}
+                        lastName={userProfileData?.lastName || ''}
+                        currentPosition={userProfileData?.currentPosition || ''}
+                        education={userProfileData?.education || ''}
+                        educationData={profileData.education}
+                        educationList={educationList}
+                        experienceList={experienceList}
+                        contactInfo={userProfileData?.contactInfo || ''}
+                        
+                        
+                        onDataRefresh={loadProfile}  
+                        onProfileImageUpdate={(newUrl) => updateProfileImage(newUrl)}
+                    />
+
+                    {/* Profile Actions */}
+                    <ProfileActions />
+
+                    {/* Analytics Dashboard */}
+                    <AnalyticsDashboard userId={user?.userId || ''} />
+
+                    {/* Professional Journey */}
+                    {/* <ProfessionalJourney userProfileData={userProfileData} /> */}
+                    <ProfessionalJourney
+                        userProfileData={userProfileData}
+                        educationList={educationList}
+                        experienceList={experienceList}
+                    />
+
+                    {/* About Section */}
+                    <AboutSection
+                        aboutData={aboutData}
+                        isLoading={isLoadingAbout}
+                        onAboutCreated={fetchAboutData}
+                        aboutId={aboutId}
+                        videoUrl={videoUrl}
+                        onVideoUpload={handleVideoUpload}
+                        isUploadingVideo={isUploadingVideo}
+                    />
+
+                    {/* Education Section */}
+                    <EducationSection
+                        collegeName={profileData.education.collegeName}
+                        degree={profileData.education.degree}
+                        fieldOfStudy={profileData.education.fieldOfStudy}
+                        graduationYear={profileData.education.graduationYear}
+                    />
+
+                    {/* Experience Section */}
+                    <ExperienceSection
+                        experienceIds={userProfileData?.experienceIds || []}
+                    />
+
+                    {/* Premium Features */}
+                    <PremiumFeatures />
+
+                    {/* Activity Section */}
+                    <ActivitySection
+                        posts={userPosts}
+                        currentUserId={user?.userId}
+                        
+                        onPostCreated={loadPosts}  
+                        followers={profileData.followers}
+                        isLoading={isLoadingPosts}
+                        profileImage={profileImageUrl}
+                        fullName={fullName}
+                        headline={profileData.headline}
+                        userReposts={userReposts}          
+                        isLoadingReposts={isLoadingReposts}
+                        onCreateRepost={createRepost}      
+                        onDeleteRepost={removeRepost}
+                    />
+
+                    {/* Skills Section */}
+                    <SkillsSection />
+
+                    {/* Interests Section */}
+                    <InterestsSection />
+                </div>
+
+                {/* Sidebar (Right) */}
+                <div className="w-full md:w-80 md:min-w-[20rem]">
+                    {/* Profile Progress */}
+                    <ProfileProgress />
+
+                    {/* People You May Know */}
+                    <PeopleYouMayKnow />
+                </div>
+            </div>
+        </div>
+    );
+}

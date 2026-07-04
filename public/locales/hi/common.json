@@ -1,0 +1,9 @@
+﻿{
+  "common": {
+    "appName": "Throne8",
+    "welcome": "स्वागत है",
+    "login": "लॉगिन",
+    "signup": "साइन अप",
+    "logout": "लॉगआउट"
+  }
+}

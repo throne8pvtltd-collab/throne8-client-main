@@ -1,0 +1,270 @@
+// src/profile/components/ProfileHeader.tsx
+'use client';
+import React, { useEffect, useState } from 'react';
+import EditIntroModal from './EditIntroModal';
+import ProfileImageModal from './ProfileImageModal';
+import ConnectionsModal from './ConnectionsModal';
+import Contactact from './Contactact';
+import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
+
+interface ProfileHeaderProps {
+    currentUserId?: string;
+    profileImage: string;
+    name: string;
+    pronouns: string;
+    headline: string;
+    company: string;
+    description: string;
+    location: string;
+    followers: number;
+    connections: string;
+    firstName?: string;
+    lastName?: string;
+    currentPosition?: string;
+    education?: string;
+    contactInfo?: string;
+    onDataRefresh?: () => void;
+    onProfileImageUpdate?: (newUrl: string) => void;
+    headlineId?: string;
+    onHeadlineCreated?: () => void;
+    educationData?: {
+        collegeName: string;
+        degree: string;
+        fieldOfStudy: string;
+        graduationYear: string;
+    };
+    educationList?: any[];
+    experienceList?: any[];
+}
+
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+    currentUserId,
+    profileImage,
+    name,
+    pronouns,
+    headline,
+    company,
+    description,
+    location,
+    followers,
+    connections,
+    firstName = '',
+    lastName = '',
+    currentPosition = '',
+    education = '',
+    contactInfo = '',
+    headlineId = '',
+    educationData,
+    educationList = [],
+    experienceList = [],
+    onHeadlineCreated,
+    onDataRefresh,
+    onProfileImageUpdate,
+}) => {
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
+    const [isConnectionsModalOpen, setIsConnectionsModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [currentProfileImage, setCurrentProfileImage] = useState(profileImage);
+
+    useEffect(() => {
+        if (profileImage) {
+            setCurrentProfileImage(profileImage); 
+        }
+    }, [profileImage]);
+
+    const {
+        followingList,
+        followersList,
+        totalConnections,
+        isLoadingConnections,
+        fetchConnectionsData,
+    } = useConnectionsData();
+
+    useEffect(() => {
+        if (currentUserId) {
+            fetchConnectionsData(currentUserId);
+        }
+    }, [currentUserId, fetchConnectionsData]);
+    console.log('👥 [ActivitySection] Followers List:', followersList);
+
+    const handleProfileUpdate = async () => {
+       
+        if (onDataRefresh) {
+            await onDataRefresh();
+        }
+
+       
+        if (onHeadlineCreated) {
+            await onHeadlineCreated();
+        }
+    };
+
+    const handleProfileImageUpdate = (newImageUrl: string) => {
+       
+        setCurrentProfileImage(newImageUrl);
+
+       
+        if (onProfileImageUpdate) {
+            onProfileImageUpdate(newImageUrl);
+        }
+
+       
+        if (onDataRefresh) {
+            onDataRefresh();
+        }
+    };
+
+    return (
+        <>
+            <div className="relative px-6 pb-6">
+                <div className="flex flex-col md:flex-row items-start gap-6 -mt-12">
+                    <div
+                        className="profileImageClick relative w-36 h-36 group cursor-pointer"
+                        onClick={() => setIsProfileImageModalOpen(true)}
+                    >
+                        <img
+                            src={currentProfileImage}
+                            alt="Profile"
+                            className="w-full h-full rounded-2xl border-4 border-white shadow-xl object-cover transition-all duration-500 group-hover:shadow-2xl group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                    </div>
+                    <div className="border border-[#e0d8cf] rounded-3xl p-6 shadow-xl bg-white/60 backdrop-blur-sm">
+                        <div className="flex-1 text-center md:text-left pt-2">
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="bannerEdit absolute top-4 right-4 rounded-2x border-2 border-black text-white/80 text-xl font-medium bg-black px-2 py-2 rounded-full backdrop-blur-sm hover:bg-black/30 transition-all duration-300">
+                                ✏
+                            </button>
+                            <div className="space-y-3">
+                                <div className="relative">
+                                    <h1 className="text-3xl font-bold text-[#4a3728] flex items-center gap-2 justify-center md:justify-start mt-8 hover:text-[#5a4738] transition-colors duration-300">
+                                        {name}
+                                        <span className="text-sm text-[#4a3728]/70 font-normal bg-[#f6ede8] px-2 py-1 rounded-full border">
+                                            ({pronouns})
+                                        </span>
+                                    </h1>
+                                </div>
+                                <div className="relative">
+                                    <h2 className="text-md w-[80%] font-semibold text-[#4a3728] bg-gradient-to-r from-[#4a3728] to-[#6a5748] bg-clip-text text-transparent">
+                                        {headline}
+                                    </h2>
+                                </div>
+                                    <p className="mt-2 text-sm w-[40vw] text-[#4a3728] font-bold leading-relaxed relative">
+                                    {/* Priority 1: Education (College Name) */}
+                                    {educationList && educationList.length > 0 && educationList[0]?.schoolCollegeName && (
+                                        <>
+                                            {educationList[0].schoolCollegeName}
+                                            {(experienceList.length > 0 || company) && ' • '}
+                                        </>
+                                    )}
+
+                                    {/* Priority 2: Fallback Education (from onboarding) */}
+                                    {(!educationList || educationList.length === 0) && educationData?.collegeName && (
+                                        <>
+                                            {educationData.collegeName}
+                                            {(experienceList.length > 0 || company) && ' • '}
+                                        </>
+                                    )}
+
+                                    {/* Priority 3: Current Experience (Company Name) */}
+                                    {experienceList && experienceList.length > 0 && (
+                                        <>
+                                            {experienceList.find(exp => exp.current)?.company || experienceList[0]?.company}
+                                        </>
+                                    )}
+
+                                    {/* Priority 4: Fallback Company (from onboarding) */}
+                                    {(!experienceList || experienceList.length === 0) && company && (
+                                        <>
+                                            {company}
+                                        </>
+                                    )}
+
+                                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#4a3728]/20 to-transparent rounded-full"></div>
+                                </p>
+                                <div className="flex items-center gap-2 justify-center md:justify-start bg-white/50 rounded-full px-3 py-2 backdrop-blur-sm border border-[#e0d8cf]/50">
+                                    <svg className="w-5 h-5 text-[#4a3728] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <p className="text-sm text-[#4a3728]">
+                                        <span className="font-semibold">Location:</span> {location}
+                                    </p>
+                                </div>
+
+
+                                <Contactact />
+                                <div className="flex gap-3 justify-center md:justify-start">
+                                    <button
+                                        onClick={() => setIsConnectionsModalOpen(true)}
+                                        className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
+                                        <svg className="w-5 h-5 text-[#4a3728] group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                        <span className="font-semibold">
+                                            {isLoadingConnections ? '' : followersList.length}
+                                        </span> followers
+                                    </button>
+
+                                    <button
+                                        className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white"
+                                        onClick={() => setIsConnectionsModalOpen(true)}>
+                                        <svg className="w-5 h-5 text-[#4a3728] group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        <span className="font-semibold">
+                                            {isLoadingConnections ? '' : totalConnections}
+                                        </span> connections
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Edit Intro Modal */}
+            <EditIntroModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                initialData={{
+                    firstName: firstName || name?.split(' ')[0] || '',
+                    lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
+                    pronouns,
+                    headline: headline,
+                    company,
+                    location,
+                    currentPosition,
+                    education,
+                    contactInfo,
+                    headlineId,
+                }}
+                onSubmit={handleProfileUpdate}
+                onHeadlineCreated={onHeadlineCreated}
+            />
+
+            {/* Profile Image Modal */}
+            <ProfileImageModal
+                isOpen={isProfileImageModalOpen}
+                onClose={() => setIsProfileImageModalOpen(false)}
+                onUploadSuccess={handleProfileImageUpdate}
+                currentImageUrl={currentProfileImage}
+            />
+
+            {/* Connections Modal */}
+            <ConnectionsModal
+                isOpen={isConnectionsModalOpen}
+                onClose={() => setIsConnectionsModalOpen(false)}
+                following={followingList}
+                followers={followersList}
+                username={name}
+            />
+        </>
+    );
+};
+
+export default ProfileHeader;

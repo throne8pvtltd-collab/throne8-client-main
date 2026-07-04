@@ -1,0 +1,27 @@
+import { calculateTimeAgo } from './time.util';
+
+export const transformApiPostToFeedPost = (
+    apiPost: any,
+    userData?: any,
+    profileImageUrl?: string | null,
+    headlineText?: string | null
+) => {
+    return {
+        user: userData ? `${userData.firstName} ${userData.lastName}`.trim() : 'Unknown User',
+        avatar: profileImageUrl || userData?.profilePhotoUrl || '',
+        role: headlineText || userData?.headline || '',
+        time: calculateTimeAgo(apiPost.createdAt),
+        content: apiPost.content || apiPost.text || '',
+        image: apiPost.images?.[0]?.cloudinarySecureUrl || apiPost.image || '',
+        likes: apiPost.likesCount || apiPost.likes || 0,
+        likesCount: apiPost.likesCount || apiPost.likes || 0,
+        comments: apiPost.commentsCount || apiPost.comments || 0,
+        commentsCount: apiPost.commentsCount || apiPost.comments || 0,
+        shares: apiPost.sharesCount || apiPost.reposts || 0,
+        postId: apiPost.entryId || apiPost.postId,        // ✅ FIX
+        entryId: apiPost.entryId,                          // ✅ ADD
+        userId: apiPost.userId,
+        isLiked: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,
+        isLikedByCurrentUser: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,  // ✅ ADD
+    };
+};

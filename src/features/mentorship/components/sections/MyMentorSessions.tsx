@@ -1,0 +1,959 @@
+// src/features/mentor/components/sections/MyMentorSessions.tsx
+'use client';
+
+import { useState, useEffect } from "react";
+
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+const C = {
+    bg: "#f6ede8",
+    card: "#fbf7f3",
+    primary: "#4a3728",
+    secondary: "#7a5c3e",
+    muted: "#8a7a6a",
+    border: "#e0d8cf",
+    btn: "#4a3728",
+    track: "#d8cec4",
+    accent: "#c9a87c",
+    success: "#6b8f6e",
+    warn: "#c97c4a",
+} as const;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface ToastProps {
+    msg: string;
+    visible: boolean;
+}
+
+interface ReminderModalProps {
+    sessionName: string;
+    onClose: () => void;
+    onSave: (time: string) => void;
+}
+
+interface StatCardProps {
+    num: string;
+    label: string;
+}
+
+interface ProgressBarProps {
+    value: number;
+    label: string;
+}
+
+interface OneOnOneTabProps {
+    onReminder: (sessionName: string, onSave: () => void) => void;
+}
+
+interface QueriesTabProps {
+    toast: (msg: string) => void;
+}
+
+interface ResourcesTabProps {
+    toast: (msg: string) => void;
+}
+
+interface ModalState {
+    open: boolean;
+    session: string;
+    onSave: (() => void) | null;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function Toast({ msg, visible }: ToastProps) {
+    return (
+        <div
+            style={{
+                background: C.primary,
+                transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+                transform: visible ? "translateY(0)" : "translateY(80px)",
+                opacity: visible ? 1 : 0,
+            }}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 rounded-xl px-5 py-3 text-white text-sm font-medium shadow-2xl"
+        >
+            {msg}
+        </div>
+    );
+}
+
+// ─── Reminder Modal ───────────────────────────────────────────────────────────
+function ReminderModal({ sessionName, onClose, onSave }: ReminderModalProps) {
+    const [selected, setSelected] = useState<string>("15 min pehle");
+    const [notif, setNotif] = useState<string>("App Notification");
+    const [note, setNote] = useState<string>("");
+
+    const chips: string[] = ["15 min pehle", "30 min pehle", "1 ghanta pehle", "1 din pehle"];
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: "rgba(74,55,40,0.38)", backdropFilter: "blur(4px)" }}
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-2xl p-8 shadow-2xl"
+                style={{ background: C.card }}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <h2
+                        className="text-xl font-bold"
+                        style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+                    >
+                        🔔 Reminder Set Karein
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-lg border flex items-center justify-center text-sm transition-colors hover:opacity-70"
+                        style={{ borderColor: C.border, color: C.muted }}
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {/* Session name */}
+                <div className="mb-4">
+                    <label
+                        className="block text-xs font-semibold mb-1.5"
+                        style={{ color: C.secondary }}
+                    >
+                        Session
+                    </label>
+                    <input
+                        readOnly
+                        value={sessionName}
+                        className="w-full rounded-xl px-4 py-2.5 text-sm border outline-none"
+                        style={{ background: C.bg, borderColor: C.border, color: C.primary }}
+                    />
+                </div>
+
+                {/* Time chips */}
+                <div className="mb-4">
+                    <label
+                        className="block text-xs font-semibold mb-1.5"
+                        style={{ color: C.secondary }}
+                    >
+                        Reminder ka time
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {chips.map((c) => (
+                            <button
+                                key={c}
+                                onClick={() => setSelected(c)}
+                                className="rounded-lg py-2 text-xs font-medium border transition-all"
+                                style={{
+                                    borderColor: selected === c ? C.secondary : C.border,
+                                    background: selected === c ? "rgba(122,92,62,0.09)" : "transparent",
+                                    color: selected === c ? C.primary : C.muted,
+                                }}
+                            >
+                                {c}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Notif type */}
+                <div className="mb-4">
+                    <label
+                        className="block text-xs font-semibold mb-1.5"
+                        style={{ color: C.secondary }}
+                    >
+                        Notification ka tarika
+                    </label>
+                    <select
+                        value={notif}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNotif(e.target.value)}
+                        className="w-full rounded-xl px-4 py-2.5 text-sm border outline-none"
+                        style={{ background: C.bg, borderColor: C.border, color: C.primary }}
+                    >
+                        <option>App Notification</option>
+                        <option>Email</option>
+                        <option>SMS + App</option>
+                    </select>
+                </div>
+
+                {/* Notes */}
+                <div className="mb-6">
+                    <label
+                        className="block text-xs font-semibold mb-1.5"
+                        style={{ color: C.secondary }}
+                    >
+                        Notes (optional)
+                    </label>
+                    <input
+                        value={note}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value)}
+                        placeholder="Session ke liye kuch prepare karna hai?"
+                        className="w-full rounded-xl px-4 py-2.5 text-sm border outline-none"
+                        style={{ background: C.bg, borderColor: C.border, color: C.primary }}
+                    />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all hover:opacity-80"
+                        style={{ borderColor: C.border, color: C.secondary }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onSave(selected)}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                        style={{ background: C.btn }}
+                    >
+                        ✓ Save Karein
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Stats Card ───────────────────────────────────────────────────────────────
+function StatCard({ num, label }: StatCardProps) {
+    return (
+        <div
+            className="rounded-2xl border p-4 text-center"
+            style={{ background: C.card, borderColor: C.border }}
+        >
+            <div
+                className="text-3xl font-bold mb-1"
+                style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+            >
+                {num}
+            </div>
+            <div className="text-xs" style={{ color: C.muted }}>
+                {label}
+            </div>
+        </div>
+    );
+}
+
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
+function ProgressBar({ value, label }: ProgressBarProps) {
+    const [width, setWidth] = useState<number>(0);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setWidth(value), 400);
+        return () => clearTimeout(timer);
+    }, [value]);
+
+    return (
+        <div className="mb-4">
+            <div
+                className="flex justify-between text-xs mb-1.5"
+                style={{ color: C.muted }}
+            >
+                <span>{label}</span>
+                <span>{value}%</span>
+            </div>
+            <div className="h-1.5 rounded-full" style={{ background: C.track }}>
+                <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                        width: `${width}%`,
+                        background: `linear-gradient(90deg, ${C.secondary}, ${C.accent})`,
+                    }}
+                />
+            </div>
+        </div>
+    );
+}
+
+// ─── Section Title ────────────────────────────────────────────────────────────
+function SectionTitle({
+    children,
+    inline,
+}: {
+    children: React.ReactNode;
+    inline?: boolean;
+}) {
+    if (inline) {
+        return (
+            <h3
+                className="text-lg font-bold"
+                style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+            >
+                {children}
+            </h3>
+        );
+    }
+    return (
+        <div className="flex items-center gap-3 mb-4">
+            <h3
+                className="text-lg font-bold whitespace-nowrap"
+                style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+            >
+                {children}
+            </h3>
+            <div className="flex-1 h-px" style={{ background: C.border }} />
+        </div>
+    );
+}
+
+// ─── ONE-ON-ONE TAB ───────────────────────────────────────────────────────────
+interface UpcomingSession {
+    id: string;
+    name: string;
+    date: string;
+    set: boolean;
+}
+
+interface BookableSession {
+    icon: string;
+    name: string;
+    mentor: string;
+    match: number;
+}
+
+function OneOnOneTab({ onReminder }: OneOnOneTabProps) {
+    const [remindersSet, setRemindersSet] = useState<Record<string, boolean>>({
+        r2: false,
+        r3: false,
+    });
+
+    const upcoming: UpcomingSession[] = [
+        {
+            id: "r1",
+            name: "Career Roadmap Discussion",
+            date: "Kal, 4:00 PM • 45 min • Rahul Sharma",
+            set: true,
+        },
+        {
+            id: "r2",
+            name: "DSA Mock Interview",
+            date: "5 April, 11:00 AM • 60 min • Priya Gupta",
+            set: false,
+        },
+        {
+            id: "r3",
+            name: "Resume Review",
+            date: "8 April, 3:00 PM • 30 min • Amit Verma",
+            set: false,
+        },
+    ];
+
+    const bookable: BookableSession[] = [
+        { icon: "🎯", name: "Career Growth Session", mentor: "Rahul Sharma", match: 92 },
+        { icon: "💻", name: "System Design Prep", mentor: "Priya Gupta", match: 85 },
+    ];
+
+    return (
+        <div>
+            {/* Upcoming Timeline */}
+            <SectionTitle>Upcoming Sessions</SectionTitle>
+            <div className="flex flex-col gap-0 mb-8">
+                {upcoming.map((s, i) => {
+                    const isSet = s.set || remindersSet[s.id];
+                    return (
+                        <div key={s.id} className="flex gap-4">
+                            <div className="flex flex-col items-center w-10 flex-shrink-0">
+                                <div
+                                    className="w-3.5 h-3.5 rounded-full mt-1 flex-shrink-0 z-10"
+                                    style={{
+                                        background: C.warn,
+                                        boxShadow: `0 0 0 3px rgba(201,124,74,0.2)`,
+                                    }}
+                                />
+                                {i < upcoming.length - 1 && (
+                                    <div
+                                        className="flex-1 w-0.5 my-1"
+                                        style={{ background: C.border }}
+                                    />
+                                )}
+                            </div>
+                            <div
+                                className="flex-1 rounded-xl border p-4 mb-4 flex items-center justify-between gap-4 transition-all hover:shadow-md"
+                                style={{ background: C.card, borderColor: C.border }}
+                            >
+                                <div>
+                                    <div
+                                        className="text-sm font-semibold mb-1"
+                                        style={{ color: C.primary }}
+                                    >
+                                        {s.name}
+                                    </div>
+                                    <div className="text-xs" style={{ color: C.muted }}>
+                                        📅 {s.date}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() =>
+                                        isSet
+                                            ? undefined
+                                            : onReminder(s.name, () =>
+                                                setRemindersSet((p) => ({ ...p, [s.id]: true }))
+                                            )
+                                    }
+                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all"
+                                    style={{
+                                        borderColor: isSet ? "rgba(107,143,110,0.3)" : C.border,
+                                        background: isSet ? "rgba(107,143,110,0.08)" : "transparent",
+                                        color: isSet ? C.success : C.secondary,
+                                        cursor: isSet ? "default" : "pointer",
+                                    }}
+                                >
+                                    {isSet ? "✅ Reminder Set" : "🔔 Reminder Set Karein"}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Completed */}
+            <SectionTitle>Completed Session</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {bookable.map((b) => (
+                    <div
+                        key={b.name}
+                        className="rounded-2xl border p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
+                        style={{ background: C.card, borderColor: C.border }}
+                    >
+                        <div className="flex items-start justify-between mb-4">
+                            <div
+                                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
+                                style={{ background: "rgba(74,55,40,0.09)" }}
+                            >
+                                {b.icon}
+                            </div>
+                            <span
+                                className="text-xs font-bold px-2.5 py-1 rounded-full"
+                                style={{ background: "rgba(74,55,40,0.08)", color: C.secondary }}
+                            >
+                                Completed
+                            </span>
+                        </div>
+                        <div
+                            className="text-base font-bold mb-1"
+                            style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+                        >
+                            {b.name}
+                        </div>
+                        <div className="text-xs mb-4" style={{ color: C.muted }}>
+                            {b.mentor} • Available
+                        </div>
+                        <ProgressBar value={b.match} label="Profile Match" />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => onReminder(b.name, () => { })}
+                                className="flex-1 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
+                                style={{ background: C.btn }}
+                            >
+                                Review
+                            </button>
+                            <button
+                                className="px-4 py-2 rounded-xl border text-xs font-medium transition-all hover:opacity-80"
+                                style={{ borderColor: C.border, color: C.secondary }}
+                            >
+                                Profile
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── QUERIES TAB ──────────────────────────────────────────────────────────────
+interface Query {
+    initials: string;
+    name: string;
+    time: string;
+    text: string;
+    tags: string[];
+    answered: boolean;
+}
+
+function QueriesTab({ toast }: QueriesTabProps) {
+    const queries: Query[] = [
+        {
+            initials: "RS",
+            name: "Rahul Sharma",
+            time: "2 ghante pehle",
+            text: "DSA mein Dynamic Programming ke saath main bohot struggle kar raha hoon. Kya aap kuch practice problems suggest kar sakte hain jo beginner level se start ho?",
+            tags: ["DSA", "Dynamic Programming"],
+            answered: false,
+        },
+        {
+            initials: "PG",
+            name: "Priya Gupta",
+            time: "1 din pehle",
+            text: "Mujhe system design interview ki preparation ke liye kahan se start karna chahiye? Koi roadmap denge?",
+            tags: ["System Design", "Interview"],
+            answered: false,
+        },
+        {
+            initials: "AV",
+            name: "Amit Verma",
+            time: "3 din pehle",
+            text: "Resume mein projects section kaise improve karein? Kya STAR method yahan bhi kaam karta hai?",
+            tags: ["Resume"],
+            answered: true,
+        },
+    ];
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-5">
+                <SectionTitle inline>Aapki Queries</SectionTitle>
+                <button
+                    onClick={() => toast("✏️ New query form khul raha hai...")}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: C.btn }}
+                >
+                    + Nayi Query
+                </button>
+            </div>
+            <div className="flex flex-col gap-4">
+                {queries.map((q) => (
+                    <div
+                        key={q.name}
+                        className="rounded-2xl border p-5 flex gap-4 transition-all hover:shadow-md"
+                        style={{ background: C.card, borderColor: C.border }}
+                    >
+                        <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                            style={{
+                                background: `linear-gradient(135deg, ${C.secondary}, ${C.accent})`,
+                            }}
+                        >
+                            {q.initials}
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-sm font-semibold" style={{ color: C.primary }}>
+                                    {q.name}
+                                </span>
+                                <span className="text-xs" style={{ color: C.muted }}>
+                                    {q.time}
+                                </span>
+                            </div>
+                            <p
+                                className="text-sm leading-relaxed mb-3"
+                                style={{ color: C.secondary }}
+                            >
+                                {q.text}
+                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {q.tags.map((t) => (
+                                    <span
+                                        key={t}
+                                        className="text-xs px-2.5 py-0.5 rounded-full font-medium"
+                                        style={{ background: "rgba(74,55,40,0.07)", color: C.secondary }}
+                                    >
+                                        {t}
+                                    </span>
+                                ))}
+                                {q.answered ? (
+                                    <span
+                                        className="text-xs px-2.5 py-0.5 rounded-full font-medium"
+                                        style={{ background: "rgba(107,143,110,0.12)", color: C.success }}
+                                    >
+                                        ✅ Answered
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => toast("💬 Reply box khul raha hai...")}
+                                        className="text-xs px-3 py-1 rounded-lg border font-medium transition-all hover:opacity-80 ml-1"
+                                        style={{ borderColor: C.border, color: C.secondary }}
+                                    >
+                                        Reply
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── RESOURCES TAB ────────────────────────────────────────────────────────────
+interface Resource {
+    icon: string;
+    type: string;
+    name: string;
+    meta: string;
+    btn: string;
+    action: string;
+}
+
+function ResourcesTab({ toast }: ResourcesTabProps) {
+    const resources: Resource[] = [
+        {
+            icon: "📄",
+            type: "PDF",
+            name: "DSA Cheat Sheet — Top 100 Problems",
+            meta: "2.4 MB • Rahul Sharma",
+            btn: "⬇",
+            action: "⬇️ Download ho raha hai...",
+        },
+        {
+            icon: "🎥",
+            type: "VIDEO",
+            name: "System Design Interview — Complete Guide",
+            meta: "45 min • Priya Gupta",
+            btn: "▶",
+            action: "▶️ Video play ho rahi hai...",
+        },
+        {
+            icon: "📊",
+            type: "SHEET",
+            name: "6-Month Study Plan — Software Engineering",
+            meta: "180 KB • Amit Verma",
+            btn: "⬇",
+            action: "⬇️ Download ho raha hai...",
+        },
+        {
+            icon: "🔗",
+            type: "LINK",
+            name: "LeetCode Top 150 Interview Questions List",
+            meta: "External • Rahul Sharma",
+            btn: "↗",
+            action: "🔗 Link khul raha hai...",
+        },
+        {
+            icon: "📝",
+            type: "NOTES",
+            name: "Resume Writing Tips — ATS Friendly Format",
+            meta: "32 KB • Amit Verma",
+            btn: "⬇",
+            action: "⬇️ Download ho raha hai...",
+        },
+        {
+            icon: "🎤",
+            type: "RECORDING",
+            name: "Mock Interview Session Recording — March 22",
+            meta: "28 min • Priya Gupta",
+            btn: "▶",
+            action: "▶️ Recording play ho rahi hai...",
+        },
+    ];
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-5">
+                <SectionTitle inline>Shared Resources</SectionTitle>
+                <button
+                    onClick={() => toast("📎 File upload ho raha hai...")}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: C.btn }}
+                >
+                    + Upload
+                </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {resources.map((r) => (
+                    <div
+                        key={r.name}
+                        className="rounded-2xl border p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
+                        style={{ background: C.card, borderColor: C.border }}
+                    >
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
+                            style={{ background: "rgba(74,55,40,0.08)" }}
+                        >
+                            {r.icon}
+                        </div>
+                        <div
+                            className="text-xs font-bold tracking-wider mb-1"
+                            style={{ color: C.muted }}
+                        >
+                            {r.type}
+                        </div>
+                        <div
+                            className="text-sm font-semibold mb-4 leading-snug"
+                            style={{ color: C.primary }}
+                        >
+                            {r.name}
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs" style={{ color: C.muted }}>
+                                {r.meta}
+                            </span>
+                            <button
+                                onClick={() => toast(r.action)}
+                                className="w-8 h-8 rounded-lg text-white flex items-center justify-center text-sm transition-all hover:scale-105 hover:opacity-90"
+                                style={{ background: C.primary }}
+                            >
+                                {r.btn}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── HISTORY TAB ──────────────────────────────────────────────────────────────
+interface SessionHistory {
+    name: string;
+    date: string;
+    stars: number;
+}
+
+function HistoryTab() {
+    const sessions: SessionHistory[] = [
+        { name: "Career Goals Planning", date: "28 March 2026 • Rahul Sharma • 45 min", stars: 5 },
+        { name: "DSA Mock Interview — Round 1", date: "21 March 2026 • Priya Gupta • 60 min", stars: 4 },
+        { name: "Resume Review & Feedback", date: "15 March 2026 • Amit Verma • 30 min", stars: 5 },
+        { name: "System Design Basics", date: "8 March 2026 • Priya Gupta • 45 min", stars: 4 },
+        { name: "Intro Session — Goals Discussion", date: "1 March 2026 • Rahul Sharma • 30 min", stars: 5 },
+        { name: "LinkedIn Profile Optimization", date: "22 Feb 2026 • Amit Verma • 30 min", stars: 4 },
+        { name: "Behavioral Interview Prep", date: "14 Feb 2026 • Priya Gupta • 45 min", stars: 5 },
+        { name: "OOP Concepts Deep Dive", date: "5 Feb 2026 • Rahul Sharma • 60 min", stars: 4 },
+    ];
+
+    return (
+        <div>
+            <SectionTitle>Completed Sessions</SectionTitle>
+            <div className="flex flex-col gap-3">
+                {sessions.map((s) => (
+                    <div
+                        key={s.name}
+                        className="rounded-xl border p-4 flex items-center gap-4 transition-all hover:shadow-md hover:translate-x-1"
+                        style={{ background: C.card, borderColor: C.border }}
+                    >
+                        <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{
+                                background: "rgba(107,143,110,0.12)",
+                                color: C.success,
+                                fontSize: "1rem",
+                            }}
+                        >
+                            ✓
+                        </div>
+                        <div className="flex-1">
+                            <div
+                                className="text-sm font-semibold mb-0.5"
+                                style={{ color: C.primary }}
+                            >
+                                {s.name}
+                            </div>
+                            <div className="text-xs" style={{ color: C.muted }}>
+                                📅 {s.date}
+                            </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                            <div className="text-sm mb-0.5" style={{ color: C.accent }}>
+                                {"★".repeat(s.stars)}
+                                {"☆".repeat(5 - s.stars)}
+                            </div>
+                            <div className="text-xs" style={{ color: C.success }}>
+                                Completed
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Tab Definition ───────────────────────────────────────────────────────────
+type TabId = "one-on-one" | "queries" | "resources" | "history";
+
+interface Tab {
+    id: TabId;
+    label: string;
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function MentorDashboard() {
+    const [activeTab, setActiveTab] = useState<TabId>("one-on-one");
+    const [modal, setModal] = useState<ModalState>({
+        open: false,
+        session: "",
+        onSave: null,
+    });
+    const [toastMsg, setToastMsg] = useState<string>("");
+    const [toastVisible, setToastVisible] = useState<boolean>(false);
+
+    const showToast = (msg: string): void => {
+        setToastMsg(msg);
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 3000);
+    };
+
+    const openReminder = (sessionName: string, onSave: () => void): void => {
+        setModal({ open: true, session: sessionName, onSave });
+    };
+
+    const handleSaveReminder = (time: string): void => {
+        modal.onSave?.();
+        setModal({ open: false, session: "", onSave: null });
+        showToast("✅ Reminder set ho gaya! Aapko samay par notification milegi.");
+    };
+
+    const tabs: Tab[] = [
+        { id: "one-on-one", label: "👤 1:1 Session" },
+        { id: "queries", label: "❓ Queries" },
+        { id: "resources", label: "📚 Resources" },
+        { id: "history", label: "📋 History" },
+    ];
+
+    return (
+        <div
+            className="min-h-screen"
+            style={{ background: C.bg, fontFamily: "'DM Sans', sans-serif" }}
+        >
+            {/* ── HEADER ── */}
+            <header
+                className="sticky top-0 z-40 flex items-center justify-between px-6 h-16 border-b shadow-sm"
+                style={{ background: C.card, borderColor: C.border }}
+            >
+                <div className="flex items-center gap-3">
+                    <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                        style={{ background: C.primary, color: C.bg }}
+                    >
+                        🎓
+                    </div>
+                    <span
+                        className="text-xl font-bold"
+                        style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+                    >
+                        MentorSpace
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => showToast("🔔 2 upcoming sessions this week!")}
+                        className="relative w-9 h-9 rounded-full border flex items-center justify-center transition-all hover:opacity-80"
+                        style={{ borderColor: C.border, color: C.secondary }}
+                    >
+                        🔔
+                        <span
+                            className="absolute top-1 right-1 w-2 h-2 rounded-full border-2"
+                            style={{ background: C.warn, borderColor: C.card }}
+                        />
+                    </button>
+                    <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white cursor-pointer"
+                        style={{
+                            background: `linear-gradient(135deg, ${C.secondary}, ${C.accent})`,
+                        }}
+                    >
+                        RK
+                    </div>
+                </div>
+            </header>
+
+            {/* ── MAIN ── */}
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pb-16">
+                {/* Page Heading */}
+                <div className="mb-6">
+                    <h1
+                        className="text-3xl font-bold mb-1"
+                        style={{ color: C.primary, fontFamily: "Georgia, serif" }}
+                    >
+                        Mentor Sessions
+                    </h1>
+                    <p className="text-sm font-light" style={{ color: C.muted }}>
+                        Apne saare mentor sessions ek jagah manage karein — queries, resources, aur history.
+                    </p>
+                </div>
+
+                {/* Alert Banner */}
+                <div
+                    className="rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg"
+                    style={{
+                        background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                    }}
+                >
+                    <div className="flex items-center gap-4">
+                        <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                            style={{ background: "rgba(255,255,255,0.15)" }}
+                        >
+                            ⏰
+                        </div>
+                        <div>
+                            <p className="font-semibold text-white text-sm mb-0.5">
+                                Upcoming: 1:1 Session with Rahul Sir — Kal 4:00 PM
+                            </p>
+                            <p className="text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>
+                                Career Roadmap discussion • 45 min • Google Meet
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                        <button
+                            onClick={() => openReminder("Career Roadmap Discussion", () => { })}
+                            className="px-4 py-2 rounded-xl text-xs font-medium border transition-all hover:opacity-90"
+                            style={{
+                                background: "rgba(255,255,255,0.15)",
+                                borderColor: "rgba(255,255,255,0.3)",
+                                color: "white",
+                            }}
+                        >
+                            🔔 Reminder
+                        </button>
+                        <button
+                            className="px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 hover:-translate-y-0.5"
+                            style={{ background: "white", color: C.primary }}
+                        >
+                            Join Meeting →
+                        </button>
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    <StatCard num="12" label="Total Sessions" />
+                    <StatCard num="8" label="Completed" />
+                    <StatCard num="3" label="Upcoming" />
+                    <StatCard num="24h" label="Total Time" />
+                </div>
+
+                {/* Tab Nav */}
+                <div
+                    className="flex flex-wrap gap-1 p-1.5 rounded-xl border mb-6 w-fit"
+                    style={{ background: C.card, borderColor: C.border }}
+                >
+                    {tabs.map((t) => (
+                        <button
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id)}
+                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                            style={{
+                                background: activeTab === t.id ? C.primary : "transparent",
+                                color: activeTab === t.id ? "white" : C.muted,
+                                boxShadow:
+                                    activeTab === t.id ? "0 2px 8px rgba(74,55,40,0.25)" : "none",
+                            }}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab Panels */}
+                {activeTab === "one-on-one" && <OneOnOneTab onReminder={openReminder} />}
+                {activeTab === "queries" && <QueriesTab toast={showToast} />}
+                {activeTab === "resources" && <ResourcesTab toast={showToast} />}
+                {activeTab === "history" && <HistoryTab />}
+            </main>
+
+            {/* Reminder Modal */}
+            {modal.open && (
+                <ReminderModal
+                    sessionName={modal.session}
+                    onClose={() => setModal({ open: false, session: "", onSave: null })}
+                    onSave={handleSaveReminder}
+                />
+            )}
+
+            {/* Toast */}
+            <Toast msg={toastMsg} visible={toastVisible} />
+        </div>
+    );
+}

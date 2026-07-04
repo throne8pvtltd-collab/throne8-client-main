@@ -1,0 +1,9 @@
+﻿{
+  "name": "Throne8",
+  "short_name": "Throne8",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": []
+}
