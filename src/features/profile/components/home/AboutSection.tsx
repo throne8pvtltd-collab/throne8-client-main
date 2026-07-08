@@ -36,6 +36,18 @@ const AboutSection: React.FC<AboutSectionProps> = ({
         }
     }, [aboutData]);
 
+    // Lock background scroll when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isModalOpen]);
+
     const handleOpenModal = (editMode: boolean = false) => {
         setIsEditMode(editMode);
         if (editMode && aboutData?.aboutText) {

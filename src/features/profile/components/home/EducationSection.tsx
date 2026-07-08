@@ -57,6 +57,9 @@ const EducationSection: React.FC<EducationSectionProps> = ({
 
     const handleOpenSelectEducationModal = () => {
         if (educationList.length === 0) {
+            if (hasOnboardingEducation) {
+                setIsAddEducationModalOpen(true);
+            }
             return;
         } else if (educationList.length === 1) {
             handleUpdateEducation(educationList[0]);
@@ -101,10 +104,10 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                         </button>
                         <button
                             onClick={handleOpenSelectEducationModal}
-                            className="UpdateEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden"
-                            disabled={educationList.length === 0}
-                            title={educationList.length === 0 ? "Add education first to update" : "Update your education"}>
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            className="UpdateEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                            disabled={educationList.length === 0 && !hasOnboardingEducation}
+                            title={educationList.length === 0 && !hasOnboardingEducation ? "Add education first to update" : "Update your education"}>
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 group-disabled:opacity-0 transition-opacity duration-300"></div>
                             <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>

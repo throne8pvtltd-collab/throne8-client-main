@@ -23,6 +23,7 @@ const ResourcesModal: React.FC<ResourcesModalProps> = ({ isOpen, onClose }) => {
         activity: false,
         about: false
     });
+    const [messageText, setMessageText] = useState('');
 
     const resources: Resource[] = [
         {
@@ -75,7 +76,10 @@ const ResourcesModal: React.FC<ResourcesModalProps> = ({ isOpen, onClose }) => {
             ></div>
 
             {/* Modal Content */}
-            <div className="relative z-10 w-full max-w-2xl mx-auto max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div 
+                className="relative z-10 w-full max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl"
+                style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between sticky top-0 bg-gradient-to-r from-[#4a3728] to-[#6a5748] px-6 py-5 z-10">
                     <div>
@@ -91,7 +95,10 @@ const ResourcesModal: React.FC<ResourcesModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Content Body */}
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <div 
+                    className="p-6"
+                    style={{ flex: 1, overflowY: 'auto' }}
+                >
                     <div className="space-y-4">
                         {resources.map((resource) => (
                             <div key={resource.id} className="border border-[#e0d8cf] rounded-xl overflow-hidden">
@@ -124,12 +131,25 @@ const ResourcesModal: React.FC<ResourcesModalProps> = ({ isOpen, onClose }) => {
                                                     <p className="text-sm text-[#4a3728]/80 mb-3">
                                                         Share your profile link with a message to your connections
                                                     </p>
+                                                    <textarea
+                                                        value={messageText}
+                                                        onChange={(e) => setMessageText(e.target.value)}
+                                                        placeholder="Type your message here..."
+                                                        className="w-full p-3 border border-[#e0d8cf] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-[#4a3728] mb-3 min-h-[100px] resize-none"
+                                                    />
                                                     <button
                                                         onClick={() => {
-                                                            resource.action();
+                                                            if (!messageText.trim()) {
+                                                                alert('Please type a message first.');
+                                                                return;
+                                                            }
+                                                            console.log('Sending message:', messageText);
+                                                            alert(`Message sent successfully: "${messageText}"`);
+                                                            setMessageText('');
                                                             toggleResource(resource.id);
                                                         }}
-                                                        className="w-full px-4 py-2 bg-[#4a3728] text-white rounded-lg hover:bg-[#6a5748] transition-colors duration-200"
+                                                        className="w-full px-4 py-2 bg-[#4a3728] text-white rounded-lg hover:bg-[#6a5748] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        disabled={!messageText.trim()}
                                                     >
                                                         Send Message
                                                     </button>

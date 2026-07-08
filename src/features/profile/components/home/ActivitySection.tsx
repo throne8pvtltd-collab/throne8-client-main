@@ -348,6 +348,38 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
 
     // console.log('📊 [ActivitySection] Rendered with posts:', posts);
 
+    const handlePostAction = async (action: string, idx: number) => {
+        const post = posts[idx];
+        if (!post) return;
+        const postId = post.entryId || post.postId;
+        
+        switch (action) {
+            case 'pin':
+                await handlers.handlePinPost(postId, post.isPinned || false);
+                break;
+            case 'save':
+                await handlers.handleSavePost(postId, post.isSaved || false);
+                break;
+            case 'delete':
+                await handlers.handleDeletePost(postId);
+                break;
+            case 'archive':
+                await handlers.handleArchivePost(postId);
+                break;
+            case 'copy':
+                try {
+                    const postUrl = `${window.location.origin}/post/${postId}`;
+                    await navigator.clipboard.writeText(postUrl);
+                    alert('Post link copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                break;
+            default:
+                break;
+        }
+    };
+
     return (
         <>
             <div className="bg-gradient-to-br from-[#f6ede8]/90 via-[#f6ede8]/80 to-[#e0d8cf]/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/60 mb-8 relative overflow-hidden">
@@ -433,57 +465,83 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                                     ) : null}
 
                                     {/* Existing Posts */}
-                                    {displayedPosts.map((post, idx) => (
-                                        <PostCard
-                                            key={post.entryId || post.postId}
-                                            post={post}
-                                            index={idx}
-                                            profileImage={profileImage}
-                                            fullName={fullName}
-                                            headline={headline}
-                                            postLikes={handlers.postLikes}
-                                            openMenuId={handlers.openMenuId}
-                                            setOpenMenuId={handlers.setOpenMenuId}
-                                            onLikeToggle={handlers.handleLikeToggle}
-                                            onPinPost={handlers.handlePinPost}
-                                            onSavePost={handlers.handleSavePost}
-                                            onDeletePost={handlers.handleDeletePost}
-                                            onArchivePost={handlers.handleArchivePost}
-                                            onOpenUpdateModal={(i: any, title: any) => {
-                                                handlers.setUpdatePostId(i);
-                                                handlers.setUpdatePostTitle(title);
-                                                handlers.setShowUpdateModal(true);
-                                            }}
-                                            openCommentsIndex={handlers.openCommentsIndex}
-                                            onToggleComments={handlers.toggleCommentsPanel}
-                                            commentsByPost={handlers.commentsByPost}
-                                            isLoadingComments={handlers.isLoadingComments}
-                                            isSubmittingComment={handlers.isSubmittingComment}
-                                            commentLikes={handlers.commentLikes}
-                                            formatCommentTime={handlers.formatCommentTime}
-                                            openCommentMenuIndex={handlers.openCommentMenuIndex}
-                                            toggleCommentMenu={handlers.toggleCommentMenu}
-                                            handleCommentAction={handlers.handleCommentAction}
-                                            editingCommentId={handlers.editingCommentId}
-                                            editCommentText={handlers.editCommentText}
-                                            setEditCommentText={handlers.setEditCommentText}
-                                            handleEditSubmit={handlers.handleEditSubmit}
-                                            isDeletingCommentId={handlers.isDeletingCommentId}
-                                            replyingToCommentId={handlers.replyingToCommentId}
-                                            setReplyingToCommentId={handlers.setReplyingToCommentId}
-                                            replyText={handlers.replyText}
-                                            setReplyText={handlers.setReplyText}
-                                            handleReplySubmit={handlers.handleReplySubmit}
-                                            likeCommentToggle={handlers.likeCommentToggle}
-                                            commentText={handlers.commentText}
-                                            setCommentText={handlers.setCommentText}
-                                            handleCommentSubmit={handlers.handleCommentSubmit}
-                                            replyingTo={handlers.replyingTo}
-                                            setReplyingTo={handlers.setReplyingTo}
-                                            showEmojiPicker={handlers.showEmojiPicker}
-                                            setShowEmojiPicker={handlers.setShowEmojiPicker}
-                                            handleEmojiClick={handlers.handleEmojiClick} setIsDeletingCommentId={undefined} currentUserId={''} isDarkMode={undefined} likedPosts={undefined} handleLike={undefined} openMenuIndex={undefined} openRepostIndex={undefined} handlePostAction={undefined} handleRepost={undefined} toggleComments={undefined} handleReply={undefined} handleCommentReaction={undefined} postComments={undefined} emojiList={undefined} togglePostMenu={undefined} toggleRepostMenu={undefined} postCommentCounts={undefined} />
-                                    ))}
+                                    {displayedPosts.map((post, idx) => {
+                                        const postKey = post.entryId || post.postId;
+                                        return (
+                                            <PostCard
+                                                key={postKey}
+                                                post={post}
+                                                index={idx}
+                                                profileImage={profileImage}
+                                                fullName={fullName}
+                                                headline={headline}
+                                                postLikes={handlers.postLikes}
+                                                openMenuId={handlers.openMenuId}
+                                                setOpenMenuId={handlers.setOpenMenuId}
+                                                onLikeToggle={handlers.handleLikeToggle}
+                                                onPinPost={handlers.handlePinPost}
+                                                onSavePost={handlers.handleSavePost}
+                                                onDeletePost={handlers.handleDeletePost}
+                                                onArchivePost={handlers.handleArchivePost}
+                                                onOpenUpdateModal={(i: any, title: any) => {
+                                                    handlers.setUpdatePostId(i);
+                                                    handlers.setUpdatePostTitle(title);
+                                                    handlers.setShowUpdateModal(true);
+                                                }}
+                                                openCommentsIndex={handlers.openCommentsIndex === idx ? postKey : null}
+                                                onToggleComments={handlers.toggleCommentsPanel}
+                                                commentsByPost={handlers.commentsByPost}
+                                                isLoadingComments={handlers.isLoadingComments}
+                                                isSubmittingComment={handlers.isSubmittingComment}
+                                                commentLikes={handlers.commentLikes}
+                                                formatCommentTime={handlers.formatCommentTime}
+                                                openCommentMenuIndex={handlers.openCommentMenuIndex}
+                                                toggleCommentMenu={handlers.toggleCommentMenu}
+                                                handleCommentAction={handlers.handleCommentAction}
+                                                editingCommentId={handlers.editingCommentId}
+                                                editCommentText={handlers.editCommentText}
+                                                setEditCommentText={handlers.setEditCommentText}
+                                                handleEditSubmit={handlers.handleEditSubmit}
+                                                isDeletingCommentId={handlers.isDeletingCommentId}
+                                                replyingToCommentId={handlers.replyingToCommentId}
+                                                setReplyingToCommentId={handlers.setReplyingToCommentId}
+                                                replyText={handlers.replyText}
+                                                setReplyText={handlers.setReplyText}
+                                                handleReplySubmit={handlers.handleReplySubmit}
+                                                likeCommentToggle={handlers.likeCommentToggle}
+                                                commentText={handlers.commentText}
+                                                setCommentText={handlers.setCommentText}
+                                                handleCommentSubmit={handlers.handleCommentSubmit}
+                                                replyingTo={handlers.replyingTo}
+                                                setReplyingTo={handlers.setReplyingTo}
+                                                showEmojiPicker={handlers.showEmojiPicker}
+                                                setShowEmojiPicker={handlers.setShowEmojiPicker}
+                                                handleEmojiClick={handlers.handleEmojiClick}
+                                                setIsDeletingCommentId={handlers.setIsDeletingCommentId}
+                                                currentUserId={currentUserId || ''}
+                                                isDarkMode={undefined}
+                                                likedPosts={handlers.postLikes}
+                                                handleLike={handlers.handleLikeToggle}
+                                                openMenuIndex={handlers.openMenuId}
+                                                openRepostIndex={undefined}
+                                                handlePostAction={handlePostAction}
+                                                handleRepost={undefined}
+                                                toggleComments={(pid: string) => {
+                                                    const pIdx = posts.findIndex(p => (p.entryId || p.postId) === pid);
+                                                    if (pIdx !== -1) {
+                                                        handlers.toggleCommentsPanel(pIdx, pid);
+                                                    }
+                                                }}
+                                                handleReply={handlers.setReplyingToCommentId}
+                                                handleCommentReaction={handlers.likeCommentToggle}
+                                                postComments={handlers.commentsByPost}
+                                                emojiList={undefined}
+                                                togglePostMenu={(i: number) => handlers.setOpenMenuId(handlers.openMenuId === i ? null : i)}
+                                                toggleRepostMenu={undefined}
+                                                postCommentCounts={undefined}
+                                            />
+                                        );
+                                    })}
                                     {hasMorePosts && <ShowAllButton label={`Show All Posts (${posts.length})`} />}
                                 </>
                             )}

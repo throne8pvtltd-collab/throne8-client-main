@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface ExperienceModalProps {
     isOpen: boolean;
@@ -60,6 +60,18 @@ const ExperienceModal: React.FC<ExperienceModalProps> = ({
     onRemoveAchievement,
     onAchievementKeyPress,
 }) => {
+    // Lock background scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (

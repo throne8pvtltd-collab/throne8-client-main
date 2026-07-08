@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, ChevronRight, Award, Calendar, MapPin } from 'lucide-react';
 import { EducationData } from '@/features/profile/types/education.types';
 
@@ -27,6 +27,18 @@ const SelectEducationModal: React.FC<SelectEducationModalProps> = ({
     educationList,
     onSelectEducation,
 }) => {
+    // Lock background scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (

@@ -18,7 +18,7 @@ interface PostActionsProps {
 
 const PostActions = ({ post, index, isDarkMode, likedPosts, handleLike, openRepostIndex, toggleRepostMenu, handleRepost, toggleComments, onOpenWithPerspectiveModal, handleRepostInstant }: PostActionsProps) => {
   const postKey = post.entryId || post.postId;  // ✅ ADD THIS
-  const isLiked = likedPosts[postKey] ?? post.isLikedByCurrentUser ?? false;  // ✅ FIX
+  const isLiked = (typeof likedPosts?.[postKey] === 'object' ? likedPosts[postKey]?.isLiked : likedPosts?.[postKey]) ?? post.isLikedByCurrentUser ?? false;  // ✅ FIX
   // PostActions.tsx mein — repost button ke upar ye add karo:
   const [hasReposted, setHasReposted] = useState(false);
   const [isReposting, setIsReposting] = useState(false);
@@ -34,7 +34,7 @@ const PostActions = ({ post, index, isDarkMode, likedPosts, handleLike, openRepo
         {/* Like Button */}
         <button
           className={`flex items-center space-x-2 ${isLiked ? 'text-red-500' : 'text-[#4a3728]'}`}
-          onClick={() => handleLike(postKey)}  // ✅ FIX
+          onClick={() => handleLike?.(postKey)}  // ✅ FIX
         >
           <i className={`ri-heart-${isLiked ? 'fill' : 'line'} text-2xl`}></i>  {/* ✅ filled heart */}
           <span className="font-semibold">{likeCount}</span>

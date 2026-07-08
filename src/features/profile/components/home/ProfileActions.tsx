@@ -1,6 +1,6 @@
 // src/profile/components/ProfileActions.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import OpenToModal from './OpenToModal';
 import AddProfileSectionModal from './AddProfileSectionModal';
@@ -12,6 +12,19 @@ const ProfileActions: React.FC = () => {
     const [addProfileSectionOpen, setAddProfileSectionOpen] = useState(false);
     const [enhanceProfileOpen, setEnhanceProfileOpen] = useState(false);
     const [resourcesOpen, setResourcesOpen] = useState(false);
+
+    const isAnyModalOpen = openToOpen || addProfileSectionOpen || enhanceProfileOpen || resourcesOpen;
+
+    useEffect(() => {
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isAnyModalOpen]);
 
     const buttons = [
         { label: 'Open to', setter: setOpenToOpen },

@@ -293,7 +293,10 @@ const AddProfileSectionModal: React.FC<AddProfileSectionModalProps> = ({ isOpen,
             ></div>
 
             {/* Modal Content */}
-            <div className="relative z-10 w-full max-w-4xl mx-auto max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div 
+                className="relative z-10 w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl"
+                style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between sticky top-0 bg-gradient-to-r from-[#4a3728] to-[#6a5748] px-6 py-5 z-10">
                     <div>
@@ -309,7 +312,10 @@ const AddProfileSectionModal: React.FC<AddProfileSectionModalProps> = ({ isOpen,
                 </div>
 
                 {/* Content Body */}
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <div 
+                    className="p-6"
+                    style={{ flex: 1, overflowY: 'auto' }}
+                >
                     <div className="space-y-4">
                         {categories.map((category) => (
                             <div key={category.id} className="border-2 border-[#e0d8cf] rounded-2xl overflow-hidden">

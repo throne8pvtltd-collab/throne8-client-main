@@ -104,7 +104,10 @@ const OpenToModal: React.FC<OpenToModalProps> = ({ isOpen, onClose }) => {
             ></div>
 
             {/* Modal Content */}
-            <div className="relative z-10 w-full max-w-3xl mx-auto max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div 
+                className="relative z-10 w-full max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl"
+                style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between sticky top-0 bg-gradient-to-r from-[#4a3728] to-[#6a5748] px-6 py-5 z-10">
                     <div>
@@ -120,7 +123,10 @@ const OpenToModal: React.FC<OpenToModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Content Body */}
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <div 
+                    className="p-6"
+                    style={{ flex: 1, overflowY: 'auto' }}
+                >
                     <div className="space-y-4">
                         {mainFeatures.map((feature) => (
                             <div key={feature.id} className="border border-[#e0d8cf] rounded-xl overflow-hidden">
