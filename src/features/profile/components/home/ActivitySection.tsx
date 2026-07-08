@@ -309,8 +309,16 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
 
     const handlers = useActivityHandlers({ posts, onPostCreated, profileImage });
 
-    const displayedPosts = posts.slice(0, 2);
-    const hasMorePosts = posts.length > 2;
+    const repostedEntryIds = new Set(
+    userReposts
+        .map((r: any) => r.originalPost?.entryId)
+        .filter(Boolean)
+);
+const filteredPosts = posts.filter(
+    (p: any) => !repostedEntryIds.has(p.entryId || p.postId)
+);
+const displayedPosts = filteredPosts.slice(0, 2);
+const hasMorePosts = filteredPosts.length > 2;
 
     const {
         followersList,
@@ -542,7 +550,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
                                             />
                                         );
                                     })}
-                                    {hasMorePosts && <ShowAllButton label={`Show All Posts (${posts.length})`} />}
+                                   {hasMorePosts && <ShowAllButton label={`Show All Posts (${filteredPosts.length})`} />}
                                 </>
                             )}
                         </>
