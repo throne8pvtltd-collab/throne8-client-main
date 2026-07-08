@@ -16,11 +16,11 @@ interface HomePostPayload {
 class HomePostService {
 
     /**
-     * POST /api/v1/profile/home-post/create
+     * POST /profile/home-post/create
      */
     static async createPost(payload: HomePostPayload): Promise<any> {
         try {
-            const { data } = await api.post('/api/v1/profile/home-post/create', payload);
+            const { data } = await api.post('/profile/home-post/create', payload);
             return data;
         } catch (error: any) {
             if (error?.response?.data?.message) {
@@ -32,7 +32,7 @@ class HomePostService {
 
     static async createPostWithMedia(formData: FormData): Promise<any> {
         try {
-            const { data } = await api.post('/api/v1/profile/home-post/create', formData, {
+            const { data } = await api.post('/profile/home-post/create', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             return data;
