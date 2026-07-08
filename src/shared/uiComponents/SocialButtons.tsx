@@ -1,39 +1,29 @@
 'use client';
-
 import { FcGoogle } from 'react-icons/fc';
 import { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import config from '../../../tailwind.config';
-
 export default function SocialButtons() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-
-  // ✅ SIRF YE FUNCTION BADLA — alert hata ke real redirect
   const handleGoogleLogin = () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-      window.location.href = `${apiUrl}/api/v1/auth/google`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
+      window.location.href = `${apiUrl}/auth/google`;
     } catch (error) {
       console.error('❌ [GOOGLE] OAuth initiation failed:', error);
       setApiError('Failed to initiate Google login. Please try again.');
     }
   };
-
   const handleGitHubLogin = () => {
     try {
-      // console.log('🔗 [GITHUB] Initiating OAuth flow...');
-
-      // Redirect to backend GitHub OAuth endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-      window.location.href = `${apiUrl}/api/v1/auth/github`;
-
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
+      window.location.href = `${apiUrl}/auth/github`;
     } catch (error) {
       console.error('❌ [GITHUB] OAuth initiation failed:', error);
       setApiError('Failed to initiate GitHub login. Please try again.');
     }
   };
-
   return (
     <>
       <div className="flex items-center my-8">
@@ -41,14 +31,10 @@ export default function SocialButtons() {
         <span className="px-4 text-gray-500 text-sm">or continue with</span>
         <div className="flex-1 border-t border-gray-300"></div>
       </div>
-
-      {/* Error message */}
       {apiError && (
         <p className="text-red-500 text-sm text-center mb-3">{apiError}</p>
       )}
-
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-        {/* ✅ SIRF onClick badla */}
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -58,7 +44,6 @@ export default function SocialButtons() {
           <FcGoogle className="text-lg sm:text-2xl" />
           <span className="text-black font-medium hidden sm:inline">Google</span>
         </button>
-
         <button
           type="button"
           onClick={handleGitHubLogin}
