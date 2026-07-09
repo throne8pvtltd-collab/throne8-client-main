@@ -34,19 +34,19 @@ const CommentItem = ({
   return (
     <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-700/30' : 'bg-[#e0d8cf]/30'}`}>
       <div className="flex items-start gap-3 mb-3">
-        <img
-          src={comment.avatar}
-          alt={comment.user}
+       <img
+          src={comment.user?.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'}
+          alt={comment.user?.name || 'User'}
           className="w-10 h-10 rounded-xl object-cover border-2 border-[#6b5643]"
         />
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
-                {comment.user}
+             <p className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
+               {comment.user?.name || 'User'}
               </p>
               <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-[#4a3728]/60'}`}>
-                {comment.time}
+              {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
               </span>
             </div>
 
