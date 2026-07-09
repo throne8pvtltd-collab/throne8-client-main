@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import z from 'zod';
 import AuthService from '@/lib/api/auth.service';
 import { useEducation } from '@/features/profile/hooks/useEducation';
+import { packFutureDate } from '@/shared/utils/educationDateHelper';
 
 interface UpdateEducationModalProps {
     isOpen: boolean;
@@ -155,17 +156,17 @@ const UpdateEducationModal: React.FC<UpdateEducationModalProps> = ({
         if (isOpen && educationData) {
             setFormData({
                 educationId: educationData.educationId,
-                schoolCollegeName: educationData.schoolCollegeName || '',
-                degree: educationData.degree || '',
+                schoolCollegeName: (educationData.schoolCollegeName || '').trim(),
+                degree: (educationData.degree || '').trim(),
                 degreeType: educationData.degreeType || "Bachelor's",
-                specialization: educationData.specialization || '',
+                specialization: (educationData.specialization || '').trim(),
                 startDate: educationData.startDate || '',
                 endDate: educationData.endDate || '',
                 description: educationData.description || '',
                 educationType: educationData.educationType || 'full-time',
                 gradeType: educationData.gradeType,
-                gradeValue: educationData.gradeValue || '',
-                location: educationData.location || '',
+                gradeValue: (educationData.gradeValue || '').trim(),
+                location: (educationData.location || '').trim(),
             });
             setErrors({});
         }
@@ -201,7 +202,16 @@ const UpdateEducationModal: React.FC<UpdateEducationModalProps> = ({
 
     const validateForm = () => {
         try {
-            educationSchema.parse(formData);
+            const trimmedData = {
+                ...formData,
+                schoolCollegeName: formData.schoolCollegeName.trim(),
+                degree: formData.degree.trim(),
+                specialization: formData.specialization ? formData.specialization.trim() : '',
+                description: formData.description ? formData.description.trim() : '',
+                gradeValue: formData.gradeValue ? formData.gradeValue.trim() : '',
+                location: formData.location ? formData.location.trim() : '',
+            };
+            educationSchema.parse(trimmedData);
             return true;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -235,9 +245,19 @@ const UpdateEducationModal: React.FC<UpdateEducationModalProps> = ({
 
         try {
 
-            const apiData = {
+            const trimmedData = {
                 ...formData,
-                endDate: formData.endDate || null,
+                schoolCollegeName: formData.schoolCollegeName.trim(),
+                degree: formData.degree.trim(),
+                specialization: formData.specialization ? formData.specialization.trim() : undefined,
+                description: formData.description ? formData.description.trim() : undefined,
+                gradeValue: formData.gradeValue ? formData.gradeValue.trim() : undefined,
+                location: formData.location ? formData.location.trim() : undefined,
+            };
+
+            const apiData = {
+                ...trimmedData,
+                endDate: trimmedData.endDate || null,
             };
 
 
@@ -288,7 +308,7 @@ const UpdateEducationModal: React.FC<UpdateEducationModalProps> = ({
 
                 {/* Form Body */}
                 <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
-                    <div className="space-y-6">
+                    <div className="space-y-6 pb-24">
                         {/* Error Message */}
                         {errors.submit && (
                             <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">

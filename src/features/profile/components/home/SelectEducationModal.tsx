@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { X, ChevronRight, Award, Calendar, MapPin } from 'lucide-react';
 import { EducationData } from '@/features/profile/types/education.types';
+import { unpackFutureDate } from '@/shared/utils/educationDateHelper';
 
 interface EducationItem {
     educationId: string;
@@ -70,8 +71,10 @@ const SelectEducationModal: React.FC<SelectEducationModalProps> = ({
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {educationList.map((education) => (
-                                <button
+                            {educationList.map((rawEducation) => {
+                                const education = unpackFutureDate(rawEducation);
+                                return (
+                                    <button
                                     key={education.educationId}
                                     onClick={() => {
                                         onSelectEducation(education);
@@ -128,8 +131,9 @@ const SelectEducationModal: React.FC<SelectEducationModalProps> = ({
                                             </div>
                                         </div>
                                     </div>
-                                </button>
-                            ))}
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

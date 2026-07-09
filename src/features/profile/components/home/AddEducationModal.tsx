@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import z from 'zod';
 import AuthService from '@/lib/api/auth.service';
-import { useEducation } from '@/features/profile/hooks/useEducation';
+import { useEducation } from '@/features/profile/hooks/useEducation';import { packFutureDate } from '@/shared/utils/educationDateHelper';
 
 
 interface AddEducationModalProps {
@@ -139,10 +139,10 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
     prefillData,
 }) => {
     const [formData, setFormData] = useState<EducationData>({
-        schoolCollegeName: prefillData?.collegeName || '',
-        degree: prefillData?.degree || '',
+        schoolCollegeName: (prefillData?.collegeName || '').trim(),
+        degree: (prefillData?.degree || '').trim(),
         degreeType: 'Bachelor\'s',
-        specialization: prefillData?.fieldOfStudy || '',
+        specialization: (prefillData?.fieldOfStudy || '').trim(),
         startDate: '',
         endDate: prefillData?.graduationYear ? `${prefillData.graduationYear}-12-31` : '',
         description: '',
@@ -162,10 +162,10 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
         if (isOpen && prefillData) {
             // ✅ Pre-fill with onboarding data when modal opens
             setFormData({
-                schoolCollegeName: prefillData.collegeName || '',
-                degree: prefillData.degree || '',
+                schoolCollegeName: (prefillData.collegeName || '').trim(),
+                degree: (prefillData.degree || '').trim(),
                 degreeType: "Bachelor's",
-                specialization: prefillData.fieldOfStudy || '',
+                specialization: (prefillData.fieldOfStudy || '').trim(),
                 startDate: '',
                 endDate: prefillData.graduationYear ? `${prefillData.graduationYear}-12-31` : '',
                 description: '',
@@ -224,7 +224,16 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
 
     const validateForm = () => {
         try {
-            educationSchema.parse(formData);
+            const trimmedData = {
+                ...formData,
+                schoolCollegeName: formData.schoolCollegeName.trim(),
+                degree: formData.degree.trim(),
+                specialization: formData.specialization ? formData.specialization.trim() : '',
+                description: formData.description ? formData.description.trim() : '',
+                gradeValue: formData.gradeValue ? formData.gradeValue.trim() : '',
+                location: formData.location ? formData.location.trim() : '',
+            };
+            educationSchema.parse(trimmedData);
             return true;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -253,9 +262,23 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
         try {
             // console.log('📤 Submitting education data:', formData);
 
-            const apiData = {
+            const trimmedData = {
                 ...formData,
-                endDate: formData.endDate || null,
+                schoolCollegeName: formData.schoolCollegeName.trim(),
+                degree: formData.degree.trim(),
+                specialization: formData.specialization ? formData.specialization.trim() : undefined,
+                description: formData.description ? formData.description.trim() : undefined,
+                gradeValue: formData.gradeValue ? formData.gradeValue.trim() : undefined,
+                location: formData.location ? formData.location.trim() : undefined,
+            };
+
+            // Pack the future date inside the description if it exceeds 1 year
+            const { apiEndDate, apiDescription } = packFutureDate(trimmedData.description || '', trimmedData.endDate);
+
+            const apiData = {
+                ...trimmedData,
+                description: apiDescription,
+                endDate: apiEndDate,
             };
 
             // ✅ Redux: Create education
@@ -343,7 +366,7 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
 
                 {/* Form Body */}
                 <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
-                    <div className="space-y-6">
+                    <div className="space-y-6 pb-24">
                         {/* Error Message */}
                         {errors.submit && (
                             <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
@@ -575,29 +598,6 @@ const AddEducationModal: React.FC<AddEducationModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Specialization Section */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-[#4a3728] flex items-center gap-2">
-                                <span className="text-2xl">🎯</span> Specialization (Optional)
-                            </h3>
-
-                            <div>
-                                <label className="block text-sm font-medium text-[#4a3728] mb-2">
-                                    Specialization Details
-                                </label>
-                                <textarea
-                                    name="specialization"
-                                    value={formData.specialization}
-                                    onChange={handleChange}
-                                    placeholder="e.g., Artificial Intelligence and Software Engineering with emphasis on scalable system design"
-                                    rows={3}
-                                    className="w-full px-4 py-2 rounded-xl border-2 border-[#e0d8cf] bg-white/50 focus:outline-none focus:border-[#4a3728] transition-colors duration-200 resize-none text-[#4a3728]"
-                                />
-                                <p className="text-xs text-[#4a3728]/60 mt-1">
-                                    Describe your specialization or focus area
-                                </p>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Footer */}

@@ -8,6 +8,7 @@ import EducationMenuPopup from './EducationMenuPopup';
 import SelectEducationModal from './SelectEducationModal';
 import AuthService from '@/lib/api/auth.service';
 import { useEducation } from '@/features/profile/hooks/useEducation';
+import { unpackFutureDate } from '@/shared/utils/educationDateHelper';
 
 interface EducationSectionProps {
     collegeName?: string;
@@ -194,8 +195,10 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                         )
                     ) : (
                         <div className="space-y-4">
-                            {educationList.map((education: any) => (
-                                <div key={education.educationId} className="relative group">
+                            {educationList.map((rawEducation: any) => {
+                                const education = unpackFutureDate(rawEducation);
+                                return (
+                                    <div key={education.educationId} className="relative group">
 
                                     <div
                                         className="relative bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/30 hover:shadow-2xl"
@@ -288,7 +291,8 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            );
+                        })}
                         </div>
                     )}
 
