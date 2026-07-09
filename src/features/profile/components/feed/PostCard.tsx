@@ -27,15 +27,17 @@ const PostCard = ({
     >
       <div className="absolute inset-0 bg-gradient-to-br from-[#6b5643]/3 via-[#8b7355]/3 to-[#4a3728]/3"></div>
       <div className="relative z-10">
-        <PostHeader
-          currentUserId={currentUserId}
-          post={post}
-          index={index}
-          isDarkMode={isDarkMode}
-          openMenuIndex={openMenuIndex}
-          togglePostMenu={togglePostMenu}
-          handlePostAction={handlePostAction}
-        />
+       <PostHeader
+  currentUserId={currentUserId}
+  post={post}
+  index={index}
+  isDarkMode={isDarkMode}
+  openMenuIndex={openMenuIndex}
+  togglePostMenu={togglePostMenu}
+  handlePostAction={handlePostAction}
+  fullName={fullName}
+  profileImage={profileImage}
+/>
 
         <PostContent post={post} isDarkMode={isDarkMode} />
 

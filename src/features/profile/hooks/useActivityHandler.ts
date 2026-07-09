@@ -1,6 +1,7 @@
 // src/profile/components/useActivityHandlers.ts
 import { useState, useEffect } from 'react';
 import AuthService from '@/lib/api/auth.service';
+
 import { useComments } from './useComments';
 import { Post, PostLikeState } from '../types';
 import ProfileService from '@/lib/api/profile.service';
