@@ -50,27 +50,21 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
     const [achievementInput, setAchievementInput] = useState<string>('');
     const [achievementsList, setAchievementsList] = useState<string[]>([]);
 
-    // ✅ Fetch experiences when experienceIds change
+    // ✅ Fetch experiences on mount or when experienceIds change
     useEffect(() => {
-        if (experienceIds && experienceIds.length > 0) {
-            fetchExperiences();
-        } else {
-            setIsLoading(false);
-        }
+        fetchExperiences();
     }, [experienceIds]);
 
     const fetchExperiences = async () => {
         try {
             setIsLoading(true);
-            // console.log('🔄 Fetching experiences for IDs:', experienceIds);
 
-            // ✅ Fetch each experience by ID
-            const fetchPromises = experienceIds.map(id => ProfileService.getExperienceById(id));
-            const responses = await Promise.all(fetchPromises);
+            // ✅ Fetch all experiences directly from database
+            const response = await ProfileService.getAllExperiences();
+            const experiencesList = response.data.experiences || [];
 
             // ✅ Transform API data to component format
-            const transformedExperiences: Experience[] = responses.map((response: any) => {
-                const exp = response.data.experience;
+            const transformedExperiences: Experience[] = experiencesList.map((exp: any) => {
                 return {
                     experienceId: exp.experienceId,
                     company: exp.companyName,
@@ -95,8 +89,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
             if (transformedExperiences.length > 0) {
                 setCurrentIndex(0);
             }
-
-            // console.log('✅ Experiences fetched:', transformedExperiences.length, transformedExperiences);
         } catch (error: any) {
             console.error('❌ Failed to fetch experiences:', error);
             setError(error.message || 'Failed to load experiences');

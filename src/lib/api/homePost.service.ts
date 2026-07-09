@@ -49,7 +49,7 @@ class HomePostService {
      */
     static async getFeedPosts(page: number = 1, limit: number = 20): Promise<any> {
         try {
-            const { data } = await api.get('/api/v1/profile/home-post/feed', {
+            const { data } = await api.get('/profile/home-post/feed', {
                 params: { page, limit }
             });
             return data;

@@ -762,7 +762,7 @@ export default function Home() {
 
 
     return (
-        <div className={`min-h-screen transition-all duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-[#e0d8cf]'} font-['Poppins'] overflow-x-hidden`}>
+        <div className={`min-h-screen transition-all duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-[#e0d8cf]'} font-['Poppins'] overflow-x-clip`}>
             {/* Header */}
             <ProfileNavbar
                 profileImage={profileData.profileImage}
@@ -792,9 +792,9 @@ export default function Home() {
             )}
 
             {/* Main Container */}
-            <div className="flex flex-col lg:flex-row mt-20 sm:mt-24 px-1 sm:px-3 md:px-4 lg:px-8 mx-auto gap-2 sm:gap-4 md:gap-6 lg:gap-8 max-w-full md:max-w-[1400px] lg:max-w-[2200px] w-full">
+            <div className="flex flex-col lg:flex-row pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 mx-auto gap-4 md:gap-6 lg:gap-8 max-w-[1200px] w-full">
                 {/* Left Sidebar - Hidden on mobile, shown on desktop */}
-                <div className="hidden lg:block">
+                <div className="hidden lg:block sticky-sidebar">
                     <Left
                         currentUserId={user?.userId!}
                         isSidebarOpen={isSidebarOpen}
@@ -867,7 +867,7 @@ export default function Home() {
                     />
 
                     {/* Desktop Right Sidebar */}
-                    <div className="hidden lg:block">
+                    <div className="hidden lg:block sticky-sidebar">
                         <Right
                             isDarkMode={isDarkMode}
                             userPosts={userPosts}
@@ -1420,6 +1420,14 @@ export default function Home() {
     <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
                 @import url('https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css');
+                
+                .sticky-sidebar {
+                    position: -webkit-sticky !important;
+                    position: sticky !important;
+                    top: 96px !important;
+                    align-self: flex-start !important;
+                }
+
                 html, body {
                     margin: 0;
                     padding: 0;
