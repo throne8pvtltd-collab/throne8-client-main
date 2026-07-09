@@ -973,6 +973,25 @@ class ProfileService {
     }
 
     /**
+     * 💼 Get All Experiences
+     */
+    static async getAllExperiences(): Promise<any> {
+        try {
+            console.log('💼 [GET_ALL_EXPERIENCES] Fetching all experiences...');
+
+            const { data } = await api.get(`${config?.NEXT_PUBLIC_EXPERIENCE_ENDPOINT || process.env.NEXT_PUBLIC_EXPERIENCE_ENDPOINT}/get-all-experiences`);
+
+            console.log('✅ [GET_ALL_EXPERIENCES] Experiences fetched successfully', data);
+
+            return data;
+
+        } catch (error: any) {
+            console.error('❌ [GET_ALL_EXPERIENCES] Failed to fetch experiences', error);
+            throw new Error(error.response?.data?.message || 'Failed to fetch experiences');
+        }
+    }
+
+    /**
     * 💼 Update Experience
     */
     static async updateExperience(experienceId: string, updates: {
@@ -1205,11 +1224,14 @@ class ProfileService {
         try {
             console.log('🌐 [GET_ALL_POSTS_HOME] Fetching all posts for home feed...');
 
-            const { data } = await api.get(`${config?.NEXT_PUBLIC_FEED_ENDPOINT || process.env.NEXT_PUBLIC_FEED_ENDPOINT}`, {
+            const baseEndpoint = config?.NEXT_PUBLIC_FEED_ENDPOINT || process.env.NEXT_PUBLIC_FEED_ENDPOINT || '/profile/home-post';
+            const endpoint = baseEndpoint.endsWith('/feed') ? baseEndpoint : `${baseEndpoint}/feed`;
+
+            const { data } = await api.get(endpoint, {
                 params: { includeArchived }
             });
 
-            // console.log('✅ [GET_ALL_POSTS_HOME] Posts fetched:', data.data.total);
+            // console.log('✅ [GET_ALL_POSTS_HOME] Posts fetched:', data.data?.total || data.data?.posts?.length);
             return data;
 
         } catch (error: any) {
