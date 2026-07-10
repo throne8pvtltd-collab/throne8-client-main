@@ -37,6 +37,7 @@ const PostCard = ({
   handlePostAction={handlePostAction}
   fullName={fullName}
   profileImage={profileImage}
+  headline={headline}
 />
 
         <PostContent post={post} isDarkMode={isDarkMode} />

@@ -6,9 +6,10 @@ import ConnectionService from '@/lib/api/connection.service';
 type ConnectionStatus = 'self' | 'connected' | 'pending_sent' | 'pending_received' | 'none';
 
 const PostHeader = ({
-  post, index, isDarkMode, openMenuIndex, togglePostMenu, handlePostAction, currentUserId
+  post, index, isDarkMode, openMenuIndex, togglePostMenu, handlePostAction, currentUserId, fullName, profileImage, headline
 }: {
   post: any; index: number; isDarkMode: boolean; openMenuIndex: number | null; togglePostMenu: (index: number) => void; handlePostAction: (action: string, index: number) => void; currentUserId: string;
+  fullName?: string; profileImage?: string; headline?: string;
 }) => {
   const isOwnPost = post.userId && currentUserId && post.userId === currentUserId;
 
@@ -85,19 +86,19 @@ const PostHeader = ({
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center space-x-4">
         <img
-          src={post.avatar}
-          alt={post.user}
+          src={post.avatar || profileImage || ''}
+          alt={post.user || fullName || ''}
           className="w-14 h-14 rounded-2xl object-cover border-2 border-[#6b5643]"
         />
         <div>
           <div className="flex items-center gap-3">
             <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
-              {post.user}
+              {post.user || fullName || 'Unknown User'}
             </h4>
             {renderConnectButton()}
           </div>
           <p className="text-sm font-semibold bg-gradient-to-r from-[#6b5643] to-[#8b7355] bg-clip-text text-transparent">
-            {post.role}
+            {post.role || headline || ''}
           </p>
           <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-[#4a3728]/60'}`}>
             {post.time}
