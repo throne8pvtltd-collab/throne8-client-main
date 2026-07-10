@@ -1,6 +1,9 @@
 // app/(dashboard)/components/feed/PostHeader.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import PostMenuDropdown from './PostMenuDropdown';
+import ConnectionService from '@/lib/api/connection.service';
+
+type ConnectionStatus = 'self' | 'connected' | 'pending_sent' | 'pending_received' | 'none';
 
 const PostHeader = ({
   post, index, isDarkMode, openMenuIndex, togglePostMenu, handlePostAction, currentUserId, fullName, profileImage
@@ -10,6 +13,76 @@ const PostHeader = ({
   const isOwnPost = post.userId && currentUserId && post.userId === currentUserId;
   const displayName = post.user || fullName || 'Unknown User';
   const displayAvatar = post.avatar || profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s';
+
+  // ✅ Backend se aaya connectionStatus initial value ke roop mein use karo
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
+    post.connectionStatus || 'none'
+  );
+  const [isSending, setIsSending] = useState(false);
+
+  const handleConnect = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isSending || connectionStatus !== 'none') return;
+
+    setIsSending(true);
+    try {
+      await ConnectionService.sendConnectionRequest({ toUserId: post.userId });
+      setConnectionStatus('pending_sent');
+    } catch (error: any) {
+      console.error('❌ Connect failed:', error.message);
+      // Agar already exists error aaya to bhi UI ko sahi state mein le aao
+      if (error.message?.includes('already exists')) {
+        setConnectionStatus('pending_sent');
+      }
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const renderConnectButton = () => {
+    if (isOwnPost || connectionStatus === 'self') return null;
+
+    if (connectionStatus === 'connected') return null; // ya "Message" button laga sakte ho
+
+    if (connectionStatus === 'pending_sent') {
+      return (
+        <button
+          disabled
+          className={`px-4 py-1.5 rounded-full text-xs font-bold cursor-default ${isDarkMode
+            ? 'bg-slate-800 text-slate-400 border border-slate-600'
+            : 'bg-[#f0eae4] text-[#4a3728]/50 border border-[#4a3728]/10'
+            }`}
+        >
+          Pending
+        </button>
+      );
+    }
+
+    if (connectionStatus === 'pending_received') {
+      return (
+        <span
+          className={`px-4 py-1.5 rounded-full text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-[#4a3728]/60'
+            }`}
+        >
+          Wants to connect
+        </span>
+      );
+    }
+
+    // status === 'none'
+    return (
+      <button
+        onClick={handleConnect}
+        disabled={isSending}
+        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${isDarkMode
+          ? 'bg-slate-700 text-white hover:bg-slate-600 border border-slate-600'
+          : 'bg-[#e0d8cf] text-[#4a3728] hover:bg-[#d0c8bf] border border-[#4a3728]/20'
+          } ${isSending ? 'opacity-50 cursor-wait' : ''}`}
+      >
+        {isSending ? '...' : '+ Connect'}
+      </button>
+    );
+  };
 
   return (
     <div className="flex items-center justify-between mb-6">
@@ -24,16 +97,7 @@ const PostHeader = ({
             <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
               {displayName}
             </h4>
-            {!isOwnPost && (
-              <button
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${isDarkMode
-                  ? 'bg-slate-700 text-white hover:bg-slate-600 border border-slate-600'
-                  : 'bg-[#e0d8cf] text-[#4a3728] hover:bg-[#d0c8bf] border border-[#4a3728]/20'
-                  }`}
-              >
-                + Connect
-              </button>
-            )}
+            {renderConnectButton()}
           </div>
           <p className="text-sm font-semibold bg-gradient-to-r from-[#6b5643] to-[#8b7355] bg-clip-text text-transparent">
             {post.role}

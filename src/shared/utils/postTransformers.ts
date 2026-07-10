@@ -18,10 +18,11 @@ export const transformApiPostToFeedPost = (
         comments: apiPost.commentsCount || apiPost.comments || 0,
         commentsCount: apiPost.commentsCount || apiPost.comments || 0,
         shares: apiPost.sharesCount || apiPost.reposts || 0,
-        postId: apiPost.entryId || apiPost.postId,        // ✅ FIX
-        entryId: apiPost.entryId,                          // ✅ ADD
+        postId: apiPost.entryId || apiPost.postId,
+        entryId: apiPost.entryId,
         userId: apiPost.userId,
         isLiked: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,
-        isLikedByCurrentUser: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,  // ✅ ADD
+        isLikedByCurrentUser: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,
+        connectionStatus: apiPost.connectionStatus || 'none',   // ✅ ADD — connect button ke liye
     };
 };
