@@ -216,13 +216,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
                                 </svg>
                                 Attach Images
                             </label>
-                            <label className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
+                            <label htmlFor="image-upload" className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
                                 <input
+                                    id="image-upload"
                                     type="file"
                                     multiple
                                     accept="image/*"
                                     onChange={(e) => handleFileChange(e, 'images')}
-                                    className="hidden"
+                                    className="sr-only"
                                 />
                                 <p className="text-sm font-medium text-[#4a3728]/70">Click to select images</p>
                             </label>
@@ -256,13 +257,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
                                 </svg>
                                 Attach Videos
                             </label>
-                            <label className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
+                            <label htmlFor="video-upload" className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
                                 <input
+                                    id="video-upload"
                                     type="file"
                                     multiple
                                     accept="video/*"
                                     onChange={(e) => handleFileChange(e, 'videos')}
-                                    className="hidden"
+                                    className="sr-only"
                                 />
                                 <p className="text-sm font-medium text-[#4a3728]/70">Click to select videos</p>
                             </label>
@@ -300,13 +302,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
                                 </svg>
                                 Attach Documents
                             </label>
-                            <label className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
+                            <label htmlFor="document-upload" className="block px-4 py-3 bg-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 rounded-xl text-center cursor-pointer hover:bg-[#e0d8cf]/50 hover:border-[#4a3728]/50 transition-all duration-300">
                                 <input
+                                    id="document-upload"
                                     type="file"
                                     multiple
                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                                     onChange={(e) => handleFileChange(e, 'documents')}
-                                    className="hidden"
+                                    className="sr-only"
                                 />
                                 <p className="text-sm font-medium text-[#4a3728]/70">Click to select documents</p>
                             </label>

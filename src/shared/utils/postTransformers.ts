@@ -23,5 +23,8 @@ export const transformApiPostToFeedPost = (
         userId: apiPost.userId,
         isLiked: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,
         isLikedByCurrentUser: apiPost.isLiked || apiPost.isLikedByCurrentUser || false,  // ✅ ADD
+        images: apiPost.images || [],
+        videos: apiPost.videos || [],
+        documents: apiPost.documents || [],
     };
 };

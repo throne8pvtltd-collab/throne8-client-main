@@ -36,6 +36,7 @@ export default function Home() {
     const [postContent, setPostContent] = useState('');
     const [isPostCreatorOpen, setIsPostCreatorOpen] = useState(false);
     const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+    const [selectedAnalyticsPost, setSelectedAnalyticsPost] = useState<any | null>(null);
     const [selectedMood, setSelectedMood] = useState('');
     const [isPublic, setIsPublic] = useState(true);
     const [openMenuIndex, setOpenMenuIndex] = useState(null);
@@ -403,7 +404,10 @@ export default function Home() {
     };
 
     const handlePostAction = (action: any, postIndex: any) => {
-        // // // console.log(`Action: ${action} on post ${postIndex}`);
+        if (action === 'analytics') {
+            const post = allPosts[postIndex];
+            setSelectedAnalyticsPost(post);
+        }
         setOpenMenuIndex(null);
     };
 
@@ -1415,6 +1419,119 @@ export default function Home() {
         onConfirm={handleConfirmRepostWithoutThoughts}
         isDarkMode={isDarkMode}
     />
+
+    {selectedAnalyticsPost && (
+        <div 
+            onClick={() => setSelectedAnalyticsPost(null)}
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+        >
+            <div 
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/50 dark:border-slate-700/50 relative text-[#4a3728] dark:text-slate-100"
+            >
+                <button 
+                    onClick={() => setSelectedAnalyticsPost(null)}
+                    className="absolute top-4 right-4 p-2.5 rounded-full hover:bg-[#e0d8cf]/40 dark:hover:bg-slate-700/50 transition-colors text-[#4a3728]/70 dark:text-slate-400"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                
+                {/* Title */}
+                <div className="flex items-center gap-2 mb-6">
+                    <div className="p-2 bg-[#4a3728] text-white rounded-xl">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-black text-[#4a3728] dark:text-white">Post Analytics</h2>
+                </div>
+
+                {/* Content Preview */}
+                <div className="mb-6 bg-[#e0d8cf]/10 border border-[#e0d8cf]/30 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-[#4a3728]/50 dark:text-white/50 uppercase tracking-wider mb-1">Post Caption</p>
+                    <p className="text-sm font-semibold text-[#4a3728] dark:text-slate-200 line-clamp-2 italic">
+                        {selectedAnalyticsPost.content || selectedAnalyticsPost.text || 'No text content'}
+                    </p>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    {/* Views */}
+                    <div className="p-4 bg-gradient-to-br from-[#e0d8cf]/20 to-[#f6ede8]/10 dark:from-slate-700/30 dark:to-slate-700/10 border border-[#e0d8cf]/20 dark:border-slate-700 rounded-2xl flex flex-col justify-between">
+                        <span className="text-xs font-bold text-[#4a3728]/60 dark:text-slate-400 flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Impressions
+                        </span>
+                        <span className="text-3xl font-black tracking-tight text-[#4a3728] dark:text-white">
+                            {selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 0}
+                        </span>
+                    </div>
+
+                    {/* Likes */}
+                    <div className="p-4 bg-gradient-to-br from-[#e0d8cf]/20 to-[#f6ede8]/10 dark:from-slate-700/30 dark:to-slate-700/10 border border-[#e0d8cf]/20 dark:border-slate-700 rounded-2xl flex flex-col justify-between">
+                        <span className="text-xs font-bold text-[#4a3728]/60 dark:text-slate-400 flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            Likes
+                        </span>
+                        <span className="text-3xl font-black tracking-tight text-[#4a3728] dark:text-white">
+                            {selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0}
+                        </span>
+                    </div>
+
+                    {/* Comments */}
+                    <div className="p-4 bg-gradient-to-br from-[#e0d8cf]/20 to-[#f6ede8]/10 dark:from-slate-700/30 dark:to-slate-700/10 border border-[#e0d8cf]/20 dark:border-slate-700 rounded-2xl flex flex-col justify-between">
+                        <span className="text-xs font-bold text-[#4a3728]/60 dark:text-slate-400 flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Comments
+                        </span>
+                        <span className="text-3xl font-black tracking-tight text-[#4a3728] dark:text-white">
+                            {selectedAnalyticsPost.commentsCount || 0}
+                        </span>
+                    </div>
+
+                    {/* Engagement Rate */}
+                    <div className="p-4 bg-gradient-to-br from-[#e0d8cf]/20 to-[#f6ede8]/10 dark:from-slate-700/30 dark:to-slate-700/10 border border-[#e0d8cf]/20 dark:border-slate-700 rounded-2xl flex flex-col justify-between">
+                        <span className="text-xs font-bold text-[#4a3728]/60 dark:text-slate-400 flex items-center gap-1.5 mb-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Engagement
+                        </span>
+                        <span className="text-3xl font-black tracking-tight text-[#4a3728] dark:text-white">
+                            {(((selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0) + (selectedAnalyticsPost.commentsCount || 0) + (selectedAnalyticsPost.sharesCount || selectedAnalyticsPost.shares || 0)) / (selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 1) * 100).toFixed(1)}%
+                        </span>
+                    </div>
+                </div>
+
+                {/* Progress Bar visual indicator */}
+                <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-[#4a3728]/60 dark:text-slate-400">
+                        <span>Engagement Level</span>
+                        <span className="text-[#4a3728] dark:text-white">
+                            {Math.min(100, Math.round((((selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0) + (selectedAnalyticsPost.commentsCount || 0) + (selectedAnalyticsPost.sharesCount || selectedAnalyticsPost.shares || 0)) / (selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 1) * 100) * 2))}%
+                        </span>
+                    </div>
+                    <div className="w-full h-3 bg-[#e0d8cf]/30 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-[#8b7355] to-[#4a3728] dark:from-[#9d8466] dark:to-white rounded-full transition-all duration-1000"
+                            style={{ 
+                                width: `${Math.min(100, Math.round((((selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0) + (selectedAnalyticsPost.commentsCount || 0) + (selectedAnalyticsPost.sharesCount || selectedAnalyticsPost.shares || 0)) / (selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 1) * 100) * 2))}%` 
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )}
 
     {/* Custom Styles */ }
     <style>{`

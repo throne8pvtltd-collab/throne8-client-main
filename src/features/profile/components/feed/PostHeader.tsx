@@ -47,7 +47,7 @@ const PostHeader = ({
       <div className="relative post-menu">
         <button
           onClick={() => togglePostMenu(index)}
-          className={`p-2 rounded-xl transition-all duration-300 ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-[#e0d8cf]/50'}`}
+          className={`p-2 rounded-xl transition-all duration-300 post-menu-trigger ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-[#e0d8cf]/50'}`}
         >
           <span className="text-xl text-[#4a3728]">⋯</span>
         </button>
