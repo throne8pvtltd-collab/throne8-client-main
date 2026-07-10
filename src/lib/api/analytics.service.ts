@@ -128,6 +128,21 @@ class AnalyticsService {
     }
 
     /**
+ * 📈 Get Profile Views % Change
+ * GET /api/v1/profile/analytics/profile-views/change
+ */
+static async getProfileViewsChange(days: number = 30): Promise<any> {
+    try {
+        const { data } = await api.get('/api/v1/profile/analytics/profile-views/change', {
+            params: { days }
+        });
+        return data;
+    } catch (error: any) {
+        console.error('❌ [ANALYTICS] Failed to fetch profile views change:', error);
+        throw error;
+    }
+}
+    /**
      * 4️⃣ Get Post Impressions Count
      * GET /api/v1/profile/analytics/post-impressions/count
      */
