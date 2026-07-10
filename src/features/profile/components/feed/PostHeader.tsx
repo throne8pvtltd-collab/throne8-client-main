@@ -6,13 +6,11 @@ import ConnectionService from '@/lib/api/connection.service';
 type ConnectionStatus = 'self' | 'connected' | 'pending_sent' | 'pending_received' | 'none';
 
 const PostHeader = ({
-  post, index, isDarkMode, openMenuIndex, togglePostMenu, handlePostAction, currentUserId, fullName, profileImage
+  post, index, isDarkMode, openMenuIndex, togglePostMenu, handlePostAction, currentUserId
 }: {
-  post: any; index: number; isDarkMode: boolean; openMenuIndex: number | null; togglePostMenu: (index: number) => void; handlePostAction: (action: string, index: number) => void; currentUserId: string; fullName?: string; profileImage?: string;
+  post: any; index: number; isDarkMode: boolean; openMenuIndex: number | null; togglePostMenu: (index: number) => void; handlePostAction: (action: string, index: number) => void; currentUserId: string;
 }) => {
   const isOwnPost = post.userId && currentUserId && post.userId === currentUserId;
-  const displayName = post.user || fullName || 'Unknown User';
-  const displayAvatar = post.avatar || profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s';
 
   // ✅ Backend se aaya connectionStatus initial value ke roop mein use karo
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
@@ -30,7 +28,6 @@ const PostHeader = ({
       setConnectionStatus('pending_sent');
     } catch (error: any) {
       console.error('❌ Connect failed:', error.message);
-      // Agar already exists error aaya to bhi UI ko sahi state mein le aao
       if (error.message?.includes('already exists')) {
         setConnectionStatus('pending_sent');
       }
@@ -42,7 +39,7 @@ const PostHeader = ({
   const renderConnectButton = () => {
     if (isOwnPost || connectionStatus === 'self') return null;
 
-    if (connectionStatus === 'connected') return null; // ya "Message" button laga sakte ho
+    if (connectionStatus === 'connected') return null;
 
     if (connectionStatus === 'pending_sent') {
       return (
@@ -88,14 +85,14 @@ const PostHeader = ({
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center space-x-4">
         <img
-          src={displayAvatar}
-          alt={displayName}
+          src={post.avatar}
+          alt={post.user}
           className="w-14 h-14 rounded-2xl object-cover border-2 border-[#6b5643]"
         />
         <div>
           <div className="flex items-center gap-3">
             <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
-              {displayName}
+              {post.user}
             </h4>
             {renderConnectButton()}
           </div>
@@ -107,7 +104,6 @@ const PostHeader = ({
           </p>
         </div>
       </div>
-
       <div className="relative post-menu">
         <button
           onClick={() => togglePostMenu(index)}
@@ -115,7 +111,6 @@ const PostHeader = ({
         >
           <span className="text-xl text-[#4a3728]">⋯</span>
         </button>
-
         {openMenuIndex === index && (
           <PostMenuDropdown
             isDarkMode={isDarkMode}
