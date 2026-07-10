@@ -6,13 +6,29 @@ const CONTENT_LIMIT = 220;
 const PostContent = ({ post, isDarkMode }: { post: any; isDarkMode: boolean }) => {
   const [expanded, setExpanded] = useState(false);
   const content: string = post.content || '';
-  const isLong = content.length > CONTENT_LIMIT;
-  const displayText = expanded || !isLong ? content : content.slice(0, CONTENT_LIMIT) + '...';
+
+  // Get lines and filter out empty ones to find the first real line
+  const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const firstLine = lines[0] || '';
+
+  const isMultiline = lines.length > 1;
+  const isTooLong = content.length > 100;
+  const isLong = isMultiline || isTooLong;
+
+  let displayText = content;
+  if (!expanded && isLong) {
+    if (isMultiline) {
+      displayText = firstLine;
+    } else {
+      displayText = content.slice(0, 100);
+    }
+  }
 
   return (
     <>
       <p className={`text-base font-medium leading-relaxed mb-2 whitespace-pre-wrap ${isDarkMode ? 'text-slate-200' : 'text-[#4a3728]'}`}>
         {displayText}
+        {!expanded && isLong && ' ...'}
       </p>
       {isLong && (
         <button

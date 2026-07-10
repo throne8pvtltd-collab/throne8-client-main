@@ -13,7 +13,7 @@ class RepostService {
     ) {
         try {
             const { data } = await api.post(
-                `/api/v1/profile/activity/posts/${entryId}/repost`,
+                `/profile/activity/posts/${entryId}/repost`,
                 {
                     type,
                     thoughtText,
@@ -38,7 +38,7 @@ class RepostService {
     static async deleteRepost(repostId: string) {
         try {
             const { data } = await api.delete(
-                `/api/v1/profile/activity/posts/reposts/${repostId}`
+                `/profile/activity/posts/reposts/${repostId}`
             );
             console.log('✅ Repost deleted successfully:', data);
             return data;
@@ -55,7 +55,7 @@ class RepostService {
     static async getMyReposts() {
         try {
             const { data } = await api.get(
-                `/api/v1/profile/activity/posts/reposts/my-reposts`
+                `/profile/activity/posts/reposts/my-reposts`
             );
             console.log('✅ My reposts fetched successfully:', data);
             return data;
@@ -71,7 +71,7 @@ class RepostService {
      */
     static async getRepostsByPost(entryId: string) {
         const { data } = await api.get(
-            `/api/v1/profile/activity/posts/${entryId}/reposts`
+            `/profile/activity/posts/${entryId}/reposts`
         );
         return data;
     }
@@ -82,7 +82,7 @@ class RepostService {
      */
     static async getRepostStatus(entryId: string) {
         const { data } = await api.get(
-            `/api/v1/profile/activity/posts/${entryId}/repost-status`
+            `/profile/activity/posts/${entryId}/repost-status`
         );
         return data;
     }
