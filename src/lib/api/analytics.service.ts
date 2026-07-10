@@ -363,7 +363,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
  */
     static async recordPostImpressionSmart(postId: string, postOwnerId: string, source: string) {
         try {
-            const { data } = await api.post('/api/v1/profile/analytics/record-post-impression-smart', {
+            const { data } = await api.post('/profile/analytics/record-post-impression-smart', {
                 postId,
                 postOwnerId,
                 source
