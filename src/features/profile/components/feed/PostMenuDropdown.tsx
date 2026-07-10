@@ -94,6 +94,19 @@ const PostMenuDropdown = ({ isDarkMode, index, handlePostAction, post, currentUs
           <span className="font-medium">Hide this post</span>
         </button>
       }
+      {isOwn && (
+        <>
+          <div className={`h-px my-2 ${isDarkMode ? 'bg-slate-700' : 'bg-[#4a3728]/20'}`}></div>
+          <button
+            onClick={() => handlePostAction('delete', index)}
+            className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-colors text-red-500 ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-red-50'
+              }`}
+          >
+            <i className="ri-delete-bin-line text-lg text-red-500"></i>
+            <span className="font-medium">Delete post</span>
+          </button>
+        </>
+      )}
       {!isOwn &&
         <button
           onClick={() => handlePostAction('unfollow', index)}

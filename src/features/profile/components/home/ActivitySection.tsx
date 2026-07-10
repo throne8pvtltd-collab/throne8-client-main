@@ -1,14 +1,17 @@
 // src/profile/components/ActivitySection.tsx
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ShowAllActivityModal from './ShowAllActivityModal';
 import CreatePostModal from './CreatePostModal';
 import UpdatePostModal from './UpdatePostModal';
 import PostCard from '../feed/PostCard';
+import RepostWithPerspectiveModal from '../../../dashboard/components/feed/RepostWithPerspectiveModal';
 import { useActivityHandlers } from '../../hooks/useActivityHandler';
 import { ActivitySectionProps } from '../../types';
 import { ACTIVITY_TABS } from '../../constants';
 import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
+import ProfileService from '@/lib/api/profile.service';
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 const EmptyState = ({ label }: { label: string }) => (
@@ -306,6 +309,40 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     const [activeTab, setActiveTab] = useState('Posts');
     const [showAllModal, setShowAllModal] = useState(false);
     const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+    const [openRepostIndex, setOpenRepostIndex] = useState<number | null>(null);
+    const [isRepostWithPerspectiveOpen, setIsRepostWithPerspectiveOpen] = useState(false);
+    const [selectedRepostPost, setSelectedRepostPost] = useState<any>(null);
+    const [userComments, setUserComments] = useState<any[]>([]);
+    const [isLoadingUserComments, setIsLoadingUserComments] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'Comments' && currentUserId) {
+            const fetchMyComments = async () => {
+                try {
+                    setIsLoadingUserComments(true);
+                    const response = await ProfileService.getMyComments();
+                    setUserComments(response.data?.comments || response.data || []);
+                } catch (error) {
+                    console.error('Failed to load user comments:', error);
+                } finally {
+                    setIsLoadingUserComments(false);
+                }
+            };
+            fetchMyComments();
+        }
+    }, [activeTab, currentUserId]);
+
+    const formatRelativeTime = (dateStr: string) => {
+        if (!dateStr) return 'Recently';
+        const diffMs = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diffMs / 60000);
+        const hours = Math.floor(mins / 60);
+        const days = Math.floor(hours / 24);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return `${mins}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
+    };
 
     const handlers = useActivityHandlers({ posts, onPostCreated, profileImage });
 
@@ -317,8 +354,45 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
 const filteredPosts = posts.filter(
     (p: any) => !repostedEntryIds.has(p.entryId || p.postId)
 );
-const displayedPosts = filteredPosts.slice(0, 2);
-const hasMorePosts = filteredPosts.length > 2;
+const hasMorePosts = (filteredPosts.length + userReposts.length) > 2;
+
+const combinedItems = [
+    ...userReposts.map((repost: any) => ({ type: 'repost', data: repost })),
+    ...filteredPosts.map((post: any) => ({ type: 'post', data: post })),
+];
+
+const scrollRef = useRef<HTMLDivElement>(null);
+const [showLeftArrow, setShowLeftArrow] = useState(false);
+const [showRightArrow, setShowRightArrow] = useState(false);
+
+const handleScroll = () => {
+    if (scrollRef.current) {
+        const { scrollLeft, clientWidth, scrollWidth } = scrollRef.current;
+        setShowLeftArrow(scrollLeft > 10);
+        setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+};
+
+useEffect(() => {
+    const timer = setTimeout(() => {
+        handleScroll();
+    }, 200);
+    return () => clearTimeout(timer);
+}, [combinedItems.length]);
+
+const scrollLeft = () => {
+    if (scrollRef.current) {
+        const { clientWidth } = scrollRef.current;
+        scrollRef.current.scrollBy({ left: -clientWidth / 2, behavior: 'smooth' });
+    }
+};
+
+const scrollRight = () => {
+    if (scrollRef.current) {
+        const { clientWidth } = scrollRef.current;
+        scrollRef.current.scrollBy({ left: clientWidth / 2, behavior: 'smooth' });
+    }
+};
 
     const {
         followersList,
@@ -356,6 +430,46 @@ const hasMorePosts = filteredPosts.length > 2;
 
     // console.log('📊 [ActivitySection] Rendered with posts:', posts);
 
+    const handleRepostInstant = async (idx: number) => {
+        const post = posts[idx];
+        if (!post) return;
+        const postId = post.entryId || post.postId;
+        try {
+            await onCreateRepost?.(postId, 'repost');
+            alert('Post reposted successfully!');
+            onPostCreated?.();
+        } catch (error: any) {
+            if (error.message?.includes('already reposted')) {
+                alert('You have already reposted this post');
+            } else {
+                alert(error.message || 'Repost failed');
+            }
+        } finally {
+            setOpenRepostIndex(null);
+        }
+    };
+
+    const openRepostWithPerspectiveModal = (post: any, idx: number) => {
+        setSelectedRepostPost(post);
+        setIsRepostWithPerspectiveOpen(true);
+        setOpenRepostIndex(null);
+    };
+
+    const handleConfirmRepost = async (thoughts: string) => {
+        if (!selectedRepostPost) return;
+        const postId = selectedRepostPost.entryId || selectedRepostPost.postId;
+        try {
+            await onCreateRepost?.(postId, 'quote', thoughts);
+            alert('Quote reposted successfully!');
+            onPostCreated?.();
+        } catch (error: any) {
+            alert(error.message || 'Repost failed');
+        } finally {
+            setIsRepostWithPerspectiveOpen(false);
+            setSelectedRepostPost(null);
+        }
+    };
+
     const handlePostAction = async (action: string, idx: number) => {
         const post = posts[idx];
         if (!post) return;
@@ -382,6 +496,21 @@ const hasMorePosts = filteredPosts.length > 2;
                 } catch (err) {
                     console.error('Failed to copy text: ', err);
                 }
+                break;
+            case 'embed':
+                try {
+                    const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
+                    await navigator.clipboard.writeText(embedCode);
+                    alert('Embed iframe code copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy embed code: ', err);
+                }
+                break;
+            case 'analytics':
+                alert(`Post Analytics:\n• Total Views: ${post.viewsCount || post.impressions || 0}\n• Likes: ${post.likesCount || post.likes || 0}\n• Comments: ${post.commentsCount || 0}`);
+                break;
+            case 'hide':
+                await handlers.handleArchivePost(postId);
                 break;
             default:
                 break;
@@ -452,111 +581,197 @@ const hasMorePosts = filteredPosts.length > 2;
                                 <div className="flex justify-center items-center py-12">
                                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a3728]" />
                                 </div>
-                            ) : displayedPosts.length === 0 && userReposts.length === 0 ? (
+                            ) : combinedItems.length === 0 ? (
                                 <EmptyState label="No posts yet. Create your first post!" />
                             ) : (
-
                                 <>
-                                    {/* Dummy Repost Card */}
-                                    {isLoadingReposts ? (
-                                        <div className="flex justify-center py-4">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4a3728]" />
-                                        </div>
-                                    ) : userReposts.length > 0 ? (
-                                        userReposts.slice(0, 2).map((repost) => (
-                                            <RepostCard
-                                                key={repost.repostId}
-                                                repost={repost}
-                                                onDeleteRepost={onDeleteRepost}
-                                            />
-                                        ))
-                                    ) : null}
+                                    <div className="relative w-full group/slider">
+                                        <style dangerouslySetInnerHTML={{__html: `
+                                            .no-scrollbar::-webkit-scrollbar {
+                                                display: none !important;
+                                            }
+                                        `}} />
 
-                                    {/* Existing Posts */}
-                                    {displayedPosts.map((post, idx) => {
-                                        const postKey = post.entryId || post.postId;
-                                        return (
-                                            <PostCard
-                                                key={postKey}
-                                                post={post}
-                                                index={idx}
-                                                profileImage={profileImage}
-                                                fullName={fullName}
-                                                headline={headline}
-                                                postLikes={handlers.postLikes}
-                                                openMenuId={handlers.openMenuId}
-                                                setOpenMenuId={handlers.setOpenMenuId}
-                                                onLikeToggle={handlers.handleLikeToggle}
-                                                onPinPost={handlers.handlePinPost}
-                                                onSavePost={handlers.handleSavePost}
-                                                onDeletePost={handlers.handleDeletePost}
-                                                onArchivePost={handlers.handleArchivePost}
-                                                onOpenUpdateModal={(i: any, title: any) => {
-                                                    handlers.setUpdatePostId(i);
-                                                    handlers.setUpdatePostTitle(title);
-                                                    handlers.setShowUpdateModal(true);
-                                                }}
-                                                openCommentsIndex={handlers.openCommentsIndex === idx ? postKey : null}
-                                                onToggleComments={handlers.toggleCommentsPanel}
-                                                commentsByPost={handlers.commentsByPost}
-                                                isLoadingComments={handlers.isLoadingComments}
-                                                isSubmittingComment={handlers.isSubmittingComment}
-                                                commentLikes={handlers.commentLikes}
-                                                formatCommentTime={handlers.formatCommentTime}
-                                                openCommentMenuIndex={handlers.openCommentMenuIndex}
-                                                toggleCommentMenu={handlers.toggleCommentMenu}
-                                                handleCommentAction={handlers.handleCommentAction}
-                                                editingCommentId={handlers.editingCommentId}
-                                                editCommentText={handlers.editCommentText}
-                                                setEditCommentText={handlers.setEditCommentText}
-                                                handleEditSubmit={handlers.handleEditSubmit}
-                                                isDeletingCommentId={handlers.isDeletingCommentId}
-                                                replyingToCommentId={handlers.replyingToCommentId}
-                                                setReplyingToCommentId={handlers.setReplyingToCommentId}
-                                                replyText={handlers.replyText}
-                                                setReplyText={handlers.setReplyText}
-                                                handleReplySubmit={handlers.handleReplySubmit}
-                                                likeCommentToggle={handlers.likeCommentToggle}
-                                                commentText={handlers.commentText}
-                                                setCommentText={handlers.setCommentText}
-                                                handleCommentSubmit={handlers.handleCommentSubmit}
-                                                replyingTo={handlers.replyingTo}
-                                                setReplyingTo={handlers.setReplyingTo}
-                                                showEmojiPicker={handlers.showEmojiPicker}
-                                                setShowEmojiPicker={handlers.setShowEmojiPicker}
-                                                handleEmojiClick={handlers.handleEmojiClick}
-                                                setIsDeletingCommentId={handlers.setIsDeletingCommentId}
-                                                currentUserId={currentUserId || ''}
-                                                isDarkMode={undefined}
-                                                likedPosts={handlers.postLikes}
-                                                handleLike={handlers.handleLikeToggle}
-                                                openMenuIndex={handlers.openMenuId}
-                                                openRepostIndex={undefined}
-                                                handlePostAction={handlePostAction}
-                                                handleRepost={undefined}
-                                                toggleComments={(pid: string) => {
-                                                    const pIdx = posts.findIndex(p => (p.entryId || p.postId) === pid);
-                                                    if (pIdx !== -1) {
-                                                        handlers.toggleCommentsPanel(pIdx, pid);
-                                                    }
-                                                }}
-                                                handleReply={handlers.setReplyingToCommentId}
-                                                handleCommentReaction={handlers.likeCommentToggle}
-                                                postComments={handlers.commentsByPost}
-                                                emojiList={undefined}
-                                                togglePostMenu={(i: number) => handlers.setOpenMenuId(handlers.openMenuId === i ? null : i)}
-                                                toggleRepostMenu={undefined}
-                                                postCommentCounts={undefined}
-                                            />
-                                        );
-                                    })}
-                                   {hasMorePosts && <ShowAllButton label={`Show All Posts (${filteredPosts.length})`} />}
+                                        {/* Left Arrow Button */}
+                                        {showLeftArrow && (
+                                            <button
+                                                onClick={scrollLeft}
+                                                className="absolute left-[-16px] top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-neutral-100 text-[#4a3728] w-10 h-10 rounded-full flex items-center justify-center shadow-lg border border-[#e0d8cf] transition-all duration-200"
+                                            >
+                                                <ChevronLeft className="w-6 h-6" />
+                                            </button>
+                                        )}
+
+                                        {/* Right Arrow Button */}
+                                        {showRightArrow && (
+                                            <button
+                                                onClick={scrollRight}
+                                                className="absolute right-[-16px] top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-neutral-100 text-[#4a3728] w-10 h-10 rounded-full flex items-center justify-center shadow-lg border border-[#e0d8cf] transition-all duration-200"
+                                            >
+                                                <ChevronRight className="w-6 h-6" />
+                                            </button>
+                                        )}
+
+                                        {/* Scrollable Row */}
+                                        <div
+                                            ref={scrollRef}
+                                            onScroll={handleScroll}
+                                            className="flex flex-row overflow-x-auto gap-4 scroll-smooth pb-4 px-1 no-scrollbar"
+                                            style={{
+                                                scrollbarWidth: 'none',
+                                                msOverflowStyle: 'none',
+                                            }}
+                                        >
+                                            {combinedItems.map((item, idx) => {
+                                                if (item.type === 'repost') {
+                                                    return (
+                                                        <div
+                                                            key={`repost-${item.data.repostId}`}
+                                                            className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0"
+                                                        >
+                                                            <RepostCard
+                                                                repost={item.data}
+                                                                onDeleteRepost={onDeleteRepost}
+                                                            />
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const post = item.data;
+                                                const postKey = post.entryId || post.postId;
+                                                const originalIndex = posts.findIndex(p => (p.entryId || p.postId) === postKey);
+                                                const idxToUse = originalIndex !== -1 ? originalIndex : idx;
+
+                                                return (
+                                                    <div
+                                                        key={`post-${postKey}`}
+                                                        className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0"
+                                                    >
+                                                        <PostCard
+                                                            post={post}
+                                                            index={idxToUse}
+                                                            profileImage={profileImage}
+                                                            fullName={fullName}
+                                                            headline={headline}
+                                                            postLikes={handlers.postLikes}
+                                                            openMenuId={handlers.openMenuId}
+                                                            setOpenMenuId={handlers.setOpenMenuId}
+                                                            onLikeToggle={handlers.handleLikeToggle}
+                                                            onPinPost={handlers.handlePinPost}
+                                                            onSavePost={handlers.handleSavePost}
+                                                            onDeletePost={handlers.handleDeletePost}
+                                                            onArchivePost={handlers.handleArchivePost}
+                                                            onOpenUpdateModal={(i: any, title: any) => {
+                                                                handlers.setUpdatePostId(i);
+                                                                handlers.setUpdatePostTitle(title);
+                                                                handlers.setShowUpdateModal(true);
+                                                            }}
+                                                            openCommentsIndex={handlers.openCommentsIndex === idxToUse ? postKey : null}
+                                                            onToggleComments={handlers.toggleCommentsPanel}
+                                                            commentsByPost={handlers.commentsByPost}
+                                                            isLoadingComments={handlers.isLoadingComments}
+                                                            isSubmittingComment={handlers.isSubmittingComment}
+                                                            commentLikes={handlers.commentLikes}
+                                                            formatCommentTime={handlers.formatCommentTime}
+                                                            openCommentMenuIndex={handlers.openCommentMenuIndex}
+                                                            toggleCommentMenu={handlers.toggleCommentMenu}
+                                                            handleCommentAction={handlers.handleCommentAction}
+                                                            editingCommentId={handlers.editingCommentId}
+                                                            editCommentText={handlers.editCommentText}
+                                                            setEditCommentText={handlers.setEditCommentText}
+                                                            handleEditSubmit={handlers.handleEditSubmit}
+                                                            isDeletingCommentId={handlers.isDeletingCommentId}
+                                                            replyingToCommentId={handlers.replyingToCommentId}
+                                                            setReplyingToCommentId={handlers.setReplyingToCommentId}
+                                                            replyText={handlers.replyText}
+                                                            setReplyText={handlers.setReplyText}
+                                                            handleReplySubmit={handlers.handleReplySubmit}
+                                                            likeCommentToggle={handlers.likeCommentToggle}
+                                                            commentText={handlers.commentText}
+                                                            setCommentText={handlers.setCommentText}
+                                                            handleCommentSubmit={handlers.handleCommentSubmit}
+                                                            replyingTo={handlers.replyingTo}
+                                                            setReplyingTo={handlers.setReplyingTo}
+                                                            showEmojiPicker={handlers.showEmojiPicker}
+                                                            setShowEmojiPicker={handlers.setShowEmojiPicker}
+                                                            handleEmojiClick={handlers.handleEmojiClick}
+                                                            setIsDeletingCommentId={handlers.setIsDeletingCommentId}
+                                                            currentUserId={currentUserId || ''}
+                                                            isDarkMode={undefined}
+                                                            likedPosts={handlers.postLikes}
+                                                            handleLike={handlers.handleLikeToggle}
+                                                            openMenuIndex={handlers.openMenuId}
+                                                            openRepostIndex={openRepostIndex}
+                                                            handlePostAction={handlePostAction}
+                                                            toggleComments={(pid: string) => {
+                                                                const pIdx = posts.findIndex(p => (p.entryId || p.postId) === pid);
+                                                                if (pIdx !== -1) {
+                                                                    handlers.toggleCommentsPanel(pIdx, pid);
+                                                                }
+                                                            }}
+                                                            handleReply={handlers.setReplyingToCommentId}
+                                                            handleCommentReaction={handlers.likeCommentToggle}
+                                                            postComments={handlers.commentsByPost}
+                                                            emojiList={undefined}
+                                                            togglePostMenu={(i: number) => handlers.setOpenMenuId(handlers.openMenuId === i ? null : i)}
+                                                            toggleRepostMenu={(i: number) => setOpenRepostIndex(openRepostIndex === i ? null : i)}
+                                                            onOpenWithPerspectiveModal={openRepostWithPerspectiveModal}
+                                                            handleRepostInstant={handleRepostInstant}
+                                                            postCommentCounts={undefined}
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    {hasMorePosts && <ShowAllButton label={`Show All Posts (${filteredPosts.length + userReposts.length})`} />}
                                 </>
                             )}
                         </>
                     )}
+
                     {activeTab === 'Comments' && (
-                        <EmptyState label="Comments you've made will appear here." />
+                        <div className="space-y-6">
+                            {isLoadingUserComments ? (
+                                <div className="flex justify-center items-center py-12">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a3728]" />
+                                </div>
+                            ) : userComments.length === 0 ? (
+                                <EmptyState label="Comments you've made will appear here." />
+                            ) : (
+                                <div className="space-y-4">
+                                    {userComments.map((comment: any) => (
+                                        <div
+                                            key={comment.commentId}
+                                            className="bg-white hover:bg-neutral-50/50 transition-colors p-6 rounded-2xl border border-[#e0d8cf]/40 shadow-sm flex flex-col gap-3"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <img
+                                                    src={profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'}
+                                                    alt={fullName}
+                                                    className="w-10 h-10 rounded-xl object-cover border border-[#4a3728]/20"
+                                                />
+                                                <div>
+                                                    <h4 className="font-bold text-[#4a3728]">{fullName}</h4>
+                                                    <p className="text-xs text-[#4a3728]/60">
+                                                        {formatRelativeTime(comment.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm font-medium text-[#4a3728] pl-1">
+                                                {comment.content}
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-[#4a3728]/50 pl-1 mt-1 border-t border-[#4a3728]/10 pt-2">
+                                                <span className="flex items-center gap-1">
+                                                    <i className="ri-heart-line text-sm"></i>
+                                                    {comment.likesCount || 0} likes
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* ── VIDEOS ── */}
@@ -645,6 +860,17 @@ const hasMorePosts = filteredPosts.length > 2;
                     setShowCreatePostModal(false);
                     onPostCreated?.();
                 }}
+            />
+
+            <RepostWithPerspectiveModal
+                isOpen={isRepostWithPerspectiveOpen}
+                onClose={() => {
+                    setIsRepostWithPerspectiveOpen(false);
+                    setSelectedRepostPost(null);
+                }}
+                post={selectedRepostPost}
+                onRepost={handleConfirmRepost}
+                isDarkMode={false}
             />
         </>
     );
