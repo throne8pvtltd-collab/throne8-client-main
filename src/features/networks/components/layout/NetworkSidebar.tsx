@@ -1,17 +1,41 @@
-import React from 'react';
+'use client';
+import React, { useEffect } from 'react';
 import { networkStats } from '../../constants/mockData';
-import { useConnectionSocket } from '@/features/networks/hooks/useConnectionSocket';
 import { useConnectionRequests } from '@/features/networks/hooks/useConnectionRequests';
+import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export const NetworkSidebar: React.FC = () => {
     const { requests } = useConnectionRequests();
+    const { user } = useAuth();
 
-    // ✅ UPDATE networkStats ARRAY:
+    const {
+        followingList,
+        followersList,
+        totalConnections,
+        isLoadingConnections,
+        fetchConnectionsData,
+    } = useConnectionsData();
+
+    useEffect(() => {
+        if (user?.userId) {
+            fetchConnectionsData(user.userId);
+        }
+    }, [user?.userId]);
+
+    // ✅ Real data for Connections + Following & Followers, 0 for the rest (not built yet)
     const dynamicStats = networkStats.map(stat => {
         if (stat.label === 'Connections') {
-            return { ...stat, count: requests.length }; // ✅ Show pending count
+            return { ...stat, count: isLoadingConnections ? '...' : totalConnections };
         }
-        return stat;
+        if (stat.label === 'Following & Followers') {
+            return {
+                ...stat,
+                count: isLoadingConnections ? '...' : followingList.length + followersList.length,
+            };
+        }
+        // Contacts, Groups, Events, Pages, Newsletters — not implemented yet
+        return { ...stat, count: 0 };
     });
 
     return (

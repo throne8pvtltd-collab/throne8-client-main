@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth, useProtectedRoute } from '@/features/auth/hooks/useAuth';
@@ -59,6 +58,19 @@ export default function ProfilePage() {
         createRepost,
         removeRepost,
     } = useProfile();
+
+    // ✅ Scroll to activity section after data loads
+    useEffect(() => {
+        if (!isLoadingProfile && window.location.hash === '#activity-section') {
+            setTimeout(() => {
+                const el = document.getElementById('activity-section');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+    }, [isLoadingProfile]);
+
     const {
         aboutData,
         videoUrl,
