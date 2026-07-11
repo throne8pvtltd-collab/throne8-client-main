@@ -9,6 +9,7 @@ import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData'
 
 interface ProfileHeaderProps {
     currentUserId?: string;
+    isOwnProfile?: boolean; // ✅ NAYA PROP
     profileImage: string;
     name: string;
     pronouns: string;
@@ -35,10 +36,18 @@ interface ProfileHeaderProps {
     };
     educationList?: any[];
     experienceList?: any[];
+    // ✅ NAYE PROPS - public profile ke actions ke liye
+    isFollowing?: boolean;
+    isConnected?: boolean;
+    connectionPending?: boolean;
+    onFollow?: () => void;
+    onConnect?: () => void;
+    onMessage?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     currentUserId,
+    isOwnProfile = true, // ✅ default true (backward-compatible: purana behavior nahi tootega)
     profileImage,
     name,
     pronouns,
@@ -60,6 +69,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     onHeadlineCreated,
     onDataRefresh,
     onProfileImageUpdate,
+    isFollowing = false,
+    isConnected = false,
+    connectionPending = false,
+    onFollow,
+    onConnect,
+    onMessage,
 }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
@@ -88,30 +103,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             fetchConnectionsData(currentUserId);
         }
     }, [currentUserId, fetchConnectionsData]);
-    console.log('👥 [ActivitySection] Followers List:', followersList);
 
     const handleProfileUpdate = async () => {
-       
         if (onDataRefresh) {
             await onDataRefresh();
         }
-
-       
         if (onHeadlineCreated) {
             await onHeadlineCreated();
         }
     };
 
     const handleProfileImageUpdate = (newImageUrl: string) => {
-       
         setCurrentProfileImage(newImageUrl);
-
-       
         if (onProfileImageUpdate) {
             onProfileImageUpdate(newImageUrl);
         }
-
-       
         if (onDataRefresh) {
             onDataRefresh();
         }
@@ -122,23 +128,30 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <div className="relative px-6 pb-6">
                 <div className="flex flex-col md:flex-row items-start gap-6 -mt-12">
                     <div
-                        className="profileImageClick relative w-36 h-36 group cursor-pointer"
-                        onClick={() => setIsProfileImageModalOpen(true)}
+                        className={`profileImageClick relative w-36 h-36 group ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                        onClick={() => {
+                            if (isOwnProfile) setIsProfileImageModalOpen(true);
+                        }}
                     >
                         <img
                             src={currentProfileImage}
                             alt="Profile"
                             className="w-full h-full rounded-2xl border-4 border-white shadow-xl object-cover transition-all duration-500 group-hover:shadow-2xl group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                        {isOwnProfile && (
+                            <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                        )}
                     </div>
                     <div className="border border-[#e0d8cf] rounded-3xl p-6 shadow-xl bg-white/60 backdrop-blur-sm">
                         <div className="flex-1 text-center md:text-left pt-2">
-                            <button
-                                onClick={() => setIsEditModalOpen(true)}
-                                className="bannerEdit absolute top-4 right-4 rounded-2x border-2 border-black text-white/80 text-xl font-medium bg-black px-2 py-2 rounded-full backdrop-blur-sm hover:bg-black/30 transition-all duration-300">
-                                ✏
-                            </button>
+                            {/* ✅ Sirf apni profile pe edit button dikhega */}
+                            {isOwnProfile && (
+                                <button
+                                    onClick={() => setIsEditModalOpen(true)}
+                                    className="bannerEdit absolute top-4 right-4 rounded-2x border-2 border-black text-white/80 text-xl font-medium bg-black px-2 py-2 rounded-full backdrop-blur-sm hover:bg-black/30 transition-all duration-300">
+                                    ✏
+                                </button>
+                            )}
                             <div className="space-y-3">
                                 <div className="relative">
                                     <h1 className="text-3xl font-bold text-[#4a3728] flex items-center gap-2 justify-center md:justify-start mt-8 hover:text-[#5a4738] transition-colors duration-300">
@@ -154,7 +167,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     </h2>
                                 </div>
                                     <p className="mt-2 text-sm w-[40vw] text-[#4a3728] font-bold leading-relaxed relative">
-                                    {/* Priority 1: Education (College Name) */}
                                     {educationList && educationList.length > 0 && educationList[0]?.schoolCollegeName && (
                                         <>
                                             {educationList[0].schoolCollegeName}
@@ -162,7 +174,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         </>
                                     )}
 
-                                    {/* Priority 2: Fallback Education (from onboarding) */}
                                     {(!educationList || educationList.length === 0) && educationData?.collegeName && (
                                         <>
                                             {educationData.collegeName}
@@ -170,14 +181,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         </>
                                     )}
 
-                                    {/* Priority 3: Current Experience (Company Name) */}
                                     {experienceList && experienceList.length > 0 && (
                                         <>
                                             {experienceList.find(exp => exp.current)?.company || experienceList[0]?.company}
                                         </>
                                     )}
 
-                                    {/* Priority 4: Fallback Company (from onboarding) */}
                                     {(!experienceList || experienceList.length === 0) && company && (
                                         <>
                                             {company}
@@ -196,9 +205,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     </p>
                                 </div>
 
+                                {/* ✅ Contact info sirf apni profile pe, ya agar backend permission de */}
+                                {isOwnProfile && <Contactact />}
 
-                                <Contactact />
-                                <div className="flex gap-3 justify-center md:justify-start">
+                                <div className="flex gap-3 justify-center md:justify-start flex-wrap">
                                     <button
                                         onClick={() => setIsConnectionsModalOpen(true)}
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
@@ -221,41 +231,78 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         </span> connections
                                     </button>
                                 </div>
+
+                                {/* ✅ PUBLIC PROFILE ACTIONS — sirf tab dikhega jab doosre ki profile ho */}
+                                {!isOwnProfile && (
+                                    <div className="flex gap-3 justify-center md:justify-start flex-wrap mt-4">
+                                        {isConnected ? (
+                                            <button
+                                                onClick={onMessage}
+                                                className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                            >
+                                                Message
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={onConnect}
+                                                disabled={connectionPending}
+                                                className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-60"
+                                            >
+                                                {connectionPending ? 'Pending...' : 'Connect'}
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={onFollow}
+                                            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#4a3728] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                        >
+                                            {isFollowing ? 'Following' : 'Follow'}
+                                        </button>
+
+                                        <button
+                                            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                        >
+                                            More
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Edit Intro Modal */}
-            <EditIntroModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                initialData={{
-                    firstName: firstName || name?.split(' ')[0] || '',
-                    lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
-                    pronouns,
-                    headline: headline,
-                    company,
-                    location,
-                    currentPosition,
-                    education,
-                    contactInfo,
-                    headlineId,
-                }}
-                onSubmit={handleProfileUpdate}
-                onHeadlineCreated={onHeadlineCreated}
-            />
+            {/* ✅ Sirf apni profile ke modals render honge */}
+            {isOwnProfile && (
+                <>
+                    <EditIntroModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        initialData={{
+                            firstName: firstName || name?.split(' ')[0] || '',
+                            lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
+                            pronouns,
+                            headline: headline,
+                            company,
+                            location,
+                            currentPosition,
+                            education,
+                            contactInfo,
+                            headlineId,
+                        }}
+                        onSubmit={handleProfileUpdate}
+                        onHeadlineCreated={onHeadlineCreated}
+                    />
 
-            {/* Profile Image Modal */}
-            <ProfileImageModal
-                isOpen={isProfileImageModalOpen}
-                onClose={() => setIsProfileImageModalOpen(false)}
-                onUploadSuccess={handleProfileImageUpdate}
-                currentImageUrl={currentProfileImage}
-            />
+                    <ProfileImageModal
+                        isOpen={isProfileImageModalOpen}
+                        onClose={() => setIsProfileImageModalOpen(false)}
+                        onUploadSuccess={handleProfileImageUpdate}
+                        currentImageUrl={currentProfileImage}
+                    />
+                </>
+            )}
 
-            {/* Connections Modal */}
             <ConnectionsModal
                 isOpen={isConnectionsModalOpen}
                 onClose={() => setIsConnectionsModalOpen(false)}

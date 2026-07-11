@@ -1,4 +1,3 @@
-
 // src/profile/components/AboutSection.tsx
 'use client';
 import AuthService from '@/lib/api/auth.service';
@@ -10,9 +9,10 @@ interface AboutSectionProps {
     isLoading?: boolean;
     onAboutCreated?: () => void;
     aboutId?: string;
-    videoUrl?: string; // ✅ Add
-    onVideoUpload?: (file: File) => Promise<void>; // ✅ Add
-    isUploadingVideo?: boolean; // ✅ Add
+    videoUrl?: string;
+    onVideoUpload?: (file: File) => Promise<void>;
+    isUploadingVideo?: boolean;
+    isOwnProfile?: boolean; // ✅ NAYA PROP
 }
 
 const AboutSection: React.FC<AboutSectionProps> = ({
@@ -20,9 +20,10 @@ const AboutSection: React.FC<AboutSectionProps> = ({
     isLoading = false,
     onAboutCreated,
     aboutId,
-    videoUrl, // ✅ Add
-    onVideoUpload, // ✅ Add
+    videoUrl,
+    onVideoUpload,
     isUploadingVideo = false,
+    isOwnProfile = true, // ✅ default true, purana behavior nahi tootega
 }) => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [aboutText, setAboutText] = useState('');
@@ -36,7 +37,6 @@ const AboutSection: React.FC<AboutSectionProps> = ({
         }
     }, [aboutData]);
 
-    // Lock background scroll when modal is open
     useEffect(() => {
         if (isModalOpen) {
             document.body.style.overflow = 'hidden';
@@ -92,20 +92,15 @@ const AboutSection: React.FC<AboutSectionProps> = ({
 
         try {
             if (isEditMode && aboutId) {
-                 await ProfileService.updateAbout(aboutId, {
+                await ProfileService.updateAbout(aboutId, {
                     aboutText: aboutText.trim(),
                 });
-                
             } else {
-                // ✅ Create new about
-               
                 await ProfileService.createAbout({
                     aboutText: aboutText.trim(),
                 });
-                
             }
 
-            // ✅ Refresh data
             if (onAboutCreated) {
                 await onAboutCreated();
             }
@@ -124,13 +119,12 @@ const AboutSection: React.FC<AboutSectionProps> = ({
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validation
         if (!file.type.startsWith('video/')) {
             alert('Please upload a video file');
             return;
         }
 
-        if (file.size > 50 * 1024 * 1024) { // 50MB
+        if (file.size > 50 * 1024 * 1024) {
             alert('Video must be less than 50MB');
             return;
         }
@@ -139,6 +133,11 @@ const AboutSection: React.FC<AboutSectionProps> = ({
             await onVideoUpload(file);
         }
     };
+
+    // ✅ Public profile pe agar About hi nahi hai, toh poora section hi hide kar do
+    if (!isOwnProfile && !aboutData?.aboutText && !videoUrl) {
+        return null;
+    }
 
     return (
         <>
@@ -188,23 +187,22 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                                         About Me
                                     </h3>
 
-                                    {/* ✅ Conditional rendering based on aboutData */}
                                     {aboutData?.aboutText ? (
                                         <>
                                             <p className="text-[#4a3728]/90 leading-relaxed font-medium tracking-wide text-sm whitespace-pre-wrap">
                                                 {aboutData.aboutText}
                                             </p>
-                                            {/* <p className="text-xs text-[#4a3728]/50 mt-3">
-                                            {aboutData.aboutText.length} / 2600 characters
-                                        </p> */}
-                                            <button
-                                                onClick={() => handleOpenModal(true)}
-                                                className="absolute top-4 right-4 bg-[#4a3728]/20 text-[#4a3728] px-2 py-1 text-xs rounded-md hover:bg-[#4a3728]/30 transition"
-                                            >
-                                                ✏ Edit
-                                            </button>
+                                            {/* ✅ Edit button sirf apni profile pe */}
+                                            {isOwnProfile && (
+                                                <button
+                                                    onClick={() => handleOpenModal(true)}
+                                                    className="absolute top-4 right-4 bg-[#4a3728]/20 text-[#4a3728] px-2 py-1 text-xs rounded-md hover:bg-[#4a3728]/30 transition"
+                                                >
+                                                    ✏ Edit
+                                                </button>
+                                            )}
                                         </>
-                                    ) : (
+                                    ) : isOwnProfile ? (
                                         <div className="text-center py-8">
                                             <p className="text-[#4a3728]/60 mb-4 text-sm">No about text added yet</p>
                                             <button
@@ -214,11 +212,10 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                                                 + Add About
                                             </button>
                                         </div>
-                                    )}
-                                    
+                                    ) : null}
                                 </div>
 
-                                {/* ✅ Video Player or Upload UI */}
+                                {/* ✅ Video section — public profile pe sirf tab dikhega jab video already hai, upload option nahi */}
                                 {videoUrl ? (
                                     <div className="relative">
                                         <video
@@ -229,19 +226,20 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                                             Your browser does not support video playback.
                                         </video>
 
-                                        {/* Replace Video Button */}
-                                        <label className="absolute top-2 right-2 bg-[#4a3728]/80 text-white px-3 py-1 text-xs rounded-md hover:bg-[#4a3728] transition cursor-pointer">
-                                            {isUploadingVideo ? 'Uploading...' : '🔄 Replace'}
-                                            <input
-                                                type="file"
-                                                accept="video/mp4,video/webm,video/quicktime"
-                                                onChange={handleVideoUpload}
-                                                disabled={isUploadingVideo}
-                                                className="hidden"
-                                            />
-                                        </label>
+                                        {isOwnProfile && (
+                                            <label className="absolute top-2 right-2 bg-[#4a3728]/80 text-white px-3 py-1 text-xs rounded-md hover:bg-[#4a3728] transition cursor-pointer">
+                                                {isUploadingVideo ? 'Uploading...' : '🔄 Replace'}
+                                                <input
+                                                    type="file"
+                                                    accept="video/mp4,video/webm,video/quicktime"
+                                                    onChange={handleVideoUpload}
+                                                    disabled={isUploadingVideo}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        )}
                                     </div>
-                                ) : (
+                                ) : isOwnProfile ? (
                                     <div className="rounded-xl bg-[#4a3728]/10 border border-[#4a3728]/30 w-full h-40 flex flex-col items-center justify-center gap-2">
                                         <div className="w-10 h-10 rounded-full bg-[#4a3728]/20 border border-[#4a3728]/30 flex items-center justify-center text-[#4a3728]/70">
                                             🎬
@@ -262,30 +260,23 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                                             </label>
                                         )}
                                     </div>
-                                )}
-
-
+                                ) : null}
                             </div>
                             <div className="absolute inset-0 bg-gradient-to-r from-[#4a3728]/5 via-transparent to-[#6b4e3d]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
                         </div>
                     </div>
                 </div>
-
-
             </div>
 
-            {/* ✅ Modal for Add/Edit */}
-            {isModalOpen && (
+            {/* ✅ Modal sirf apni profile pe render hoga */}
+            {isOwnProfile && isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                         onClick={handleCloseModal}
                     ></div>
 
-                    {/* Modal Content */}
                     <div className="relative z-10 w-full max-w-2xl mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        {/* Header */}
                         <div className="flex items-center justify-between bg-gradient-to-r from-[#4a3728] to-[#6a5748] px-6 py-5">
                             <div>
                                 <h2 className="text-2xl font-bold text-white">
@@ -306,7 +297,6 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                             </button>
                         </div>
 
-                        {/* Body */}
                         <div className="p-6">
                             {error && (
                                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
@@ -344,7 +334,6 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="flex gap-3 px-6 pb-6">
                             <button
                                 type="button"
@@ -371,4 +360,3 @@ const AboutSection: React.FC<AboutSectionProps> = ({
 };
 
 export default AboutSection;
-

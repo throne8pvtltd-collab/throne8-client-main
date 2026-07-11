@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Person } from '@/features/networks/types';
 
 interface PersonCardProps {
@@ -14,6 +17,12 @@ export const PersonCard: React.FC<PersonCardProps> = ({
     onConnect,
     isLoading = false
 }) => {
+    const router = useRouter();
+
+    const goToProfile = () => {
+        router.push(`/profile/${person.id}`);
+    };
+
     return (
         <div
             className="group relative overflow-hidden rounded-2xl shadow-xl transition-all duration-700 transform hover:-translate-y-1 hover:border-[#4a3728] hover:shadow-[0_0_15px_rgba(74,55,40,0.3)]"
@@ -25,7 +34,10 @@ export const PersonCard: React.FC<PersonCardProps> = ({
 
             <div className="relative p-5 flex flex-col h-full">
                 <div className="flex flex-col items-center text-center">
-                    <div className="relative mb-4">
+                    <div
+                        className="relative mb-4 cursor-pointer"
+                        onClick={goToProfile}
+                    >
                         <div className="absolute inset-0 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity duration-500 animate-pulse"></div>
                         <div className="relative">
                             <img
@@ -40,7 +52,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
                     </div>
 
                     <h3
-                        className="font-bold text-base mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-pink-600 transition-all duration-500"
+                        onClick={goToProfile}
+                        className="cursor-pointer font-bold text-base mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-pink-600 transition-all duration-500"
                         style={{ color: '#4a3728' }}
                     >
                         {person.name}

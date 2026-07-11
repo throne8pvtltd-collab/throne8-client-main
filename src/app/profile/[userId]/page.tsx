@@ -19,14 +19,12 @@ import InterestsSection from '../../../features/profile/components/home/Interest
 import PeopleYouMayKnow from '../../../features/profile/components/home/PeopleYouMayKnow';
 import { transformToProfileData } from '@/shared/utils/profileTransformers';
 
-// ✅ Import custom hooks - SEARCH USER KE LIYE
 import { useSearchUserProfileData } from '@/features/profile/hooks/useSearchUserProfileData';
 import { usePostsData } from '@/features/profile/hooks/usePostsData';
 import { useAboutData } from '@/features/profile/hooks/useAboutData';
 import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
 import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
-
-// ✅ Import transformer
+import AnalyticsService from '@/lib/api/analytics.service';
 
 export default function SearchUserProfilePage() {
     const params = useParams();
@@ -69,14 +67,11 @@ export default function SearchUserProfilePage() {
 
     const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
 
-
-    // ✅ Transform data
     const profileData = transformToProfileData(userProfileData, profileImageUrl, headlineData);
 
     const fullName = userProfileData
         ? `${userProfileData.firstName} ${userProfileData.lastName}`.trim()
         : 'Loading...';
-
 
     useEffect(() => {
         if (userId) {
@@ -84,24 +79,30 @@ export default function SearchUserProfilePage() {
         }
     }, [userId, fetchUserProfileById]);
 
-    // ✅ Fetch about data
+    useEffect(() => {
+        if (user?.userId && userId && user.userId !== userId) {
+            AnalyticsService.recordProfileView(userId, {
+                viewerId: user.userId,
+                viewerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            });
+        }
+    }, [user, userId]);
+
     useEffect(() => {
         if (aboutId) {
             fetchAboutData();
         }
     }, [aboutId, fetchAboutData]);
 
-    // ✅ Fetch headline data
     useEffect(() => {
         if (headlineId) {
             fetchHeadlineData();
         }
     }, [headlineId, fetchHeadlineData]);
 
-    // ✅ Fetch posts (optional - agar chahiye to)
     useEffect(() => {
         if (userId) {
-            // fetchUserPosts(); // Agar posts API me userId pass kar sakte ho
+            // fetchUserPosts();
         }
     }, [userId]);
 
@@ -113,11 +114,10 @@ export default function SearchUserProfilePage() {
             setTimeout(() => {
                 const el = document.getElementById(section);
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 3000); // wait for DOM to load
+            }, 3000);
         }
     }, [searchParams]);
 
-    // 🎨 Loading state
     if (isLoadingProfile) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
@@ -129,7 +129,6 @@ export default function SearchUserProfilePage() {
         );
     }
 
-    // 🚨 Error state
     if (profileError) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
@@ -149,7 +148,6 @@ export default function SearchUserProfilePage() {
     return (
         <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-                {/* Navbar */}
                 <ProfileNavbar
                     profileImage={profileData.profileImage}
                     userName={profileData.userName}
@@ -157,15 +155,15 @@ export default function SearchUserProfilePage() {
                 />
 
                 <div className="flex-1 pt-20">
-                    {/* ✅ Uncomment all components */}
                     <ProfileBanner
                         bannerImage={bannerUrl}
-                        onBannerUpdate={() => { }} // Disabled
-                        onDataRefresh={() => { }} // Disabled
+                        onBannerUpdate={() => { }}
+                        onDataRefresh={() => { }}
                         coverId={coverPhotoId}
                     />
 
                     <ProfileHeader
+                        isOwnProfile={false}
                         currentUserId={userId}
                         profileImage={profileImageUrl}
                         name={profileData.name}
@@ -190,6 +188,7 @@ export default function SearchUserProfilePage() {
                     <ProfessionalJourney userProfileData={userProfileData} />
 
                     <AboutSection
+                        isOwnProfile={false}
                         aboutData={aboutData}
                         isLoading={isLoadingAbout}
                         onAboutCreated={() => { }}
@@ -224,7 +223,6 @@ export default function SearchUserProfilePage() {
                     <InterestsSection />
                 </div>
 
-                {/* Sidebar (Right) */}
                 <div className="w-full md:w-80 md:min-w-[20rem]">
                     <PeopleYouMayKnow />
                 </div>
