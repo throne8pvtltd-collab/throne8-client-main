@@ -27,5 +27,9 @@ export const transformApiPostToFeedPost = (
         videos: apiPost.videos || [],
         documents: apiPost.documents || [],
         connectionStatus: apiPost.connectionStatus || 'none',
+        likedByConnections: apiPost.likedByConnections || [],                     // ✅ ADD — e.g. ['Bhoomi jain', 'Yashasvi S. Rajput']
+        likedByConnectionsAvatars: apiPost.likedByConnectionsAvatars || [],       // ✅ ADD — parallel photo URLs
+        likedByConnectionsCount: apiPost.likedByConnectionsCount || 0,            // ✅ ADD — total connections who liked
+        likedByConnectionsFull: apiPost.likedByConnectionsFull || [],             // ✅ ADD — poori list [{userId, name, avatar}]
     };
 };
