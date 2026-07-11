@@ -102,12 +102,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         if (currentUserId) {
             fetchConnectionsData(currentUserId);
         }
-<<<<<<< HEAD
-    }, [currentUserId, fetchConnectionsData]);
-=======
     }, [currentUserId, isConnectionsModalOpen, fetchConnectionsData]);
-    console.log('👥 [ActivitySection] Followers List:', followersList);
->>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
 
     const handleProfileUpdate = async () => {
         if (onDataRefresh) {
@@ -119,7 +114,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     };
 
     const handleProfileImageUpdate = (newImageUrl: string) => {
-<<<<<<< HEAD
         setCurrentProfileImage(newImageUrl);
         if (onProfileImageUpdate) {
             onProfileImageUpdate(newImageUrl);
@@ -127,12 +121,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         if (onDataRefresh) {
             onDataRefresh();
         }
-=======
-       
-        if (onProfileImageUpdate) {
-            onProfileImageUpdate(newImageUrl);
-        }
->>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
     };
 
     return (
@@ -221,11 +209,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                 {/* ✅ Contact info sirf apni profile pe, ya agar backend permission de */}
                                 {isOwnProfile && <Contactact />}
 
-<<<<<<< HEAD
                                 <div className="flex gap-3 justify-center md:justify-start flex-wrap">
-=======
-                                <div className="flex gap-3 justify-center md:justify-start">
->>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
                                     <button
                                         onClick={() => setIsConnectionsModalOpen(true)}
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
