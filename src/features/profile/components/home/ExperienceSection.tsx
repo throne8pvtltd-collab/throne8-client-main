@@ -509,7 +509,7 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                 {/* Timeline + Details */}
                 <div className="grid grid-cols-5 gap-3">
                     <div className="col-span-2 relative">
-                        <div className="absolute left-8 top-12 bottom-12 w-0.5 bg-gradient-to-b from-[#8b6f47] via-[#d4c4b5] to-[#8b6f47]/30"></div>
+                        <div className="absolute left-5 top-12 bottom-12 w-0.5 bg-gradient-to-b from-[#8b6f47] via-[#d4c4b5] to-[#8b6f47]/30"></div>
                         <div className="space-y-10 relative">
                             {experiences.slice(0, 3).map((exp, i) => {
                                 const active = i === currentIndex;

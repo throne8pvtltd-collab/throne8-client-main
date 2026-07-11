@@ -157,7 +157,7 @@ const RepostCard = ({
     };
 
     return (
-        <div className="bg-gradient-to-br from-[#e0d8cf]/60 via-[#e0d8cf]/40 to-[#f6ede8]/30 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 border border-[#e0d8cf]/40 overflow-hidden">
+        <div className="p-6 rounded-3xl shadow-2xl backdrop-blur-xl border transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 bg-[#f6ede8]/95 border-[#4a3728]/20 relative overflow-hidden h-full flex flex-col">
             {/* Repost Header */}
             <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#e0d8cf]/50">
                 <div className="flex items-center gap-3 flex-1">
@@ -370,6 +370,13 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     const [userComments, setUserComments] = useState<any[]>([]);
     const [isLoadingUserComments, setIsLoadingUserComments] = useState(false);
     const [selectedAnalyticsPost, setSelectedAnalyticsPost] = useState<any | null>(null);
+    const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
+    const [visibleImagesCount, setVisibleImagesCount] = useState(3);
+
+    useEffect(() => {
+        setVisibleCommentsCount(3);
+        setVisibleImagesCount(3);
+    }, [activeTab]);
 
     useEffect(() => {
         if (activeTab === 'Comments' && currentUserId) {
@@ -477,7 +484,7 @@ const scrollRight = () => {
     const ShowAllButton = ({ label }: { label: string }) => (
         <button
             onClick={() => setShowAllModal(true)}
-            className="w-full group bg-gradient-to-r from-[#4a3728]/10 via-[#4a3728]/5 to-[#e0d8cf]/20 hover:from-[#4a3728]/20 hover:via-[#4a3728]/15 hover:to-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 hover:border-[#4a3728]/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-center gap-3"
+            className="w-full group bg-gradient-to-r from-[#4a3728]/10 via-[#4a3728]/5 to-[#e0d8cf]/20 hover:from-[#4a3728]/20 hover:via-[#4a3728]/15 hover:to-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 hover:border-[#4a3728]/50 rounded-2xl p-6 transition-all duration-300 flex items-center justify-center gap-3 relative z-30"
         >
             <span className="text-[#4a3728] font-bold text-lg">{label}</span>
             <svg className="w-5 h-5 text-[#4a3728] group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -696,7 +703,7 @@ const scrollRight = () => {
                                                     return (
                                                         <div
                                                             key={`repost-${item.data.repostId}`}
-                                                            className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0"
+                                                            className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0 flex flex-col"
                                                         >
                                                             <RepostCard
                                                                 repost={item.data}
@@ -717,7 +724,7 @@ const scrollRight = () => {
                                                 return (
                                                     <div
                                                         key={`post-${postKey}`}
-                                                        className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0"
+                                                        className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0 flex flex-col"
                                                     >
                                                         <PostCard
                                                             post={post}
@@ -796,55 +803,79 @@ const scrollRight = () => {
                                             })}
                                         </div>
                                     </div>
-                                    {hasMorePosts && <ShowAllButton label={`Show All Posts (${filteredPosts.length + userReposts.length})`} />}
+                                    {hasMorePosts && (
+                                        <div className="relative z-30 mt-6 w-full">
+                                            <ShowAllButton label={`Show All Posts (${filteredPosts.length + userReposts.length})`} />
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </>
                     )}
 
-                    {activeTab === 'Comments' && (
-                        <div className="space-y-6">
-                            {isLoadingUserComments ? (
-                                <div className="flex justify-center items-center py-12">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a3728]" />
-                                </div>
-                            ) : userComments.length === 0 ? (
-                                <EmptyState label="Comments you've made will appear here." />
-                            ) : (
-                                <div className="space-y-4">
-                                    {userComments.map((comment: any) => (
-                                        <div
-                                            key={comment.commentId}
-                                            className="bg-white hover:bg-neutral-50/50 transition-colors p-6 rounded-2xl border border-[#e0d8cf]/40 shadow-sm flex flex-col gap-3"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <img
-                                                    src={profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'}
-                                                    alt={fullName}
-                                                    className="w-10 h-10 rounded-xl object-cover border border-[#4a3728]/20"
-                                                />
-                                                <div>
-                                                    <h4 className="font-bold text-[#4a3728]">{fullName}</h4>
-                                                    <p className="text-xs text-[#4a3728]/60">
-                                                        {formatRelativeTime(comment.createdAt)}
-                                                    </p>
+                    {activeTab === 'Comments' && (() => {
+                        console.log("Profile Comments tab details:", {
+                            "userComments.length": userComments.length,
+                            "visibleCommentsCount": visibleCommentsCount,
+                            "slicedComments": userComments.slice(0, visibleCommentsCount)
+                        });
+
+                        return (
+                            <div className="space-y-6">
+                                {isLoadingUserComments ? (
+                                    <div className="flex justify-center items-center py-12">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a3728]" />
+                                    </div>
+                                ) : userComments.length === 0 ? (
+                                    <EmptyState label="Comments you've made will appear here." />
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userComments.slice(0, visibleCommentsCount).map((comment: any, commentIdx: number) => (
+                                            <div
+                                                key={comment.commentId || commentIdx}
+                                                className="bg-white hover:bg-neutral-50/50 transition-colors p-6 rounded-2xl border border-[#e0d8cf]/40 shadow-sm flex flex-col gap-3"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <img
+                                                        src={profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'}
+                                                        alt={fullName}
+                                                        className="w-10 h-10 rounded-xl object-cover border border-[#4a3728]/20"
+                                                    />
+                                                    <div>
+                                                        <h4 className="font-bold text-[#4a3728]">{fullName}</h4>
+                                                        <p className="text-xs text-[#4a3728]/60">
+                                                            {formatRelativeTime(comment.createdAt)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-sm font-medium text-[#4a3728] pl-1">
+                                                    {comment.content}
+                                                </div>
+                                                <div className="flex items-center gap-4 text-xs text-[#4a3728]/50 pl-1 mt-1 border-t border-[#4a3728]/10 pt-2">
+                                                    <span className="flex items-center gap-1">
+                                                        <i className="ri-heart-line text-sm"></i>
+                                                        {comment.likesCount || 0} likes
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="text-sm font-medium text-[#4a3728] pl-1">
-                                                {comment.content}
-                                            </div>
-                                            <div className="flex items-center gap-4 text-xs text-[#4a3728]/50 pl-1 mt-1 border-t border-[#4a3728]/10 pt-2">
-                                                <span className="flex items-center gap-1">
-                                                    <i className="ri-heart-line text-sm"></i>
-                                                    {comment.likesCount || 0} likes
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        ))}
+
+                                        {userComments.length > visibleCommentsCount && (
+                                            <button
+                                                onClick={() => setVisibleCommentsCount(prev => prev + 3)}
+                                                className="w-full mt-6 group bg-gradient-to-r from-[#4a3728]/10 via-[#4a3728]/5 to-[#e0d8cf]/20 hover:from-[#4a3728]/20 hover:via-[#4a3728]/15 hover:to-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 hover:border-[#4a3728]/50 rounded-2xl p-4 transition-all duration-300 flex items-center justify-center gap-2 relative z-30 text-[#4a3728] font-bold text-sm"
+                                            >
+                                                <span>Show More</span>
+                                                <svg className="w-4 h-4 text-[#4a3728] group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* ── VIDEOS ── */}
                     {activeTab === 'Videos' && (
@@ -872,12 +903,20 @@ const scrollRight = () => {
                             ) : (
                                 <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                        {allImages.slice(0, 6).map(({ post, img }, idx) => (
+                                        {allImages.slice(0, visibleImagesCount).map(({ post, img }, idx) => (
                                             <ImageCard key={`${post.entryId || post.postId}-${idx}`} post={post} img={img} />
                                         ))}
                                     </div>
-                                    {allImages.length > 6 && (
-                                        <ShowAllButton label={`Show All Images (${allImages.length})`} />
+                                    {allImages.length > visibleImagesCount && (
+                                        <button
+                                            onClick={() => setVisibleImagesCount(prev => prev + 3)}
+                                            className="w-full mt-6 group bg-gradient-to-r from-[#4a3728]/10 via-[#4a3728]/5 to-[#e0d8cf]/20 hover:from-[#4a3728]/20 hover:via-[#4a3728]/15 hover:to-[#e0d8cf]/30 border-2 border-dashed border-[#4a3728]/30 hover:border-[#4a3728]/50 rounded-2xl p-4 transition-all duration-300 flex items-center justify-center gap-2 relative z-30 text-[#4a3728] font-bold text-sm"
+                                        >
+                                            <span>Show all images</span>
+                                            <svg className="w-4 h-4 text-[#4a3728] group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
                                     )}
                                 </>
                             )}
@@ -910,6 +949,10 @@ const scrollRight = () => {
                 onClose={() => setShowAllModal(false)}
                 activeSection={activeTab}
                 posts={posts}
+                userReposts={userReposts}
+                profileImage={profileImage}
+                fullName={fullName}
+                currentUserId={currentUserId}
                 postLikes={handlers.postLikes}
                 onLikeToggle={handlers.handleLikeToggle}
             />

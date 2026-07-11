@@ -22,11 +22,15 @@ export const useConnectionsData = () => {
             setTotalConnections(connections.length);
 
 
-            // ✅ STEP 2: Separate following and followers based on fromUserId/toUserId
+            // ✅ STEP 2: Separate following and followers based on fromUserId/toUserId and build connectionId map
             const followingUserIds: string[] = [];
             const followerUserIds: string[] = [];
+            const connectionIdMap: Record<string, string> = {};
 
             connections.forEach((conn: any) => {
+                const targetId = conn.fromUserId === currentUserId ? conn.toUserId : conn.fromUserId;
+                connectionIdMap[targetId] = conn.connectionId;
+
                 if (conn.fromUserId === currentUserId) {
                     // Current user sent request = Following
                     followingUserIds.push(conn.toUserId);
@@ -36,19 +40,14 @@ export const useConnectionsData = () => {
                 }
             });
 
-
-
-
             // ✅ STEP 3: Fetch user profiles for both lists
             const [followingProfiles, followerProfiles] = await Promise.all([
-                fetchUserProfiles(followingUserIds),
-                fetchUserProfiles(followerUserIds)
+                fetchUserProfiles(followingUserIds, connectionIdMap),
+                fetchUserProfiles(followerUserIds, connectionIdMap)
             ]);
 
             setFollowingList(followingProfiles);
             setFollowersList(followerProfiles);
-
-
 
         } catch (error: any) {
             console.error('❌ [CONNECTIONS] Failed to fetch:', error);
@@ -60,7 +59,7 @@ export const useConnectionsData = () => {
     }, []);
 
     // ✅ Helper function to fetch user profiles
-    const fetchUserProfiles = async (userIds: string[]) => {
+    const fetchUserProfiles = async (userIds: string[], connectionIdMap: Record<string, string> = {}) => {
         if (userIds.length === 0) return [];
 
         try {
@@ -113,6 +112,7 @@ export const useConnectionsData = () => {
             // Transform to UI format
             return profiles.map(user => ({
                 id: user.userId,
+                connectionId: connectionIdMap[user.userId] || '',
                 name: `${user.firstName} ${user.lastName}`.trim(),
                 headline: user.headlineId ? headlinesMap[user.headlineId] || '' : '',
                 image: user.profilePhotoId

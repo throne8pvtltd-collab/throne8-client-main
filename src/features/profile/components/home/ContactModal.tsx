@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     X,
     Mail,
@@ -160,10 +161,29 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
         }));
     };
 
-    if (!isOpen) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    // ✅ Scroll lock when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
+    if (!isOpen || !mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
             {/* Overlay */}
             <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -235,7 +255,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                                 type="email"
                                                 value={email.value}
                                                 onChange={(e) => updateEmail(email.id, e.target.value, email.privacy)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm text-[#4a3728] font-medium"
                                                 placeholder="your@email.com"
                                             />
                                             <button
@@ -250,10 +270,10 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                             <select
                                                 value={email.privacy}
                                                 onChange={(e) => updateEmail(email.id, email.value, e.target.value as any)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white text-[#4a3728] font-semibold"
                                             >
                                                 {privacyLevels.map(level => (
-                                                    <option key={level} value={level}>
+                                                    <option key={level} value={level} className="text-[#4a3728] bg-white" style={{ color: '#4a3728', backgroundColor: '#ffffff' }}>
                                                         {privacyLabels[level]} - {privacyDescriptions[level]}
                                                     </option>
                                                 ))}
@@ -289,7 +309,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                                 type="tel"
                                                 value={phone.value}
                                                 onChange={(e) => updatePhone(phone.id, e.target.value, phone.privacy)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm text-[#4a3728] font-medium"
                                                 placeholder="+1 (555) 000-0000"
                                             />
                                             <button
@@ -304,10 +324,10 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                             <select
                                                 value={phone.privacy}
                                                 onChange={(e) => updatePhone(phone.id, phone.value, e.target.value as any)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white text-[#4a3728] font-semibold"
                                             >
                                                 {privacyLevels.map(level => (
-                                                    <option key={level} value={level}>
+                                                    <option key={level} value={level} className="text-[#4a3728] bg-white" style={{ color: '#4a3728', backgroundColor: '#ffffff' }}>
                                                         {privacyLabels[level]} - {privacyDescriptions[level]}
                                                     </option>
                                                 ))}
@@ -342,9 +362,9 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                 </label>
                                 <div className="flex items-center gap-2 pt-2">
                                     <Lock className="w-4 h-4 text-[#4a3728]" />
-                                    <select className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white">
+                                    <select className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white text-[#4a3728] font-semibold">
                                         {privacyLevels.map(level => (
-                                            <option key={level} value={level}>
+                                            <option key={level} value={level} className="text-[#4a3728] bg-white" style={{ color: '#4a3728', backgroundColor: '#ffffff' }}>
                                                 {privacyLabels[level]} - {privacyDescriptions[level]}
                                             </option>
                                         ))}
@@ -372,10 +392,10 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                     <select
                                         value={addressPrivacy}
                                         onChange={(e) => setAddressPrivacy(e.target.value as any)}
-                                        className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white"
+                                        className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white text-[#4a3728] font-semibold"
                                     >
                                         {privacyLevels.map(level => (
-                                            <option key={level} value={level}>
+                                            <option key={level} value={level} className="text-[#4a3728] bg-white" style={{ color: '#4a3728', backgroundColor: '#ffffff' }}>
                                                 {privacyLabels[level]} - {privacyDescriptions[level]}
                                             </option>
                                         ))}
@@ -409,7 +429,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                                 type="text"
                                                 value={website.label}
                                                 onChange={(e) => updateWebsite(website.id, website.value, e.target.value)}
-                                                className="px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm"
+                                                className="px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm text-[#4a3728] font-medium"
                                                 placeholder="e.g., Portfolio"
                                             />
                                             <div className="flex gap-2">
@@ -417,7 +437,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                                     type="url"
                                                     value={website.value}
                                                     onChange={(e) => updateWebsite(website.id, e.target.value, website.label)}
-                                                    className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm"
+                                                    className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm text-[#4a3728] font-medium"
                                                     placeholder="https://example.com"
                                                 />
                                                 <button
@@ -456,10 +476,10 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                             <select
                                                 value={im.platform}
                                                 onChange={(e) => updateIMHandle(im.id, e.target.value, im.value)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm bg-white text-[#4a3728] font-semibold"
                                             >
                                                 {imPlatforms.map(platform => (
-                                                    <option key={platform.id} value={platform.id}>
+                                                    <option key={platform.id} value={platform.id} className="text-[#4a3728] bg-white" style={{ color: '#4a3728', backgroundColor: '#ffffff' }}>
                                                         {platform.label}
                                                     </option>
                                                 ))}
@@ -468,7 +488,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                                                 type="text"
                                                 value={im.value}
                                                 onChange={(e) => updateIMHandle(im.id, im.platform, e.target.value)}
-                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm"
+                                                className="flex-1 px-3 py-2 rounded border border-[#d4ccc3] focus:outline-none focus:ring-2 focus:ring-[#4a3728] text-sm text-[#4a3728] font-medium"
                                                 placeholder="Handle/ID"
                                             />
                                             <button
@@ -555,7 +575,8 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
