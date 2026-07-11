@@ -1,5 +1,5 @@
 // app/(dashboard)/components/feed/CommentsSection.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import CommentItem from './CommentItem';
 import CommentInput from './CommentInput';
 
@@ -50,14 +50,24 @@ const CommentsSection = ({
   handleCommentAction,
   handleEditSubmit,
   handleEmojiClick,
-  comments,
+  comments = [],
   postId,
   emojiList,
 }: CommentsSectionProps) => {
+  const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
+  const visibleComments = (comments || []).slice(0, visibleCommentsCount);
+
+  console.log("CommentsSection details:", {
+    postId,
+    commentsLength: comments.length,
+    visibleCommentsCount,
+    visibleCommentsLength: visibleComments.length
+  });
+
   return (
     <div className={`mt-6 pt-6 border-t ${isDarkMode ? 'border-slate-700' : 'border-[#4a3728]/20'}`}>
       <div className="space-y-4 mb-6">
-        {comments.map((comment: any) => (
+        {visibleComments.map((comment: any) => (
           <CommentItem
             key={comment.commentId || comment._id}
             comment={comment}
@@ -76,6 +86,17 @@ const CommentsSection = ({
           />
         ))}
       </div>
+
+      {comments && comments.length > visibleCommentsCount && (
+        <button
+          onClick={() => setVisibleCommentsCount(prev => prev + 3)}
+          className={`text-sm font-semibold mb-6 mt-2 block hover:underline ${
+            isDarkMode ? 'text-slate-300 hover:text-white' : 'text-[#6b5643] hover:text-[#4a3728]'
+          }`}
+        >
+          Show More
+        </button>
+      )}
 
       <CommentInput
         isDarkMode={isDarkMode}

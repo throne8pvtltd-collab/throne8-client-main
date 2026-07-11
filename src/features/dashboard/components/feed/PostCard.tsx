@@ -1,4 +1,5 @@
 // app/(dashboard)/components/feed/PostCard.tsx
+// Force rebuild comment section slice update
 import React from 'react';
 import PostHeader from './PostHeader';
 import PostContent from './PostContent';
@@ -135,7 +136,7 @@ const PostCard = ({
         source: 'feed'
       })}
       key={post.postId}
-      className={`p-8 rounded-3xl shadow-2xl backdrop-blur-xl border transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 ${isDarkMode ? 'bg-slate-800/60 border-slate-700/50' : 'bg-[#f6ede8]/95 border-[#4a3728]/20'
+      className={`p-6 rounded-3xl shadow-2xl backdrop-blur-xl border transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 ${isDarkMode ? 'bg-slate-800/60 border-slate-700/50' : 'bg-[#f6ede8]/95 border-[#4a3728]/20'
         } relative`}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-[#6b5643]/3 via-[#8b7355]/3 to-[#4a3728]/3 rounded-3xl"></div>

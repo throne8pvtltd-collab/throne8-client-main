@@ -173,6 +173,20 @@ class ConnectionService {
             throw new Error('Failed to fetch connection stats');
         }
     }
+
+    /**
+     * ❌ DELETE CONNECTION
+     */
+    static async deleteConnection(connectionId: string) {
+        try {
+            // console.log('❌ [DELETE_CONNECTION] Deleting connection:', connectionId);
+            const { data } = await api.delete(`/connections/connection/${connectionId}`);
+            return data;
+        } catch (error: any) {
+            console.error('❌ [DELETE_CONNECTION] Failed:', error);
+            throw new Error(error.response?.data?.message || 'Failed to delete connection');
+        }
+    }
 }
 
 export default ConnectionService;

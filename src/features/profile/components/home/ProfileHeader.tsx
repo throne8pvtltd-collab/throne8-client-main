@@ -82,7 +82,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isUpdating, setIsUpdating] = useState(false);
-    const [currentProfileImage, setCurrentProfileImage] = useState(profileImage);
+    const [currentProfileImage, setCurrentProfileImage] = useState(profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s');
 
     useEffect(() => {
         if (profileImage) {
@@ -102,7 +102,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         if (currentUserId) {
             fetchConnectionsData(currentUserId);
         }
+<<<<<<< HEAD
     }, [currentUserId, fetchConnectionsData]);
+=======
+    }, [currentUserId, isConnectionsModalOpen, fetchConnectionsData]);
+    console.log('👥 [ActivitySection] Followers List:', followersList);
+>>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
 
     const handleProfileUpdate = async () => {
         if (onDataRefresh) {
@@ -114,6 +119,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     };
 
     const handleProfileImageUpdate = (newImageUrl: string) => {
+<<<<<<< HEAD
         setCurrentProfileImage(newImageUrl);
         if (onProfileImageUpdate) {
             onProfileImageUpdate(newImageUrl);
@@ -121,6 +127,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         if (onDataRefresh) {
             onDataRefresh();
         }
+=======
+       
+        if (onProfileImageUpdate) {
+            onProfileImageUpdate(newImageUrl);
+        }
+>>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
     };
 
     return (
@@ -195,6 +207,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
                                     <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#4a3728]/20 to-transparent rounded-full"></div>
                                 </p>
+                                <Contactact />
                                 <div className="flex items-center gap-2 justify-center md:justify-start bg-white/50 rounded-full px-3 py-2 backdrop-blur-sm border border-[#e0d8cf]/50">
                                     <svg className="w-5 h-5 text-[#4a3728] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -208,7 +221,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                 {/* ✅ Contact info sirf apni profile pe, ya agar backend permission de */}
                                 {isOwnProfile && <Contactact />}
 
+<<<<<<< HEAD
                                 <div className="flex gap-3 justify-center md:justify-start flex-wrap">
+=======
+                                <div className="flex gap-3 justify-center md:justify-start">
+>>>>>>> 99213027d90ef23ce744be79f7cdf1c33fbce908
                                     <button
                                         onClick={() => setIsConnectionsModalOpen(true)}
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
@@ -309,6 +326,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 following={followingList}
                 followers={followersList}
                 username={name}
+                currentUserId={currentUserId}
             />
         </>
     );

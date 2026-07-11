@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import ConnectionService from '@/lib/api/connection.service';
 
 interface User {
     id: string;
+    connectionId?: string;
     name: string;
     headline: string;
     image: string;
@@ -17,6 +20,7 @@ interface ConnectionsModalProps {
     following: User[];
     followers: User[];
     username?: string;
+    currentUserId?: string;
 }
 
 const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
@@ -25,12 +29,19 @@ const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
     following,
     followers,
     username = 'User',
+    currentUserId,
 }) => {
     const [activeTab, setActiveTab] = useState<'following' | 'followers'>('followers');
     const [followingList, setFollowingList] = useState<User[]>(following);
     const [followersList, setFollowersList] = useState<User[]>(followers);
+    const [mounted, setMounted] = useState(false);
 
-    // ✅ ADD THIS useEffect - Sync state with props when they change
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    // ✅ Sync state with props when they change
     useEffect(() => {
         setFollowingList(following);
         setFollowersList(followers);
@@ -43,21 +54,61 @@ const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
-    const handleFollowToggle = (userId: string, isFollowing: boolean) => {
-        if (activeTab === 'following') {
-            setFollowingList(prev =>
-                prev.map(user =>
-                    user.id === userId ? { ...user, isFollowing: !isFollowing } : user
-                )
-            );
+    // ✅ Scroll lock when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
         } else {
-            setFollowersList(prev =>
-                prev.map(user =>
-                    user.id === userId ? { ...user, isFollowing: !isFollowing } : user
-                )
-            );
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
+
+
+    const handleFollowToggle = async (userId: string, isFollowing: boolean) => {
+        const displayUsers = activeTab === 'following' ? followingList : followersList;
+        const targetUser = displayUsers.find(u => u.id === userId);
+        if (!targetUser) return;
+
+        try {
+            if (isFollowing) {
+                // UNFOLLOW / DELETE CONNECTION
+                if (targetUser.connectionId) {
+                    await ConnectionService.deleteConnection(targetUser.connectionId);
+                } else if (currentUserId) {
+                    // Fallback to fetch dynamically
+                    const connRes = await ConnectionService.getUserConnections(currentUserId);
+                    const connections = connRes.data.data || [];
+                    const connObj = connections.find((c: any) => c.fromUserId === userId || c.toUserId === userId);
+                    if (connObj) {
+                        await ConnectionService.deleteConnection(connObj.connectionId);
+                    }
+                }
+            } else {
+                // FOLLOW / SEND CONNECTION REQUEST
+                await ConnectionService.sendConnectionRequest({ toUserId: userId });
+            }
+
+            // Update local UI state
+            if (activeTab === 'following') {
+                setFollowingList(prev =>
+                    prev.map(user =>
+                        user.id === userId ? { ...user, isFollowing: !isFollowing } : user
+                    )
+                );
+            } else {
+                setFollowersList(prev =>
+                    prev.map(user =>
+                        user.id === userId ? { ...user, isFollowing: !isFollowing } : user
+                    )
+                );
+            }
+        } catch (err: any) {
+            console.error("Failed to toggle follow status:", err);
+            alert(err.message || "Failed to update connection status. Please try again.");
         }
     };
 
@@ -65,7 +116,9 @@ const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
     const tabCount = activeTab === 'following' ? followingList.length : followersList.length;
 
 
-    return (
+    if (!isOpen || !mounted) return null;
+
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Transparent Overlay Background */}
             <div
@@ -198,7 +251,8 @@ const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
