@@ -27,9 +27,13 @@ export const transformApiPostToFeedPost = (
         videos: apiPost.videos || [],
         documents: apiPost.documents || [],
         connectionStatus: apiPost.connectionStatus || 'none',
-        likedByConnections: apiPost.likedByConnections || [],                     // ✅ ADD — e.g. ['Bhoomi jain', 'Yashasvi S. Rajput']
-        likedByConnectionsAvatars: apiPost.likedByConnectionsAvatars || [],       // ✅ ADD — parallel photo URLs
-        likedByConnectionsCount: apiPost.likedByConnectionsCount || 0,            // ✅ ADD — total connections who liked
-        likedByConnectionsFull: apiPost.likedByConnectionsFull || [],             // ✅ ADD — poori list [{userId, name, avatar}]
+        likedByConnections: apiPost.likedByConnections || [],                     
+        likedByConnectionsAvatars: apiPost.likedByConnectionsAvatars || [],       
+        likedByConnectionsCount: apiPost.likedByConnectionsCount || 0,            
+        likedByConnectionsFull: apiPost.likedByConnectionsFull || [],             
+        commentedByConnections: apiPost.commentedByConnections || [],             
+        commentedByConnectionsAvatars: apiPost.commentedByConnectionsAvatars || [],
+        commentedByConnectionsCount: apiPost.commentedByConnectionsCount || 0,
+        commentedByConnectionsFull: apiPost.commentedByConnectionsFull || [],
     };
 };

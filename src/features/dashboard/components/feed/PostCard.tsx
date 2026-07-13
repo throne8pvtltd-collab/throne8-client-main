@@ -1,5 +1,4 @@
 // app/(dashboard)/components/feed/PostCard.tsx
-// Force rebuild comment section slice update
 import React from 'react';
 import PostHeader from './PostHeader';
 import PostContent from './PostContent';
@@ -15,9 +14,13 @@ const PostCard = ({
   const { trackPostImpression } = usePostImpressionTracking();
   const postKey = post.entryId || post.postId;
 
-  // ✅ "Liked by connections you know" — LinkedIn style social proof line
+  // "Liked by connections you know" — LinkedIn style social proof line
   const [dismissedLikedBy, setDismissedLikedBy] = React.useState(false);
   const [showLikersList, setShowLikersList] = React.useState(false);
+
+  // "Commented by connections you know"
+  const [dismissedCommentedBy, setDismissedCommentedBy] = React.useState(false);
+  const [showCommentersList, setShowCommentersList] = React.useState(false);
 
   const renderLikedByConnections = () => {
     const names: string[] = post.likedByConnections || [];
@@ -43,7 +46,7 @@ const PostCard = ({
 
     return (
       <div
-        className={`relative flex items-center justify-between gap-2 mb-4 pb-3 border-b text-sm ${isDarkMode ? 'text-slate-300 border-slate-700/50' : 'text-[#4a3728]/80 border-[#4a3728]/10'
+        className={`relative flex items-center justify-between gap-2 mb-2 pb-3 border-b text-sm ${isDarkMode ? 'text-slate-300 border-slate-700/50' : 'text-[#4a3728]/80 border-[#4a3728]/10'
           }`}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -87,7 +90,6 @@ const PostCard = ({
 
         {showLikersList && fullList.length > 0 && (
           <>
-            {/* Backdrop to close on outside click */}
             <div
               className="fixed inset-0 z-10"
               onClick={() => setShowLikersList(false)}
@@ -128,6 +130,115 @@ const PostCard = ({
     );
   };
 
+  // ✅ "Commented by connections you know" — same pattern as likes
+  const renderCommentedByConnections = () => {
+    const names: string[] = post.commentedByConnections || [];
+    const totalCount: number = post.commentedByConnectionsCount || 0;
+    const fullList: Array<{ userId: string; name: string; avatar: string | null }> =
+      post.commentedByConnectionsFull || [];
+
+    if (names.length === 0 || dismissedCommentedBy) return null;
+
+    let text = '';
+    if (names.length === 1) {
+      text = `${names[0]} commented on this`;
+    } else if (names.length >= 2) {
+      const shown = names.slice(0, 2).join(' and ');
+      const remaining = totalCount - Math.min(names.length, 2);
+      text = remaining > 0
+        ? `${shown} and ${remaining} other${remaining > 1 ? 's' : ''} commented`
+        : `${shown} commented`;
+    }
+
+    const firstCommenterAvatar = post.commentedByConnectionsAvatars?.[0] || null;
+    const firstCommenterInitial = names[0]?.charAt(0)?.toUpperCase() || '?';
+
+    return (
+      <div
+        className={`relative flex items-center justify-between gap-2 mb-4 pb-3 border-b text-sm ${isDarkMode ? 'text-slate-300 border-slate-700/50' : 'text-[#4a3728]/80 border-[#4a3728]/10'
+          }`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {firstCommenterAvatar ? (
+            <img
+              src={firstCommenterAvatar}
+              alt={names[0]}
+              className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-[#6b5643] text-white'
+                }`}
+            >
+              {firstCommenterInitial}
+            </div>
+          )}
+          <p className="truncate">
+            <span className="font-semibold">{text}</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => setShowCommentersList((prev) => !prev)}
+            className={`p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-[#e0d8cf]/50'
+              }`}
+            aria-label="Show who commented"
+          >
+            <span className="text-lg leading-none">⋯</span>
+          </button>
+          <button
+            onClick={() => setDismissedCommentedBy(true)}
+            className={`p-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-[#e0d8cf]/50'
+              }`}
+            aria-label="Dismiss"
+          >
+            <span className="text-lg leading-none">✕</span>
+          </button>
+        </div>
+
+        {showCommentersList && fullList.length > 0 && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setShowCommentersList(false)}
+            />
+            <div
+              className={`absolute right-0 top-full mt-1 z-20 w-64 max-h-72 overflow-y-auto rounded-xl shadow-2xl border py-2 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-[#4a3728]/10'
+                }`}
+            >
+              {fullList.map((commenter) => (
+                <div
+                  key={commenter.userId}
+                  className={`flex items-center gap-3 px-4 py-2 ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-[#f6ede8]'
+                    }`}
+                >
+                  {commenter.avatar ? (
+                    <img
+                      src={commenter.avatar}
+                      alt={commenter.name}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-[#6b5643] text-white'
+                        }`}
+                    >
+                      {commenter.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
+                    {commenter.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       ref={trackPostImpression({
@@ -142,6 +253,7 @@ const PostCard = ({
       <div className="absolute inset-0 bg-gradient-to-br from-[#6b5643]/3 via-[#8b7355]/3 to-[#4a3728]/3 rounded-3xl"></div>
       <div className="relative z-10">
         {renderLikedByConnections()}
+        {renderCommentedByConnections()}
 
         <PostHeader
           currentUserId={currentUserId}
@@ -159,7 +271,6 @@ const PostCard = ({
           post={post}
           index={index}
           isDarkMode={isDarkMode}
-          // likes={likes}
           likedPosts={likedPosts}
           handleLike={handleLike}
           openRepostIndex={openRepostIndex}
