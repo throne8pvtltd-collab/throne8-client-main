@@ -1,5 +1,6 @@
 // app/(dashboard)/components/feed/PostHeader.tsx
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PostMenuDropdown from './PostMenuDropdown';
 import ConnectionService from '@/lib/api/connection.service';
 
@@ -11,13 +12,24 @@ const PostHeader = ({
   post: any; index: number; isDarkMode: boolean; openMenuIndex: number | null; togglePostMenu: (index: number) => void; handlePostAction: (action: string, index: number) => void; currentUserId: string;
   fullName?: string; profileImage?: string; headline?: string;
 }) => {
+  const router = useRouter();
   const isOwnPost = post.userId && currentUserId && post.userId === currentUserId;
 
-  // ✅ Backend se aaya connectionStatus initial value ke roop mein use karo
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     post.connectionStatus || 'none'
   );
   const [isSending, setIsSending] = useState(false);
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!post.userId) return;
+
+    if (isOwnPost) {
+      router.push('/profile');
+    } else {
+      router.push(`/profile/${post.userId}`);
+    }
+  };
 
   const handleConnect = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,7 +51,6 @@ const PostHeader = ({
 
   const renderConnectButton = () => {
     if (isOwnPost || connectionStatus === 'self') return null;
-
     if (connectionStatus === 'connected') return null;
 
     if (connectionStatus === 'pending_sent') {
@@ -67,7 +78,6 @@ const PostHeader = ({
       );
     }
 
-    // status === 'none'
     return (
       <button
         onClick={handleConnect}
@@ -88,11 +98,15 @@ const PostHeader = ({
         <img
           src={post.avatar || profileImage || ''}
           alt={post.user || fullName || ''}
-          className="w-14 h-14 rounded-2xl object-cover border-2 border-[#6b5643]"
+          onClick={handleProfileClick}
+          className="w-14 h-14 rounded-2xl object-cover border-2 border-[#6b5643] cursor-pointer"
         />
         <div>
           <div className="flex items-center gap-3">
-            <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}>
+            <h4
+              onClick={handleProfileClick}
+              className={`text-lg font-bold cursor-pointer hover:underline ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}
+            >
               {post.user || fullName || 'Unknown User'}
             </h4>
             {renderConnectButton()}

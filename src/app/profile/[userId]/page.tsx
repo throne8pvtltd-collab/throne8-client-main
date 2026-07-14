@@ -225,7 +225,7 @@ export default function SearchUserProfilePage() {
                         />
                     </div>
 
-                    <SkillsSection />
+                    <SkillsSection userId={userId} isOwnProfile={false} />
                     <InterestsSection />
                 </div>
 

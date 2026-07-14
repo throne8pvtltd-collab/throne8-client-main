@@ -27,6 +27,7 @@ import { useExperienceData } from '@/features/profile/hooks/useExperienceData';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useAboutData } from '@/features/profile/hooks/useAboutData';
 import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
+import { useSkillsData } from '@/features/profile/hooks/useSkillsData';
 
 export default function ProfilePage() {
     const { isChecking } = useProtectedRoute();
@@ -76,6 +77,7 @@ export default function ProfilePage() {
     const { headlineData, fetchHeadlineData } = useHeadlineData(headlineId);
     const { experienceList, fetchExperienceData } = useExperienceData();
     const { educationList, loadEducation } = useEducation();
+    const { skillsList, fetchSkillsData } = useSkillsData(user?.userId, true);
 
     // ✅ Fetch data on mount
     useEffect(() => {
@@ -84,6 +86,7 @@ export default function ProfilePage() {
             loadPosts();
             loadEducation();
             loadMyReposts();
+            fetchSkillsData();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
@@ -246,7 +249,17 @@ export default function ProfilePage() {
                 {/* Sidebar (Right) */}
                 <div className="w-full md:w-80 md:min-w-[20rem]">
                     {/* Profile Progress */}
-                    <ProfileProgress />
+                    <ProfileProgress
+                        profileImageUrl={profileImageUrl}
+                        bannerUrl={bannerUrl}
+                        headline={headlineData?.title || profileData.headline}
+                        about={aboutData}
+                        educationList={educationList}
+                        experienceList={experienceList}
+                        skillsCount={skillsList.length}
+                        connectionsCount={profileData.connections}
+                        postsCount={userPosts?.length || 0}
+                    />
 
                     {/* People You May Know */}
                     <PeopleYouMayKnow />

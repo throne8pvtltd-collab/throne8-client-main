@@ -22,7 +22,15 @@ interface Skill {
     createdAt: string;
 }
 
-const SkillsSection: React.FC = () => {
+interface SkillsSectionProps {
+    userId?: string;          // target user ka id (public profile ke liye)
+    isOwnProfile?: boolean;   // default true - purana behavior nahi tootega
+}
+
+const SkillsSection: React.FC<SkillsSectionProps> = ({
+    userId,
+    isOwnProfile = true,
+}) => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
     const [isUpdateSkillModalOpen, setIsUpdateSkillModalOpen] = useState(false);
@@ -44,7 +52,7 @@ const SkillsSection: React.FC = () => {
         getPinnedCount,
         updatePinStatus,
         removeSkillFromList,
-    } = useSkillsData();
+    } = useSkillsData(userId, isOwnProfile);
 
     useEffect(() => {
         fetchSkillsData();
@@ -58,7 +66,7 @@ const SkillsSection: React.FC = () => {
                 await fetchSkillsData();
             }
         } catch (error: any) {
-            console.error('❌ Failed to add skill:', error);
+            console.error('Failed to add skill:', error);
             alert(error.message || 'Failed to add skill');
         }
     };
@@ -72,6 +80,11 @@ const SkillsSection: React.FC = () => {
                 </div>
             </div>
         );
+    }
+
+    // Public profile pe agar koi skill nahi, poora section hide
+    if (!isOwnProfile && skillsList.length === 0) {
+        return null;
     }
 
     const getStrengthLevel = (strength: string) => {
@@ -132,7 +145,7 @@ const SkillsSection: React.FC = () => {
 
             setIsArchivingSkillId(null);
         } catch (error: any) {
-            console.error('❌ Failed to archive skill:', error);
+            console.error('Failed to archive skill:', error);
             alert(error.message || 'Failed to archive skill');
             setIsArchivingSkillId(null);
         }
@@ -170,7 +183,7 @@ const SkillsSection: React.FC = () => {
             }, 300);
 
         } catch (error: any) {
-            console.error('❌ Failed to pin/unpin skill:', error);
+            console.error('Failed to pin/unpin skill:', error);
             alert(error.message || 'Failed to update pin status');
             setIsPinningSkillId(null);
         }
@@ -204,7 +217,7 @@ const SkillsSection: React.FC = () => {
 
             setIsDeletingSkillId(null);
         } catch (error: any) {
-            console.error('❌ Failed to delete skill:', error);
+            console.error('Failed to delete skill:', error);
             alert(error.message || 'Failed to delete skill');
             setIsDeletingSkillId(null);
         }
@@ -223,7 +236,7 @@ const SkillsSection: React.FC = () => {
 
             }
         } catch (error: any) {
-            console.error('❌ Failed to update skill:', error);
+            console.error('Failed to update skill:', error);
             alert(error.message || 'Failed to update skill');
         }
     };
@@ -259,14 +272,17 @@ const SkillsSection: React.FC = () => {
                                 <p className="text-sm text-[#4a3728]/60 font-medium">Professional Expertise</p>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setIsAddSkillModalOpen(true)}
-                                className="AddSkillButton text-sm font-bold text-[#fff] bg-[#4a3728] px-4 py-2 rounded-full backdrop-blur-sm hover:shadow-lg hover:from-[#7a5c3e] transition-all duration-200"
-                            >
-                                Add Skill
-                            </button>
-                        </div>
+                        {/* Add Skill button sirf apni profile pe */}
+                        {isOwnProfile && (
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsAddSkillModalOpen(true)}
+                                    className="AddSkillButton text-sm font-bold text-[#fff] bg-[#4a3728] px-4 py-2 rounded-full backdrop-blur-sm hover:shadow-lg hover:from-[#7a5c3e] transition-all duration-200"
+                                >
+                                    Add Skill
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-6">
@@ -308,64 +324,66 @@ const SkillsSection: React.FC = () => {
                                                         </h4>
                                                     </div>
 
-                                                    {/* Three Dot Menu */}
-                                                    <div className="relative">
-                                                        <button
-                                                            onClick={() => handleMenuToggle(skill.skillId)}
-                                                            className="p-2 hover:bg-[#e0d8cf]/50 rounded-lg transition-colors duration-200"
-                                                        >
-                                                            <MoreVertical className="w-5 h-5 text-[#4a3728]" />
-                                                        </button>
+                                                    {/* Three Dot Menu sirf apni profile pe */}
+                                                    {isOwnProfile && (
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={() => handleMenuToggle(skill.skillId)}
+                                                                className="p-2 hover:bg-[#e0d8cf]/50 rounded-lg transition-colors duration-200"
+                                                            >
+                                                                <MoreVertical className="w-5 h-5 text-[#4a3728]" />
+                                                            </button>
 
-                                                        {openMenuId === skill.skillId && (
-                                                            <>
-                                                                {/* Backdrop */}
-                                                                <div
-                                                                    className="fixed inset-0 z-[9998]"
-                                                                    onClick={() => setOpenMenuId(null)}
-                                                                ></div>
+                                                            {openMenuId === skill.skillId && (
+                                                                <>
+                                                                    {/* Backdrop */}
+                                                                    <div
+                                                                        className="fixed inset-0 z-[9998]"
+                                                                        onClick={() => setOpenMenuId(null)}
+                                                                    ></div>
 
-                                                                {/* Menu */}
-                                                                <div className="absolute right-8 top-2 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf]/50 py-2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-                                                                    <button
-                                                                        onClick={() => handleUpdateSkill(skill.skillId)}
-                                                                        className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
-                                                                    >
-                                                                        <Edit className="w-4 h-4 text-[#4a3728]" />
-                                                                        <span className="text-sm font-medium text-[#4a3728]">Update Skill</span>
-                                                                    </button>
+                                                                    {/* Menu */}
+                                                                    <div className="absolute right-8 top-2 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf]/50 py-2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                                                                        <button
+                                                                            onClick={() => handleUpdateSkill(skill.skillId)}
+                                                                            className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
+                                                                        >
+                                                                            <Edit className="w-4 h-4 text-[#4a3728]" />
+                                                                            <span className="text-sm font-medium text-[#4a3728]">Update Skill</span>
+                                                                        </button>
 
-                                                                    <button
-                                                                        onClick={() => handlePinSkill(skill.skillId, skill.isPinned)}
-                                                                        className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
-                                                                    >
-                                                                        <Pin className="w-4 h-4 text-[#4a3728]" />
-                                                                        <span className="text-sm font-medium text-[#4a3728]">
-                                                                            {skill.isPinned ? 'Unpin Skill' : 'Pin Skill'}
-                                                                        </span>
-                                                                    </button>
+                                                                        <button
+                                                                            onClick={() => handlePinSkill(skill.skillId, skill.isPinned)}
+                                                                            className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
+                                                                        >
+                                                                            <Pin className="w-4 h-4 text-[#4a3728]" />
+                                                                            <span className="text-sm font-medium text-[#4a3728]">
+                                                                                {skill.isPinned ? 'Unpin Skill' : 'Pin Skill'}
+                                                                            </span>
+                                                                        </button>
 
-                                                                    <button
-                                                                        onClick={() => handleArchiveSkill(skill.skillId)}
-                                                                        className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
-                                                                    >
-                                                                        <Archive className="w-4 h-4 text-[#4a3728]" />
-                                                                        <span className="text-sm font-medium text-[#4a3728]">Archive Skill</span>
-                                                                    </button>
+                                                                        <button
+                                                                            onClick={() => handleArchiveSkill(skill.skillId)}
+                                                                            className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-[#f6ede8] transition-colors duration-200 text-left"
+                                                                        >
+                                                                            <Archive className="w-4 h-4 text-[#4a3728]" />
+                                                                            <span className="text-sm font-medium text-[#4a3728]">Archive Skill</span>
+                                                                        </button>
 
-                                                                    <div className="h-px bg-[#e0d8cf] my-2"></div>
+                                                                        <div className="h-px bg-[#e0d8cf] my-2"></div>
 
-                                                                    <button
-                                                                        onClick={() => handleDeleteSkill(skill.skillId)}
-                                                                        className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors duration-200 text-left"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4 text-red-600" />
-                                                                        <span className="text-sm font-medium text-red-600">Delete Skill</span>
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                                        <button
+                                                                            onClick={() => handleDeleteSkill(skill.skillId)}
+                                                                            className="w-full flex cursor-pointer  items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors duration-200 text-left"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4 text-red-600" />
+                                                                            <span className="text-sm font-medium text-red-600">Delete Skill</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <p className="text-sm text-[#4a3728]/70 leading-relaxed mb-3">{skill.category}</p>
@@ -424,46 +442,48 @@ const SkillsSection: React.FC = () => {
 
             </div>
 
-            {/* Add Skill Modal */}
-            <AddSkillModal
-                isOpen={isAddSkillModalOpen}
-                onClose={() => setIsAddSkillModalOpen(false)}
-                onAddSkill={handleAddSkill}
-            />
+            {/* Modals sirf apni profile pe render honi chahiye */}
+            {isOwnProfile && (
+                <>
+                    <AddSkillModal
+                        isOpen={isAddSkillModalOpen}
+                        onClose={() => setIsAddSkillModalOpen(false)}
+                        onAddSkill={handleAddSkill}
+                    />
 
-            {/* Update Skill Modal */}
-            <UpdateSkillModal
-                isOpen={isUpdateSkillModalOpen}
-                onClose={() => {
-                    setIsUpdateSkillModalOpen(false);
-                    setSelectedSkillForUpdate(undefined);
-                }}
-                onUpdateSkill={handleUpdateSkillConfirm}
-                skill={selectedSkillForUpdate}
-            />
+                    <UpdateSkillModal
+                        isOpen={isUpdateSkillModalOpen}
+                        onClose={() => {
+                            setIsUpdateSkillModalOpen(false);
+                            setSelectedSkillForUpdate(undefined);
+                        }}
+                        onUpdateSkill={handleUpdateSkillConfirm}
+                        skill={selectedSkillForUpdate}
+                    />
 
-            {/* View All Skills Modal */}
+                    <PinLimitModal
+                        isOpen={isPinLimitModalOpen}
+                        onClose={() => setIsPinLimitModalOpen(false)}
+                    />
+
+                    <DeleteSkillConfirmModal
+                        isOpen={isDeleteConfirmModalOpen}
+                        onClose={() => {
+                            setIsDeleteConfirmModalOpen(false);
+                            setSkillToDelete(null);
+                        }}
+                        onConfirm={handleDeleteSkillConfirm}
+                        skillName={skillToDelete?.skillName || ''}
+                        isDeleting={isDeletingSkillId === skillToDelete?.skillId}
+                    />
+                </>
+            )}
+
+            {/* View All Skills Modal - read-only, dono profiles pe theek hai */}
             <ViewAllSkillsModal
                 isOpen={isViewAllSkillsModalOpen}
                 onClose={() => setIsViewAllSkillsModalOpen(false)}
                 skills={skillsList} />
-
-            {/* Pin Limit Modal */}
-            <PinLimitModal
-                isOpen={isPinLimitModalOpen}
-                onClose={() => setIsPinLimitModalOpen(false)}
-            />
-
-            <DeleteSkillConfirmModal
-                isOpen={isDeleteConfirmModalOpen}
-                onClose={() => {
-                    setIsDeleteConfirmModalOpen(false);
-                    setSkillToDelete(null);
-                }}
-                onConfirm={handleDeleteSkillConfirm}
-                skillName={skillToDelete?.skillName || ''}
-                isDeleting={isDeletingSkillId === skillToDelete?.skillId}
-            />
         </>
     );
 };
