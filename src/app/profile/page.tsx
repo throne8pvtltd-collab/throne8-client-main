@@ -146,7 +146,7 @@ export default function ProfilePage() {
                 />
 
                 {/* Main Content (Left) */}
-                <div className="flex-1 pt-20">
+                <div className="flex-1 min-w-0 pt-20">
                     {/* Banner */}
                     <ProfileBanner
                         bannerImage={bannerUrl}

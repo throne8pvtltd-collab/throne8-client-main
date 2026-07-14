@@ -661,7 +661,7 @@ const scrollRight = () => {
                                 <EmptyState label="No posts yet. Create your first post!" />
                             ) : (
                                 <>
-                                    <div className="relative w-full group/slider">
+                                    <div className="relative w-full min-w-0 group/slider">
                                         <style dangerouslySetInnerHTML={{__html: `
                                             .no-scrollbar::-webkit-scrollbar {
                                                 display: none !important;

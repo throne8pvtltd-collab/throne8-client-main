@@ -1,9 +1,9 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Import components
 import ProfileNavbar from '../../../features/profile/components/home/ProfileNavbar';
@@ -25,9 +25,11 @@ import { useAboutData } from '@/features/profile/hooks/useAboutData';
 import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
 import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
 import AnalyticsService from '@/lib/api/analytics.service';
-
+import ConnectionService from '@/lib/api/connection.service';
+import FollowService from '@/lib/api/follow.service';
 export default function SearchUserProfilePage() {
     const params = useParams();
+    const router = useRouter();
     const userId = params.userId as string;
     const { user } = useAuth();
     const {
@@ -50,11 +52,71 @@ export default function SearchUserProfilePage() {
         fetchConnectionsData,
     } = useConnectionsData();
 
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
+    const [connectionPending, setConnectionPending] = useState(false);
+    const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
+
     useEffect(() => {
         if (userId) {
             fetchConnectionsData(userId);
         }
     }, [userId, fetchConnectionsData]);
+
+    useEffect(() => {
+        if (!userId || !user?.userId || userId === user.userId) return;
+        const checkStatus = async () => {
+            try {
+                const followRes = await FollowService.checkFollowStatus(userId);
+                setIsFollowing(!!followRes?.data?.isFollowing);
+            } catch {
+                setIsFollowing(false);
+            }
+        };
+        checkStatus();
+    }, [userId, user?.userId]);
+
+    useEffect(() => {
+        if (!user?.userId) return;
+        const connected = followersList.some((f: any) => f.userId === user.userId || f.followerId === user.userId)
+            || followingList.some((f: any) => f.userId === user.userId || f.followingId === user.userId);
+        setIsConnected(connected);
+    }, [followersList, followingList, user?.userId]);
+
+    const handleConnect = async () => {
+        if (!userId || connectionPending) return;
+        try {
+            setConnectionPending(true);
+            await ConnectionService.sendConnectionRequest({ toUserId: userId });
+            alert('Connection request sent!');
+        } catch (error: any) {
+            alert(error.message?.includes('already exists') ? 'Connection request already sent' : (error.message || 'Failed to send connection request'));
+        } finally {
+            setConnectionPending(false);
+        }
+    };
+
+    const handleFollow = async () => {
+        if (!userId || isFollowActionLoading) return;
+        try {
+            setIsFollowActionLoading(true);
+            if (isFollowing) {
+                await FollowService.unfollowUser(userId);
+                setIsFollowing(false);
+            } else {
+                await FollowService.followUser(userId);
+                setIsFollowing(true);
+            }
+        } catch (error: any) {
+            alert(error.message || 'Failed to update follow status');
+        } finally {
+            setIsFollowActionLoading(false);
+        }
+    };
+
+    const handleMessage = () => {
+        router.push(`/message/${userId}`);
+    };
 
     const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData();
 
@@ -160,6 +222,7 @@ export default function SearchUserProfilePage() {
                         onBannerUpdate={() => { }}
                         onDataRefresh={() => { }}
                         coverId={coverPhotoId}
+                        isOwnProfile={false}
                     />
 
                     <ProfileHeader
@@ -183,6 +246,12 @@ export default function SearchUserProfilePage() {
                         contactInfo={userProfileData?.contactInfo || ''}
                         onDataRefresh={() => { }}
                         onProfileImageUpdate={() => { }}
+                        isFollowing={isFollowing}
+                        isConnected={isConnected}
+                        connectionPending={connectionPending}
+                        onFollow={handleFollow}
+                        onConnect={handleConnect}
+                        onMessage={handleMessage}
                     />
 
                     <ProfessionalJourney userProfileData={userProfileData} />
@@ -197,7 +266,6 @@ export default function SearchUserProfilePage() {
                         isUploadingVideo={false}
                     />
 
-                    {/* ✅ FIX: isOwnProfile + userId pass kiya, taaki apna data/buttons na dikhein */}
                     <EducationSection
                         isOwnProfile={false}
                         userId={userId}
@@ -207,7 +275,6 @@ export default function SearchUserProfilePage() {
                         graduationYear={profileData.education.graduationYear}
                     />
 
-                    {/* ✅ FIX: isOwnProfile + userId pass kiya, taaki apna data/buttons na dikhein */}
                     <ExperienceSection
                         experienceIds={userProfileData?.experienceIds || []}
                         userId={userId}
@@ -222,6 +289,7 @@ export default function SearchUserProfilePage() {
                             profileImage={profileImageUrl}
                             fullName={fullName}
                             headline={profileData.headline}
+                            isOwnProfile={false}
                         />
                     </div>
 
