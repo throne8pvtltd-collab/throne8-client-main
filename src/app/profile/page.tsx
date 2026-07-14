@@ -4,7 +4,6 @@ import { useAuth, useProtectedRoute } from '@/features/auth/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 
-
 import ProfileNavbar from '../../features/profile/components/home/ProfileNavbar';
 import ProfileBanner from '../../features/profile/components/home/ProfileBanner';
 import ProfileHeader from '../../features/profile/components/home/ProfileHeader';
@@ -21,18 +20,13 @@ import AnalyticsDashboard from '../../features/profile/components/home/Analytics
 import ProfileProgress from '../../features/profile/components/home/ProfileProgress';
 import PeopleYouMayKnow from '../../features/profile/components/home/PeopleYouMayKnow';
 
-// ✅ Import custom hooks
-import { useProfileData } from '@/features/profile/hooks/useProfileData';
-import { usePostsData } from '@/features/profile/hooks/usePostsData';
-import { useAboutData } from '@/features/profile/hooks/useAboutData';
-import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
-
 // ✅ Import transformer
 import { transformToProfileData } from '@/shared/utils/profileTransformers';
-import { useEducationData } from '@/features/profile/hooks/useEducationData';
+import { useEducation } from '@/features/profile/hooks/useEducation';
 import { useExperienceData } from '@/features/profile/hooks/useExperienceData';
 import { useProfile } from '@/features/profile/hooks/useProfile';
-import { useEducation } from '@/features/profile/hooks/useEducation';
+import { useAboutData } from '@/features/profile/hooks/useAboutData';
+import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
 
 export default function ProfilePage() {
     const { isChecking } = useProtectedRoute();
@@ -45,7 +39,6 @@ export default function ProfilePage() {
         aboutId,
         headlineId,
         isLoadingProfile,
-        profileError,
         userPosts,
         isLoadingPosts,
         loadProfile,
@@ -80,18 +73,19 @@ export default function ProfilePage() {
         handleVideoUpload,
     } = useAboutData(aboutId);
 
-    const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
-    const { experienceList, isLoadingExperience, fetchExperienceData } = useExperienceData();
-    const { educationList, isLoadingEducation, loadEducation } = useEducation();
+    const { headlineData, fetchHeadlineData } = useHeadlineData(headlineId);
+    const { experienceList, fetchExperienceData } = useExperienceData();
+    const { educationList, loadEducation } = useEducation();
 
     // ✅ Fetch data on mount
     useEffect(() => {
         if (user) {
-            loadProfile();   // ← Redux action
+            loadProfile();
             loadPosts();
             loadEducation();
             loadMyReposts();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     useEffect(() => {
@@ -114,7 +108,6 @@ export default function ProfilePage() {
 
     // ✅ Transform profile data using utility function
     const profileData = transformToProfileData(userProfileData, profileImageUrl, headlineData);
-
 
     const fullName = userProfileData
         ? `${userProfileData.firstName} ${userProfileData.lastName}`.trim()
@@ -143,7 +136,6 @@ export default function ProfilePage() {
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
                 {/* Navbar */}
                 <ProfileNavbar
-                    // profileImage={profileData.profileImage}
                     profileImage={profileImageUrl}
                     userName={profileData.userName}
                     currentUserId={user?.userId}
@@ -156,9 +148,9 @@ export default function ProfilePage() {
                     <ProfileBanner
                         bannerImage={bannerUrl}
                         onBannerUpdate={(newUrl) => {
-                            updateBanner(newUrl);  
+                            updateBanner(newUrl);
                         }}
-                        onDataRefresh={loadProfile}  
+                        onDataRefresh={loadProfile}
                         coverId={coverPhotoId}
                     />
 
@@ -184,9 +176,7 @@ export default function ProfilePage() {
                         educationList={educationList}
                         experienceList={experienceList}
                         contactInfo={userProfileData?.contactInfo || ''}
-                        
-                        
-                        onDataRefresh={loadProfile}  
+                        onDataRefresh={loadProfile}
                         onProfileImageUpdate={(newUrl) => updateProfileImage(newUrl)}
                     />
 
@@ -197,7 +187,6 @@ export default function ProfilePage() {
                     <AnalyticsDashboard userId={user?.userId || ''} />
 
                     {/* Professional Journey */}
-                    {/* <ProfessionalJourney userProfileData={userProfileData} /> */}
                     <ProfessionalJourney
                         userProfileData={userProfileData}
                         educationList={educationList}
@@ -223,7 +212,7 @@ export default function ProfilePage() {
                         graduationYear={profileData.education.graduationYear}
                     />
 
-                    {/* Experience Section */}
+                    {/* ✅ FIXED: Experience Section — apni profile ke liye, isOwnProfile default true hai */}
                     <ExperienceSection
                         experienceIds={userProfileData?.experienceIds || []}
                     />
@@ -235,16 +224,15 @@ export default function ProfilePage() {
                     <ActivitySection
                         posts={userPosts}
                         currentUserId={user?.userId}
-                        
-                        onPostCreated={loadPosts}  
+                        onPostCreated={loadPosts}
                         followers={profileData.followers}
                         isLoading={isLoadingPosts}
                         profileImage={profileImageUrl}
                         fullName={fullName}
                         headline={profileData.headline}
-                        userReposts={userReposts}          
+                        userReposts={userReposts}
                         isLoadingReposts={isLoadingReposts}
-                        onCreateRepost={createRepost}      
+                        onCreateRepost={createRepost}
                         onDeleteRepost={removeRepost}
                     />
 

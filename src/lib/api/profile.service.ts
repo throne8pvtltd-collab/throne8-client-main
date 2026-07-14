@@ -742,6 +742,26 @@ class ProfileService {
             throw new Error('Failed to fetch education records. Please try again.');
         }
     }
+    /**
+ * 🎓 Get All Education BY USER ID (Public Profile)
+ */
+static async getAllEducationByUserId(userId: string, includeArchived: boolean = false): Promise<any> {
+    try {
+        console.log('🎓 [GET_EDUCATION_BY_USERID] Fetching education for user...', { userId });
+
+        const { data } = await api.get(`${config?.NEXT_PUBLIC_EDUCATION_ENDPOINT || process.env.NEXT_PUBLIC_EDUCATION_ENDPOINT}/get-all-education/${userId}`, {
+            params: { includeArchived }
+        });
+
+        console.log('✅ [GET_EDUCATION_BY_USERID] Education fetched successfully', data);
+
+        return data;
+
+    } catch (error: any) {
+        console.error('❌ [GET_EDUCATION_BY_USERID] Failed to fetch education', error);
+        throw new Error(error.response?.data?.message || 'Failed to fetch education records');
+    }
+}
 
     /**
  * 🎓 Update Education
@@ -990,6 +1010,25 @@ class ProfileService {
             throw new Error(error.response?.data?.message || 'Failed to fetch experiences');
         }
     }
+
+    /**
+ * 💼 Get All Experiences BY USER ID (Public Profile)
+ */
+static async getAllExperiencesByUserId(userId: string): Promise<any> {
+    try {
+        console.log('💼 [GET_EXPERIENCES_BY_USERID] Fetching experiences for user...', { userId });
+
+        const { data } = await api.get(`${config?.NEXT_PUBLIC_EXPERIENCE_ENDPOINT || process.env.NEXT_PUBLIC_EXPERIENCE_ENDPOINT}/get-all-experiences/${userId}`);
+
+        console.log('✅ [GET_EXPERIENCES_BY_USERID] Experiences fetched successfully', data);
+
+        return data;
+
+    } catch (error: any) {
+        console.error('❌ [GET_EXPERIENCES_BY_USERID] Failed to fetch experiences', error);
+        throw new Error(error.response?.data?.message || 'Failed to fetch experiences');
+    }
+}
 
     /**
     * 💼 Update Experience
@@ -1690,6 +1729,18 @@ class ProfileService {
             }
 
             throw new Error('Failed to fetch skills. Please try again.');
+        }
+    }
+    /**
+     * Get All Skills BY USER ID (Public Profile)
+     */
+    static async getSkillsByUserId(userId: string): Promise<any> {
+        try {
+            const { data } = await api.get(`${config?.NEXT_PUBLIC_SKILLS_ENDPOINT || process.env.NEXT_PUBLIC_SKILLS_ENDPOINT}/get-all-skills/${userId}`);
+            return data;
+        } catch (error: any) {
+            console.error('[GET_SKILLS_BY_USERID] Failed to fetch skills', error);
+            throw new Error(error.response?.data?.message || 'Failed to fetch skills');
         }
     }
 

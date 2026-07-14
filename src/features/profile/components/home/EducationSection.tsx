@@ -1,12 +1,12 @@
 // src/profile/components/EducationSection.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
-import { GraduationCap, Calendar, MapPin, Award, BookOpen } from 'lucide-react';
+import { GraduationCap, Calendar, MapPin, Award, BookOpen, Loader2 } from 'lucide-react';
 import AddEducationModal, { EducationData } from './AddEducationModal';
 import UpdateEducationModal from './UpdateEducationModal';
 import EducationMenuPopup from './EducationMenuPopup';
 import SelectEducationModal from './SelectEducationModal';
-import AuthService from '@/lib/api/auth.service';
+import ProfileService from '@/lib/api/profile.service';
 import { useEducation } from '@/features/profile/hooks/useEducation';
 import { unpackFutureDate } from '@/shared/utils/educationDateHelper';
 
@@ -15,37 +15,73 @@ interface EducationSectionProps {
     degree?: string;
     fieldOfStudy?: string;
     graduationYear?: string;
+    userId?: string;          // ✅ NAYA PROP - target user ka id
+    isOwnProfile?: boolean;   // ✅ NAYA PROP
 }
 
 const EducationSection: React.FC<EducationSectionProps> = ({
     collegeName = '',
     degree = '',
     fieldOfStudy = '',
-    graduationYear = ''
+    graduationYear = '',
+    userId,
+    isOwnProfile = true, // ✅ default true - purana behavior nahi tootega
 }) => {
     const [isAddEducationModalOpen, setIsAddEducationModalOpen] = useState(false);
     const [isUpdateEducationModalOpen, setIsUpdateEducationModalOpen] = useState(false);
     const [isSelectEducationModalOpen, setIsSelectEducationModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+    // ✅ Apni profile ke liye redux hook (purana behavior)
     const {
-        educationList,
-        isLoadingEducation,
+        educationList: ownEducationList,
+        isLoadingEducation: isLoadingOwnEducation,
         loadEducation,
         selectEducation,
         selectedEducation,
     } = useEducation();
 
+    // ✅ Dusre user ki profile ke liye local state (public, read-only)
+    const [publicEducationList, setPublicEducationList] = useState<any[]>([]);
+    const [isLoadingPublicEducation, setIsLoadingPublicEducation] = useState(true);
+
+    // ✅ Jo bhi list actually render honi hai, wo profile type ke hisaab se
+    const educationList = isOwnProfile ? ownEducationList : publicEducationList;
+    const isLoadingEducation = isOwnProfile ? isLoadingOwnEducation : isLoadingPublicEducation;
+
     useEffect(() => {
     }, [selectedEducation]);
 
     useEffect(() => {
-        loadEducation();
-    }, []);
+        if (isOwnProfile) {
+            loadEducation();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOwnProfile]);
+
+    const fetchPublicEducation = async () => {
+        if (!userId) return;
+        try {
+            setIsLoadingPublicEducation(true);
+            const response = await ProfileService.getAllEducationByUserId(userId, false);
+            setPublicEducationList(response?.data?.educationList || response?.data?.education || []);
+        } catch (error: any) {
+            console.error('❌ Failed to fetch public education:', error);
+            setPublicEducationList([]);
+        } finally {
+            setIsLoadingPublicEducation(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isOwnProfile && userId) {
+            fetchPublicEducation();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOwnProfile, userId]);
 
     const hasOnboardingEducation =
         collegeName || degree || fieldOfStudy || graduationYear;
-
 
     const handleAddEducation = async (data: EducationData) => {
         await loadEducation();
@@ -77,6 +113,11 @@ const EducationSection: React.FC<EducationSectionProps> = ({
         await loadEducation();
     };
 
+    // ✅ Public profile pe agar koi education nahi, poora section hide
+    if (!isOwnProfile && !isLoadingEducation && educationList.length === 0) {
+        return null;
+    }
+
     return (
         <div className="relative">
             <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-[#4a3728]/10 to-[#8b7355]/10 rounded-full blur-xl"></div>
@@ -93,28 +134,31 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                         <h3 className="text-2xl font-bold text-[#4a3728] tracking-tight">Education</h3>
                     </div>
 
-                    <div className="flex gap-3 items-center">
-                        <button
-                            onClick={() => setIsAddEducationModalOpen(true)}
-                            className="AddEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            <span className="relative z-10">Add Education</span>
-                        </button>
-                        <button
-                            onClick={handleOpenSelectEducationModal}
-                            className="UpdateEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                            disabled={educationList.length === 0 && !hasOnboardingEducation}
-                            title={educationList.length === 0 && !hasOnboardingEducation ? "Add education first to update" : "Update your education"}>
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 group-disabled:opacity-0 transition-opacity duration-300"></div>
-                            <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            <span className="relative z-10">Update Education</span>
-                        </button>
-                    </div>
+                    {/* ✅ Action buttons sirf apni profile pe */}
+                    {isOwnProfile && (
+                        <div className="flex gap-3 items-center">
+                            <button
+                                onClick={() => setIsAddEducationModalOpen(true)}
+                                className="AddEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                <span className="relative z-10">Add Education</span>
+                            </button>
+                            <button
+                                onClick={handleOpenSelectEducationModal}
+                                className="UpdateEducationButton group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                                disabled={educationList.length === 0 && !hasOnboardingEducation}
+                                title={educationList.length === 0 && !hasOnboardingEducation ? "Add education first to update" : "Update your education"}>
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 group-disabled:opacity-0 transition-opacity duration-300"></div>
+                                <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                <span className="relative z-10">Update Education</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="relative group">
 
@@ -125,8 +169,9 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                             <p className="mt-2 text-[#4a3728]/60">Loading education...</p>
                         </div>
                     ) : educationList.length === 0 ? (
+                        // ✅ Ye branch ab sirf isOwnProfile ke liye chalega
+                        // (public profile pe upar hi return null ho chuka hai agar empty hai)
                         hasOnboardingEducation ? (
-                            // ✅ Show pre-filled education suggestion
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl animate-pulse"></div>
                                 <div className="relative bg-gradient-to-br from-white/80 via-blue-50/50 to-purple-50/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed border-[#4a3728]/30 hover:border-[#4a3728]/60 transition-all duration-300">
@@ -188,7 +233,6 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            // ✅ No data at all - simple message
                             <div className="text-center py-8">
                                 <p className="text-[#4a3728]/60">No education records found. Click "Add Education" to add one.</p>
                             </div>
@@ -208,27 +252,32 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                                                 <Award className="w-4 h-4" />
                                                 {education.degreeType}
                                             </div>
-                                            <button
-                                                onClick={() => setOpenMenuId(openMenuId === education.educationId ? null : education.educationId)}
-                                                className="threeDots inline-flex items-center gap-2 bg-gradient-to-r from-[#c68f7a] to-[#f5b097] text-white px-3 py-2 rounded-full text-sm font-semibold shadow-lg mb-4 hover:shadow-xl transition-all duration-200">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                                                </svg>
-                                            </button>
-                                            {openMenuId === education.educationId && (
-                                                <EducationMenuPopup
-                                                    educationId={education.educationId}
-                                                    isOpen={openMenuId === education.educationId}
-                                                    onClose={() => setOpenMenuId(null)}
-                                                    onEducationDeleted={() => {
-                                                        setOpenMenuId(null);
-                                                        loadEducation();
-                                                    }}
-                                                    onEducationArchived={() => {
-                                                        setOpenMenuId(null);
-                                                        loadEducation();
-                                                    }}
-                                                />
+                                            {/* ✅ 3-dot menu (delete/archive) sirf apni profile pe */}
+                                            {isOwnProfile && (
+                                                <>
+                                                    <button
+                                                        onClick={() => setOpenMenuId(openMenuId === education.educationId ? null : education.educationId)}
+                                                        className="threeDots inline-flex items-center gap-2 bg-gradient-to-r from-[#c68f7a] to-[#f5b097] text-white px-3 py-2 rounded-full text-sm font-semibold shadow-lg mb-4 hover:shadow-xl transition-all duration-200">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                                                        </svg>
+                                                    </button>
+                                                    {openMenuId === education.educationId && (
+                                                        <EducationMenuPopup
+                                                            educationId={education.educationId}
+                                                            isOpen={openMenuId === education.educationId}
+                                                            onClose={() => setOpenMenuId(null)}
+                                                            onEducationDeleted={() => {
+                                                                setOpenMenuId(null);
+                                                                loadEducation();
+                                                            }}
+                                                            onEducationArchived={() => {
+                                                                setOpenMenuId(null);
+                                                                loadEducation();
+                                                            }}
+                                                        />
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                         <div className="space-y-4">
@@ -300,44 +349,43 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                 </div>
             </div>
 
-            {/* Add Education Modal */}
-            <AddEducationModal
-                isOpen={isAddEducationModalOpen}
-                onClose={() => setIsAddEducationModalOpen(false)}
-                onSubmit={handleAddEducation}
-                prefillData={{
-                    collegeName: collegeName,
-                    degree: degree,
-                    fieldOfStudy: fieldOfStudy,
-                    graduationYear: graduationYear
-                }}
-            />
+            {/* ✅ Modals sirf apni profile pe render karo */}
+            {isOwnProfile && (
+                <>
+                    <AddEducationModal
+                        isOpen={isAddEducationModalOpen}
+                        onClose={() => setIsAddEducationModalOpen(false)}
+                        onSubmit={handleAddEducation}
+                        prefillData={{
+                            collegeName: collegeName,
+                            degree: degree,
+                            fieldOfStudy: fieldOfStudy,
+                            graduationYear: graduationYear
+                        }}
+                    />
 
-            {/* Select Education Modal */}
-            <SelectEducationModal
-                isOpen={isSelectEducationModalOpen}
-                onClose={() => setIsSelectEducationModalOpen(false)}
-                educationList={educationList}
-                onSelectEducation={(education) => {
-                    handleUpdateEducation(education);
-                }}
-            />
+                    <SelectEducationModal
+                        isOpen={isSelectEducationModalOpen}
+                        onClose={() => setIsSelectEducationModalOpen(false)}
+                        educationList={educationList}
+                        onSelectEducation={(education) => {
+                            handleUpdateEducation(education);
+                        }}
+                    />
 
-            {/* Update Education Modal */}
-            <UpdateEducationModal
-                isOpen={isUpdateEducationModalOpen}
-                onClose={() => {
-                    setIsUpdateEducationModalOpen(false);
-                    selectEducation(null);  // ← Use Redux action instead
-                }}
-                educationData={selectedEducation}
-                onSubmit={handleUpdateEducationSubmit}
-            />
+                    <UpdateEducationModal
+                        isOpen={isUpdateEducationModalOpen}
+                        onClose={() => {
+                            setIsUpdateEducationModalOpen(false);
+                            selectEducation(null);
+                        }}
+                        educationData={selectedEducation}
+                        onSubmit={handleUpdateEducationSubmit}
+                    />
+                </>
+            )}
         </div>
     );
 };
 
 export default EducationSection;
-
-
-// yaha par jab user register karke aayega to yaha par uska data show honga chahiye jab tak yaha par map ka data ki length 0 hai and agar user type student na ho to yaha par kuch na show honga only placeholder show honga jo show karega add your education details aur sath hi sath education ko update karna hai and real time me update karna hai update ke sath get bhi karna hai by loader 

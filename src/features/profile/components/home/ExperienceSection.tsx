@@ -22,10 +22,16 @@ interface Experience {
 }
 
 interface ExperienceSectionProps {
-    experienceIds?: string[]; // ✅ Accept experienceIds from parent
+    experienceIds?: string[];
+    userId?: string; // ✅ NAYA PROP - target user ka id
+    isOwnProfile?: boolean; // ✅ NAYA PROP
 }
 
-const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [] }) => {
+const ExperienceSection: React.FC<ExperienceSectionProps> = ({
+    experienceIds = [],
+    userId,
+    isOwnProfile = true, // ✅ default true - purana behavior nahi tootega
+}) => {
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isShowAllModalOpen, setIsShowAllModalOpen] = useState<boolean>(false);
@@ -50,20 +56,22 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
     const [achievementInput, setAchievementInput] = useState<string>('');
     const [achievementsList, setAchievementsList] = useState<string[]>([]);
 
-    // ✅ Fetch experiences on mount or when experienceIds change
+    // ✅ Fetch experiences on mount or when experienceIds/userId change
     useEffect(() => {
         fetchExperiences();
-    }, [experienceIds]);
+    }, [experienceIds, userId, isOwnProfile]);
 
     const fetchExperiences = async () => {
         try {
             setIsLoading(true);
 
-            // ✅ Fetch all experiences directly from database
-            const response = await ProfileService.getAllExperiences();
+            // ✅ Public profile pe userId ke sath fetch karo, apni profile pe normal
+            const response = isOwnProfile
+                ? await ProfileService.getAllExperiences()
+                : await ProfileService.getAllExperiencesByUserId(userId as string);
+
             const experiencesList = response.data.experiences || [];
 
-            // ✅ Transform API data to component format
             const transformedExperiences: Experience[] = experiencesList.map((exp: any) => {
                 return {
                     experienceId: exp.experienceId,
@@ -79,7 +87,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                 };
             });
 
-            // ✅ Sort by start date (most recent first)
             transformedExperiences.sort((a, b) =>
                 (b.startDate || '9999').localeCompare(a.startDate || '9999')
             );
@@ -118,16 +125,12 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
         setAchievementsList(achievementsList.filter((_, idx) => idx !== i));
     };
 
-    // ✅ CLIENT-SIDE VALIDATION (matching server)
     const validateExperience = (): string | null => {
-      
-        // Start date validation
         if (!startDate) return 'Start date is required';
         const start = new Date(startDate);
         if (isNaN(start.getTime())) return 'Invalid start date';
         if (start > new Date()) return 'Start date cannot be in the future';
 
-        // End date validation
         if (!isCurrent) {
             if (!endDate) return 'End date is required when not currently working';
             const end = new Date(endDate);
@@ -136,7 +139,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
             if (end > new Date()) return 'End date cannot be in the future';
         }
 
-        // Achievements validation
         if (achievementsList.length > 10) return 'Maximum 10 achievements allowed';
         for (const achievement of achievementsList) {
             if (achievement.length < 5) return 'Each achievement must be at least 5 characters';
@@ -149,7 +151,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
     const handleSaveExperience = async (): Promise<void> => {
         setError('');
 
-        // ✅ Client-side validation
         const validationError = validateExperience();
         if (validationError) {
             setError(validationError);
@@ -159,7 +160,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
         setIsSaving(true);
 
         try {
-            // ✅ Prepare API payload
             const payload = {
                 currentPosition: position.trim(),
                 companyName: company.trim(),
@@ -173,11 +173,9 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
             let response;
 
             if (isEditing) {
-                // ✅ UPDATE existing experience
                 const experienceId = experiences[currentIndex].experienceId;
                 response = await ProfileService.updateExperience(experienceId, payload);
 
-                // ✅ Transform and update in local state
                 const updatedExperience: Experience = {
                     experienceId: response.data.experience.experienceId,
                     company: response.data.experience.companyName,
@@ -191,27 +189,21 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                     endDate: response.data.experience.endDate
                 };
 
-                // ✅ Update state without page reload
                 const updatedExperiences = [...experiences];
                 updatedExperiences[currentIndex] = updatedExperience;
 
-                // ✅ Sort by date
                 updatedExperiences.sort((a, b) =>
                     (b.startDate || '9999').localeCompare(a.startDate || '9999')
                 );
 
                 setExperiences(updatedExperiences);
 
-                // ✅ Find updated index after sorting
                 const newIndex = updatedExperiences.findIndex(e => e.experienceId === updatedExperience.experienceId);
                 setCurrentIndex(newIndex);
 
-               
             } else {
-                // ✅ CREATE new experience
                 response = await ProfileService.createExperience(payload);
 
-                // ✅ Transform and add to local state
                 const newExperience: Experience = {
                     experienceId: response.data.experience.experienceId,
                     company: response.data.experience.companyName,
@@ -225,18 +217,14 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                     endDate: response.data.experience.endDate
                 };
 
-                // ✅ Update state without page reload
                 const updatedExperiences = [...experiences, newExperience].sort((a, b) =>
                     (b.startDate || '9999').localeCompare(a.startDate || '9999')
                 );
 
                 setExperiences(updatedExperiences);
                 setCurrentIndex(updatedExperiences.findIndex(e => e.experienceId === newExperience.experienceId));
-
-               
             }
 
-            // ✅ Reset form and close modal
             resetForm();
             setIsModalOpen(false);
             setIsEditing(false);
@@ -265,7 +253,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
 
     const handleDeleteExperience = async (): Promise<void> => {
         if (!currentExp) return;
-
         setIsDeleteConfirmOpen(true);
     };
 
@@ -284,7 +271,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
             setExperiences(updatedExperiences);
             setCurrentIndex(updatedExperiences.length > 0 ? 0 : 0);
 
-            // console.log('✅ Experience deleted successfully');
             setIsDeleteConfirmOpen(false);
         } catch (error: any) {
             console.error('❌ Delete failed:', error);
@@ -309,7 +295,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
             setExperiences(updatedExperiences);
             setCurrentIndex(updatedExperiences.length > 0 ? 0 : 0);
 
-            // console.log('✅ Experience archived successfully');
         } catch (error: any) {
             console.error('❌ Archive failed:', error);
             setError(error.message || 'Failed to archive experience');
@@ -334,11 +319,15 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
 
     // ✅ Empty state
     if (experiences.length === 0) {
+        // ✅ Public profile pe agar koi experience nahi, poora section hide
+        if (!isOwnProfile) {
+            return null;
+        }
+
         return (
             <div className='max-w-4/6 ml-5'>
                 <div className="bg-gradient-to-br from-[#f6ede8] to-[#f0e6d8] backdrop-blur-md rounded-2xl p-12 shadow-2xl border border-[#e0d8cf]/50 mb-8 min-h-[400px] flex items-center justify-center">
                     <div className="text-center max-w-md">
-                        {/* Icon */}
                         <div className="mb-6 flex justify-center">
                             <div className="p-4 bg-[#4a3728]/10 rounded-full">
                                 <svg className="w-16 h-16 text-[#4a3728]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,7 +344,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                             Click below to add your first experience entry
                         </p>
 
-                        {/* Primary Button */}
                         <button
                             onClick={() => {
                                 resetForm();
@@ -369,7 +357,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                             Add Your First Experience
                         </button>
 
-                        {/* Help Text */}
                         <div className="mt-6 p-3 bg-[#4a3728]/5 rounded-lg border border-[#8b6f47]/20">
                             <p className="text-xs text-[#6b5038]">
                                 💡 <span className="font-semibold">Tip:</span> Include job title, company, dates, and key achievements to stand out.
@@ -378,7 +365,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                     </div>
                 </div>
 
-                {/* Modal Component */}
                 <ExperienceModal
                     isOpen={isModalOpen}
                     isEditing={isEditing}
@@ -426,84 +412,83 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                         <h3 className="text-xl font-bold text-[#4a3728] mb-1">Experience</h3>
                         <p className="text-xs text-[#8b6f47]">Professional Journey ({currentIndex + 1}/{experiences.length})</p>
                     </div>
-                    <div className="flex gap-2">
-                        {/* + Button */}
-                        <Tooltip text="Add New Experience">
-                            <button
-                                onClick={() => {
-                                    resetForm();
-                                    setIsModalOpen(true);
-                                }}
-                                className={`p-1.5 rounded-lg transition-all duration-300 shadow-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038]`}
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </Tooltip>
-
-                        {/* Pencil/Edit Button */}
-                        <Tooltip text="Update Experience">
-                            <button
-                                onClick={() => {
-                                    setIsEditing(true);
-                                    setIsModalOpen(true);
-                                    setCompany(currentExp.company);
-                                    setPosition(currentExp.position);
-                                    setDescription(currentExp.description);
-                                    setStartDate(currentExp.startDate.split('T')[0]); // ✅ Format date properly
-                                    setEndDate(currentExp.current ? '' : (
-                                        currentExp.endDate ? currentExp.endDate.split('T')[0] : '')
-                                    );
-                                    setIsCurrent(currentExp.current);
-                                    setLogoUrl(currentExp.logo);
-                                    setAchievementsList(currentExp.achievements);
-                                }}
-                                className="updateExperienceBypencile p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038] transition-all duration-300 shadow-lg hover:scale-110"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m1 1l6 6-6 6-6-6 6-6z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3l5 5M3 21v-4l12-12 4 4-12 12H3z" />
-                                </svg>
-                            </button>
-                        </Tooltip>
-
-                        {/* Minus Button */}
-                        <Tooltip text="Delete Experience">
-                            <button
-                                onClick={handleDeleteExperience}
-                                disabled={isDeleting}
-                                className="p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-red-700 transition-all duration-300 shadow-lg hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Delete current experience"
-                            >
-                                {isDeleting ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
+                    {/* ✅ Action buttons sirf apni profile pe */}
+                    {isOwnProfile && (
+                        <div className="flex gap-2">
+                            <Tooltip text="Add New Experience">
+                                <button
+                                    onClick={() => {
+                                        resetForm();
+                                        setIsModalOpen(true);
+                                    }}
+                                    className={`p-1.5 rounded-lg transition-all duration-300 shadow-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038]`}
+                                >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                                     </svg>
-                                )}
-                            </button>
-                        </Tooltip>
+                                </button>
+                            </Tooltip>
 
-                        {/* Archived Button */}
-                        <Tooltip text="Archive Experience">
-                            <button
-                                onClick={handleArchiveExperience}
-                                disabled={isArchiving}
-                                className="p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038] transition-all duration-300 shadow-lg hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Archive current experience"
-                            >
-                                {isArchiving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-5-3v2m0 0v2" />
+                            <Tooltip text="Update Experience">
+                                <button
+                                    onClick={() => {
+                                        setIsEditing(true);
+                                        setIsModalOpen(true);
+                                        setCompany(currentExp.company);
+                                        setPosition(currentExp.position);
+                                        setDescription(currentExp.description);
+                                        setStartDate(currentExp.startDate.split('T')[0]);
+                                        setEndDate(currentExp.current ? '' : (
+                                            currentExp.endDate ? currentExp.endDate.split('T')[0] : '')
+                                        );
+                                        setIsCurrent(currentExp.current);
+                                        setLogoUrl(currentExp.logo);
+                                        setAchievementsList(currentExp.achievements);
+                                    }}
+                                    className="updateExperienceBypencile p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038] transition-all duration-300 shadow-lg hover:scale-110"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m1 1l6 6-6 6-6-6 6-6z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3l5 5M3 21v-4l12-12 4 4-12 12H3z" />
                                     </svg>
-                                )}
-                            </button>
-                        </Tooltip>
-                    </div>
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip text="Delete Experience">
+                                <button
+                                    onClick={handleDeleteExperience}
+                                    disabled={isDeleting}
+                                    className="p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-red-700 transition-all duration-300 shadow-lg hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Delete current experience"
+                                >
+                                    {isDeleting ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip text="Archive Experience">
+                                <button
+                                    onClick={handleArchiveExperience}
+                                    disabled={isArchiving}
+                                    className="p-1.5 rounded-lg bg-[#4a3728] text-[#f6ede8] hover:bg-[#6b5038] transition-all duration-300 shadow-lg hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Archive current experience"
+                                >
+                                    {isArchiving ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-5-3v2m0 0v2" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </Tooltip>
+                        </div>
+                    )}
                 </div>
 
                 {/* Timeline + Details */}
@@ -560,7 +545,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                                 );
                             })}
 
-                            {/* Show All Button */}
                             {experiences.length > 3 && (
                                 <button
                                     onClick={() => setIsShowAllModalOpen(true)}
@@ -624,111 +608,109 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experienceIds = [
                 </div>
             </div>
 
-            {/* Modal Component */}
-            <ExperienceModal
-                isOpen={isModalOpen}
-                isEditing={isEditing}
-                error={error}
-                company={company}
-                position={position}
-                description={description}
-                startDate={startDate}
-                endDate={endDate}
-                isCurrent={isCurrent}
-                logoUrl={logoUrl}
-                achievementInput={achievementInput}
-                achievementsList={achievementsList}
-                isSaving={isSaving}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    resetForm();
-                }}
-                onSave={handleSaveExperience}
-                onCompanyChange={setCompany}
-                onPositionChange={setPosition}
-                onDescriptionChange={setDescription}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                onIsCurrentChange={setIsCurrent}
-                onLogoUrlChange={setLogoUrl}
-                onAchievementInputChange={setAchievementInput}
-                onAddAchievement={addAchievement}
-                onRemoveAchievement={removeAchievement}
-                onAchievementKeyPress={(e) => e.key === 'Enter' && addAchievement()}
-            />
+            {/* ✅ Modals sirf apni profile pe */}
+            {isOwnProfile && (
+                <>
+                    <ExperienceModal
+                        isOpen={isModalOpen}
+                        isEditing={isEditing}
+                        error={error}
+                        company={company}
+                        position={position}
+                        description={description}
+                        startDate={startDate}
+                        endDate={endDate}
+                        isCurrent={isCurrent}
+                        logoUrl={logoUrl}
+                        achievementInput={achievementInput}
+                        achievementsList={achievementsList}
+                        isSaving={isSaving}
+                        onClose={() => {
+                            setIsModalOpen(false);
+                            resetForm();
+                        }}
+                        onSave={handleSaveExperience}
+                        onCompanyChange={setCompany}
+                        onPositionChange={setPosition}
+                        onDescriptionChange={setDescription}
+                        onStartDateChange={setStartDate}
+                        onEndDateChange={setEndDate}
+                        onIsCurrentChange={setIsCurrent}
+                        onLogoUrlChange={setLogoUrl}
+                        onAchievementInputChange={setAchievementInput}
+                        onAddAchievement={addAchievement}
+                        onRemoveAchievement={removeAchievement}
+                        onAchievementKeyPress={(e) => e.key === 'Enter' && addAchievement()}
+                    />
 
-            {/* Show All Experiences Modal */}
+                    {isDeleteConfirmOpen && currentExp && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                            <div className="bg-gradient-to-br from-[#f6ede8] to-[#f0e6d8] rounded-2xl shadow-2xl border border-[#e0d8cf] max-w-md w-full">
+                                <div className="bg-[#f6ede8] border-b border-[#e0d8cf] px-6 py-4">
+                                    <h3 className="text-xl font-bold text-[#4a3728] flex items-center gap-2">
+                                        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4v2m0 4H8a2 2 0 01-2-2V7a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2h-4m-6-4h.01M9 16h.01" />
+                                        </svg>
+                                        Delete Experience?
+                                    </h3>
+                                </div>
+
+                                <div className="px-6 py-5">
+                                    <p className="text-[#4a3728] text-sm font-medium leading-relaxed mb-4">
+                                        Are you sure you want to permanently delete "<span className="font-bold">{currentExp.company}</span>" experience? This action cannot be undone.
+                                    </p>
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-xs flex items-start gap-2">
+                                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>{error}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-[#f0e6d8] border-t border-[#e0d8cf] px-6 py-4 flex gap-3">
+                                    <button
+                                        onClick={() => setIsDeleteConfirmOpen(false)}
+                                        disabled={isDeleting}
+                                        className="flex-1 px-4 py-2.5 bg-[#e0d8cf] text-[#4a3728] rounded-lg font-semibold text-sm hover:bg-[#d4c4b5] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteExperience}
+                                        disabled={isDeleting}
+                                        className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isDeleting ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Deleting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Yes, Delete
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
             <ShowAllExperiencesModal
                 isOpen={isShowAllModalOpen}
                 experiences={experiences}
                 onClose={() => setIsShowAllModalOpen(false)}
                 onSelectExperience={(index) => setCurrentIndex(index)}
             />
-
-            {/* Delete Confirmation Modal */}
-            {isDeleteConfirmOpen && currentExp && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-gradient-to-br from-[#f6ede8] to-[#f0e6d8] rounded-2xl shadow-2xl border border-[#e0d8cf] max-w-md w-full">
-                        {/* Header */}
-                        <div className="bg-[#f6ede8] border-b border-[#e0d8cf] px-6 py-4">
-                            <h3 className="text-xl font-bold text-[#4a3728] flex items-center gap-2">
-                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4v2m0 4H8a2 2 0 01-2-2V7a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2h-4m-6-4h.01M9 16h.01" />
-                                </svg>
-                                Delete Experience?
-                            </h3>
-                        </div>
-
-                        {/* Body */}
-                        <div className="px-6 py-5">
-                            <p className="text-[#4a3728] text-sm font-medium leading-relaxed mb-4">
-                                Are you sure you want to permanently delete "<span className="font-bold">{currentExp.company}</span>" experience? This action cannot be undone.
-                            </p>
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-xs flex items-start gap-2">
-                                    <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                    <span>{error}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="bg-[#f0e6d8] border-t border-[#e0d8cf] px-6 py-4 flex gap-3">
-                            <button
-                                onClick={() => setIsDeleteConfirmOpen(false)}
-                                disabled={isDeleting}
-                                className="flex-1 px-4 py-2.5 bg-[#e0d8cf] text-[#4a3728] rounded-lg font-semibold text-sm hover:bg-[#d4c4b5] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDeleteExperience}
-                                disabled={isDeleting}
-                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                {isDeleting ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                        Yes, Delete
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
 export default ExperienceSection;
-

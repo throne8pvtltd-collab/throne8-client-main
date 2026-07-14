@@ -197,15 +197,21 @@ export default function SearchUserProfilePage() {
                         isUploadingVideo={false}
                     />
 
+                    {/* ✅ FIX: isOwnProfile + userId pass kiya, taaki apna data/buttons na dikhein */}
                     <EducationSection
+                        isOwnProfile={false}
+                        userId={userId}
                         collegeName={profileData.education.collegeName}
                         degree={profileData.education.degree}
                         fieldOfStudy={profileData.education.fieldOfStudy}
                         graduationYear={profileData.education.graduationYear}
                     />
 
+                    {/* ✅ FIX: isOwnProfile + userId pass kiya, taaki apna data/buttons na dikhein */}
                     <ExperienceSection
                         experienceIds={userProfileData?.experienceIds || []}
+                        userId={userId}
+                        isOwnProfile={false}
                     />
 
                     <div id="activity">

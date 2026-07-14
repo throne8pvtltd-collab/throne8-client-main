@@ -79,6 +79,7 @@ export interface Document {
     time: string;
 }
 
+// ✅ FIXED: repost-related fields add ki gayi
 export interface ActivitySectionProps {
     posts: Post[];
     onPostCreated?: () => void;
@@ -88,6 +89,10 @@ export interface ActivitySectionProps {
     headline?: string;
     followers: number;
     currentUserId?: string;
+    userReposts?: any[];
+    isLoadingReposts?: boolean;
+    onCreateRepost?: (postId: string, type: 'repost' | 'quote', thoughts?: string) => Promise<any>;
+    onDeleteRepost?: (repostId: string) => Promise<any>;
 }
 
 export interface PostLikeState {

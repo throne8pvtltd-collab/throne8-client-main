@@ -1,10 +1,8 @@
-// src/profile/types/profile.types.ts
-
 export interface UserProfileData {
     firstName: string;
     lastName: string;
     email: string;
-    phoneNumber: string;
+    phoneNumber?: string;   // ✅ FIXED: ab optional hai
     location: string;
     profilePhotoId?: string;
     coverPhotoId?: string;
@@ -15,7 +13,7 @@ export interface UserProfileData {
     education?: string;
     contactInfo?: any;
     onboarding?: {
-        userType?: 'student' | 'working';  // ✅ ADD THIS
+        userType?: 'student' | 'working';
         completedAt?: string;
         studentProfile?: {
             collegeName: string;
@@ -23,7 +21,7 @@ export interface UserProfileData {
             fieldOfStudy: string;
             graduationYear: string;
         };
-        workingProfile?: {  // ✅ ADD THIS
+        workingProfile?: {
             companyName: string;
             jobTitle: string;
             startDate: string;
