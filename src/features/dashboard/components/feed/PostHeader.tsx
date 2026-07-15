@@ -89,13 +89,27 @@ const PostHeader = ({
         />
         <div>
           <div className="flex items-center gap-3">
-            <h4
+            {/* <h4
               onClick={handleProfileClick}
               className={`text-lg font-bold cursor-pointer hover:underline ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}
             >
               {post.user}
             </h4>
+            {renderConnectButton()} */}
+
+<h4
+              onClick={handleProfileClick}
+              className={`text-lg font-bold cursor-pointer hover:underline ${isDarkMode ? 'text-white' : 'text-[#4a3728]'}`}
+            >
+              {post.user}
+            </h4>
+            {post.degreeLabel && !isOwnPost && (
+              <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-[#4a3728]/50'}`}>
+                · {post.degreeLabel}
+              </span>
+            )}
             {renderConnectButton()}
+            
           </div>
           <p className="text-sm font-semibold bg-gradient-to-r from-[#6b5643] to-[#8b7355] bg-clip-text text-transparent">
             {post.role}

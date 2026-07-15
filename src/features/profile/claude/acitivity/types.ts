@@ -2,6 +2,10 @@
 
 export interface Post {
     entryId: string;
+    
+    connectionDegree?: 1 | 2 | 3 | null;   // ✅ NEW: raw degree from backend
+    degreeLabel?: string | null;            // ✅ NEW: "1st" | "2nd" | "3rd" | "3rd+" | null
+
     isLiked: boolean;
     isPinned: boolean;
     isSaved: boolean;
