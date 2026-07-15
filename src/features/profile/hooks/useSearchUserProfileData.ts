@@ -6,9 +6,7 @@ import { UserProfileData } from '@/types/profile.types';
 
 export const useSearchUserProfileData = (userId: string) => {
     const [userProfileData, setUserProfileData] = useState<UserProfileData | null>(null);
-    const [profileImageUrl, setProfileImageUrl] = useState(
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'
-    );
+    const [profileImageUrl, setProfileImageUrl] = useState('');
     const [bannerUrl, setBannerUrl] = useState('');
     const [coverPhotoId, setCoverPhotoId] = useState<string>('');
     const [aboutId, setAboutId] = useState<string>('');

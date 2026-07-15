@@ -82,11 +82,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isUpdating, setIsUpdating] = useState(false);
-    const [currentProfileImage, setCurrentProfileImage] = useState(profileImage || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s');
-
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+    const [currentProfileImage, setCurrentProfileImage] = useState(
+        profileImage && profileImage.trim() !== ''
+            ? profileImage
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=4a3728&color=fff&size=256`
+    );
     useEffect(() => {
-        if (profileImage) {
-            setCurrentProfileImage(profileImage); 
+        if (profileImage && profileImage.trim() !== '') {
+            setCurrentProfileImage(profileImage);
         }
     }, [profileImage]);
 
@@ -137,6 +141,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                             src={currentProfileImage}
                             alt="Profile"
                             className="w-full h-full rounded-2xl border-4 border-white shadow-xl object-cover transition-all duration-500 group-hover:shadow-2xl group-hover:scale-105"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=4a3728&color=fff&size=256`;
+                            }}
                         />
                         {isOwnProfile && (
                             <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
@@ -166,7 +173,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         {headline}
                                     </h2>
                                 </div>
-                                    <p className="mt-2 text-sm w-[40vw] text-[#4a3728] font-bold leading-relaxed relative">
+                                <p className="mt-2 text-sm w-[40vw] text-[#4a3728] font-bold leading-relaxed relative">
                                     {educationList && educationList.length > 0 && educationList[0]?.schoolCollegeName && (
                                         <>
                                             {educationList[0].schoolCollegeName}
@@ -260,11 +267,53 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                             {isFollowing ? 'Following' : 'Follow'}
                                         </button>
 
-                                        <button
-                                            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                        >
-                                            More
-                                        </button>
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                                                className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                            >
+                                                More
+                                            </button>
+                                            {isMoreMenuOpen && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-40"
+                                                        onClick={() => setIsMoreMenuOpen(false)}
+                                                    ></div>
+                                                    <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
+                                                        <button
+                                                            onClick={() => {
+                                                                const profileUrl = `${window.location.origin}/profile/${currentUserId}`;
+                                                                navigator.clipboard.writeText(profileUrl);
+                                                                alert('Profile link copied to clipboard!');
+                                                                setIsMoreMenuOpen(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+                                                        >
+                                                            Share Profile
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                alert('Report feature coming soon');
+                                                                setIsMoreMenuOpen(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+                                                        >
+                                                            Report
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                alert('Block feature coming soon');
+                                                                setIsMoreMenuOpen(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                                                        >
+                                                            Block
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
