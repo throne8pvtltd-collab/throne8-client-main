@@ -27,6 +27,7 @@ import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData'
 import AnalyticsService from '@/lib/api/analytics.service';
 import ConnectionService from '@/lib/api/connection.service';
 import FollowService from '@/lib/api/follow.service';
+
 export default function SearchUserProfilePage() {
     const params = useParams();
     const router = useRouter();
@@ -76,12 +77,26 @@ export default function SearchUserProfilePage() {
         checkStatus();
     }, [userId, user?.userId]);
 
+    // Real connection status check — uses current user's own connections list
+    // and looks for the target userId in it (fromUserId/toUserId, status active).
     useEffect(() => {
-        if (!user?.userId) return;
-        const connected = followersList.some((f: any) => f.userId === user.userId || f.followerId === user.userId)
-            || followingList.some((f: any) => f.userId === user.userId || f.followingId === user.userId);
-        setIsConnected(connected);
-    }, [followersList, followingList, user?.userId]);
+        if (!user?.userId || !userId) return;
+        const checkConnection = async () => {
+            try {
+                const res = await ConnectionService.getUserConnections(user.userId);
+                const connections = res?.data?.data || res?.data || [];
+                const connected = connections.some(
+                    (c: any) =>
+                        (c.fromUserId === userId || c.toUserId === userId) &&
+                        c.status === 'active'
+                );
+                setIsConnected(connected);
+            } catch {
+                setIsConnected(false);
+            }
+        };
+        checkConnection();
+    }, [userId, user?.userId]);
 
     const handleConnect = async () => {
         if (!userId || connectionPending) return;
