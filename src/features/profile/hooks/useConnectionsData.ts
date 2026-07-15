@@ -11,6 +11,8 @@ export const useConnectionsData = () => {
     const [totalConnections, setTotalConnections] = useState(0);
 
     const fetchConnectionsData = useCallback(async (currentUserId: string) => {
+            // yahan "currentUserId" actually target profile ka userId hai (parameter naam misleading hai)
+
         try {
             setIsLoadingConnections(true);
 
@@ -20,6 +22,13 @@ export const useConnectionsData = () => {
             const connections = connectionsResponse.data.data || [];
 
             setTotalConnections(connections.length);
+
+
+
+            // const connectionsResponse = await ConnectionService.getUserConnections(currentUserId);
+            // const connections = connectionsResponse.data.data || [];
+
+            // setTotalConnections(connectionsResponse.data.totalCount ?? connections.length);
 
 
             // ✅ STEP 2: Separate following and followers based on fromUserId/toUserId and build connectionId map
