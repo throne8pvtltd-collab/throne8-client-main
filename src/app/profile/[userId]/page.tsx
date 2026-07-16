@@ -98,6 +98,48 @@ export default function SearchUserProfilePage() {
         checkConnection();
     }, [userId, user?.userId]);
 
+    // Pending connection status check — checks if current user already sent
+    // a pending request to this profile's userId
+
+    useEffect(() => {
+        if (!user?.userId || !userId || userId === user.userId) return;
+        const checkPendingStatus = async () => {
+            try {
+                const res = await ConnectionService.getOutgoingRequests(user.userId);
+                const outgoingRequests = res?.data?.data || res?.data || [];
+                const isPending = outgoingRequests.some(
+                    (r: any) => r.toUserId === userId
+                );
+                setConnectionPending(isPending);
+            } catch {
+                setConnectionPending(false);
+            }
+        };
+        checkPendingStatus();
+    }, [userId, user?.userId]);
+
+
+    // Check if this profile's user sent ME a pending request
+
+    const [incomingRequestId, setIncomingRequestId] = useState<string | null>(null);
+
+useEffect(() => {
+    if (!user?.userId || !userId || userId === user.userId) return;
+    const checkIncomingRequest = async () => {
+        try {
+            const res = await ConnectionService.getIncomingRequests(user.userId);
+            const incomingRequests = res?.data?.data || res?.data || [];
+            const matchedRequest = incomingRequests.find(
+                (r: any) => r.fromUserId === userId
+            );
+            setIncomingRequestId(matchedRequest?.requestId || null);
+        } catch {
+            setIncomingRequestId(null);
+        }
+    };
+    checkIncomingRequest();
+}, [userId, user?.userId]);
+
     const handleConnect = async () => {
         if (!userId || connectionPending) return;
         try {
@@ -108,6 +150,28 @@ export default function SearchUserProfilePage() {
             alert(error.message?.includes('already exists') ? 'Connection request already sent' : (error.message || 'Failed to send connection request'));
         } finally {
             setConnectionPending(false);
+        }
+    };
+
+
+    const handleAcceptRequest = async () => {
+        if (!incomingRequestId) return;
+        try {
+            await ConnectionService.acceptConnectionRequest(incomingRequestId);
+            setIncomingRequestId(null);
+            setIsConnected(true);
+        } catch (error: any) {
+            alert(error.message || 'Failed to accept request');
+        }
+    };
+    
+    const handleDeclineRequest = async () => {
+        if (!incomingRequestId) return;
+        try {
+            await ConnectionService.declineConnectionRequest(incomingRequestId);
+            setIncomingRequestId(null);
+        } catch (error: any) {
+            alert(error.message || 'Failed to decline request');
         }
     };
 
@@ -270,8 +334,8 @@ export default function SearchUserProfilePage() {
                     />
 
                     <ProfessionalJourney userProfileData={userProfileData} />
-
-                    <AboutSection
+                    <div id="about">
+                     <AboutSection
                         isOwnProfile={false}
                         aboutData={aboutData}
                         isLoading={isLoadingAbout}
@@ -280,6 +344,7 @@ export default function SearchUserProfilePage() {
                         videoUrl={videoUrl}
                         isUploadingVideo={false}
                     />
+                 </div>
 
                     <EducationSection
                         isOwnProfile={false}

@@ -42,6 +42,9 @@ interface ProfileHeaderProps {
     onFollow?: () => void;
     onConnect?: () => void;
     onMessage?: () => void;
+    incomingRequestId?: string | null;
+    onAcceptRequest?: () => void;
+    onDeclineRequest?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -73,6 +76,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     onFollow,
     onConnect,
     onMessage,
+    incomingRequestId = null,
+    onAcceptRequest,
+    onDeclineRequest,
 }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
@@ -127,7 +133,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
     return (
         <>
-            <div className="relative px-6 pb-6">
+            <div className="relative z-20 px-6 pb-6">
                 <div className="flex flex-col md:flex-row items-start gap-6 -mt-12">
                     <div
                         className={`profileImageClick relative w-36 h-36 group ${isOwnProfile ? 'cursor-pointer' : ''}`}
@@ -234,7 +240,40 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
                                 {!isOwnProfile && (
                                     <div className="flex gap-3 justify-center md:justify-start flex-wrap mt-4">
-                                        {isConnected ? (
+
+
+{isConnected ? (
+    <button
+        onClick={onMessage}
+        className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+    >
+        Message
+    </button>
+) : incomingRequestId ? (
+    <>
+        <button
+            onClick={onAcceptRequest}
+            className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+            Accept
+        </button>
+        <button
+            onClick={onDeclineRequest}
+            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+            Decline
+        </button>
+    </>
+) : (
+    <button
+        onClick={onConnect}
+        disabled={connectionPending}
+        className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-60"
+    >
+        {connectionPending ? 'Pending...' : 'Connect'}
+    </button>
+)}
+                                        {/* {isConnected ? (
                                             <button
                                                 onClick={onMessage}
                                                 className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -249,14 +288,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                             >
                                                 {connectionPending ? 'Pending...' : 'Connect'}
                                             </button>
-                                        )}
+                                        )} */}
 
-                                        <button
+                                        {/* <button
                                             onClick={onFollow}
                                             className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#4a3728] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                                         >
                                             {isFollowing ? 'Following' : 'Follow'}
-                                        </button>
+                                        </button> */}
 
                                         <div className="relative">
                                             <button
@@ -271,37 +310,57 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                                         className="fixed inset-0 z-40"
                                                         onClick={() => setIsMoreMenuOpen(false)}
                                                     ></div>
-                                                    <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
-                                                        <button
-                                                            onClick={() => {
-                                                                const profileUrl = `${window.location.origin}/profile/${currentUserId}`;
-                                                                navigator.clipboard.writeText(profileUrl);
-                                                                alert('Profile link copied to clipboard!');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
-                                                        >
-                                                            Share Profile
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert('Report feature coming soon');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
-                                                        >
-                                                            Report
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert('Block feature coming soon');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
-                                                        >
-                                                            Block
-                                                        </button>
-                                                    </div>
+                                                   <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
+    <button
+        onClick={() => { onFollow?.(); setIsMoreMenuOpen(false); }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        {isFollowing ? 'Unfollow' : 'Follow'}
+    </button>
+
+    <button
+        onClick={() => {
+            setIsMoreMenuOpen(false);
+            const el = document.getElementById('about');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        About this member
+    </button>
+
+    <button
+        onClick={() => {
+            const profileUrl = `${window.location.origin}/profile/${currentUserId}`;
+            navigator.clipboard.writeText(profileUrl);
+            alert('Profile link copied to clipboard!');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        Share Profile
+    </button>
+
+    <button
+        onClick={() => {
+            alert('Report feature coming soon');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        Report
+    </button>
+
+    <button
+        onClick={() => {
+            alert('Block feature coming soon');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+    >
+        Block
+    </button>
+</div>
                                                 </>
                                             )}
                                         </div>
