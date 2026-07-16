@@ -60,7 +60,7 @@ export default function SearchUserProfilePage() {
 
     useEffect(() => {
         if (userId) {
-            fetchConnectionsData(userId);
+            fetchConnectionsData(userId);  // 👈 target profile ka userId pass ho raha hai
         }
     }, [userId, fetchConnectionsData]);
 
