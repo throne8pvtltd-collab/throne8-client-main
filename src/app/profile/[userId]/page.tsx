@@ -133,7 +133,7 @@ export default function SearchUserProfilePage() {
         router.push(`/message/${userId}`);
     };
 
-    const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData();
+   const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData(userId);
 
     const {
         aboutData,
@@ -178,10 +178,10 @@ export default function SearchUserProfilePage() {
     }, [headlineId, fetchHeadlineData]);
 
     useEffect(() => {
-        if (userId) {
-            // fetchUserPosts();
-        }
-    }, [userId]);
+    if (userId) {
+        fetchUserPosts(userId);
+    }
+}, [userId, fetchUserPosts]);
 
     const searchParams = useSearchParams();
 

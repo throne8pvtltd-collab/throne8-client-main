@@ -1,3 +1,4 @@
+// src/profile/components/CoverPhotoModal.tsx
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -13,8 +14,6 @@ interface CoverPhotoModalProps {
     coverId?: string;
 }
 
-const DEFAULT_COVER_IMAGE_URL = 'https://images.unsplash.com/photo-1761960084255-7b45bd632251?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1744';
-
 const CoverPhotoModal: React.FC<CoverPhotoModalProps> = ({
     isOpen = false,
     onClose = () => { },
@@ -29,13 +28,12 @@ const CoverPhotoModal: React.FC<CoverPhotoModalProps> = ({
     const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Check if current image is default
-    const isDefaultImage = !currentImageUrl || currentImageUrl === DEFAULT_COVER_IMAGE_URL;
-    const hasActualImage = currentImageUrl && currentImageUrl !== DEFAULT_COVER_IMAGE_URL;
+    // ✅ Ab sirf actual currentImageUrl ke hone/na hone par depend karta hai —
+    // koi hardcoded DEFAULT_COVER_IMAGE_URL se compare nahi ho raha
+    const hasActualImage = !!(currentImageUrl && currentImageUrl.trim() !== '');
+    const isDefaultImage = !hasActualImage;
 
     const { uploadCover, updateCover } = useProfile();
-
-
 
     const validateAndSetFile = (file: File) => {
         setError('');
@@ -98,23 +96,17 @@ const CoverPhotoModal: React.FC<CoverPhotoModalProps> = ({
         setError('');
 
         try {
-        
-
             let uploadedImageUrl;
 
             if (coverId && hasActualImage) {
                 // ✅ Redux: Update existing cover
-            
                 const result = await updateCover(coverId, selectedFile);
                 uploadedImageUrl = result.payload;
             } else {
                 // ✅ Redux: Upload new cover
-            
                 const result = await uploadCover(selectedFile);
                 uploadedImageUrl = result.payload;
             }
-
-        
 
             // Call parent callback
             if (onUploadSuccess && uploadedImageUrl) {

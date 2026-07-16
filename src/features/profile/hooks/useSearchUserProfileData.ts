@@ -25,11 +25,18 @@ export const useSearchUserProfileData = (userId: string) => {
             setIsLoadingProfile(true);
             setProfileError(null);
 
+            // ✅ Naye userId ke liye fetch shuru hote hi purana/stale data clear karo,
+            // warna jab tak naya data na aaye purani profile ka banner/photo dikhta reh sakta hai
+            setUserProfileData(null);
+            setProfileImageUrl('');
+            setBannerUrl('');
+            setCoverPhotoId('');
+            setAboutId('');
+            setHeadlineId('');
 
             // ✅ getUserProfileById use karo
             const response = await AuthService.getUserProfileById(userId);
             const data = response.data;
-
 
             setUserProfileData(data);
 
@@ -45,7 +52,7 @@ export const useSearchUserProfileData = (userId: string) => {
                 }
             }
 
-            // Fetch cover photo
+            // Fetch cover photo — sirf tab jab is user ka apna coverPhotoId ho
             if (data?.coverPhotoId) {
                 try {
                     const coverUrl = await profileApi.fetchCoverPhoto(data.coverPhotoId);
@@ -56,8 +63,11 @@ export const useSearchUserProfileData = (userId: string) => {
                     }
                 } catch (error) {
                     console.warn('⚠️ [SEARCH_USER_HOOK] Failed to load cover photo');
+                    // ✅ Fetch fail hone par bhi bannerUrl empty hi rahega — koi fallback nahi
                 }
             }
+            // ✅ Agar coverPhotoId nahi hai (user ne upload nahi kiya),
+            // to bannerUrl upar reset kiya hua '' hi rahega — yahi expected behaviour hai
 
             // Set IDs
             if (data?.headlineId) {

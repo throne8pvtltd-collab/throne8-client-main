@@ -1232,7 +1232,7 @@ static async getAllExperiencesByUserId(userId: string): Promise<any> {
     }
 
     /**
-     * 📋 GET ALL USER POSTS
+     * 📋 GET ALL USER POSTS (authenticated user's own posts)
      */
     static async getAllUserPosts(includeArchived: boolean = false): Promise<any> {
         try {
@@ -1248,6 +1248,28 @@ static async getAllExperiencesByUserId(userId: string): Promise<any> {
         } catch (error: any) {
             console.error('❌ [GET_ALL_POSTS] Failed:', error);
             throw new Error(error.response?.data?.message || 'Failed to fetch posts');
+        }
+    }
+
+    /**
+     * 📋 GET POSTS BY USER ID (viewing someone else's profile)
+     * Route: GET {NEXT_PUBLIC_ACTIVITY_ENDPOINT}/posts/user/:userId
+     */
+    static async getAllUserPostsByUserId(userId: string, includeArchived: boolean = false): Promise<any> {
+        try {
+            console.log('📋 [GET_POSTS_BY_USERID] Fetching posts for user...', { userId });
+
+            const { data } = await api.get(
+                `${config?.NEXT_PUBLIC_ACTIVITY_ENDPOINT || process.env.NEXT_PUBLIC_ACTIVITY_ENDPOINT}/posts/user/${userId}`,
+                { params: { includeArchived } }
+            );
+
+            console.log('✅ [GET_POSTS_BY_USERID] Posts fetched:', data.data?.total ?? data.data?.posts?.length);
+            return data;
+
+        } catch (error: any) {
+            console.error('❌ [GET_POSTS_BY_USERID] Failed:', error);
+            throw new Error(error.response?.data?.message || 'Failed to fetch user posts');
         }
     }
 
