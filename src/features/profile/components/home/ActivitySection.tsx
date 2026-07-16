@@ -1,4 +1,4 @@
-// src/profile/components/ActivitySection.tsx
+// src/features/profile/components/home/ActivitySection.tsx
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -98,12 +98,14 @@ const RepostCard = ({
     profileImage,
     fullName,
     currentUserId,
+    isOwnProfile = true, // 👈 NAYA
 }: {
     repost: any;
     onDeleteRepost?: (repostId: string) => Promise<any>;
     profileImage?: string;
     fullName?: string;
     currentUserId?: string;
+    isOwnProfile?: boolean; // 👈 NAYA
 }) => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -188,37 +190,39 @@ const RepostCard = ({
                     </div>
                 </div>
 
-                {/* 3-dot menu */}
-                <div className="relative flex-shrink-0">
-                    <button
-                        onClick={() => setOpenMenuId(openMenuId ? null : 'menu')}
-                        className="p-2 hover:bg-[#4a3728]/10 rounded-full transition-all duration-200"
-                    >
-                        <svg className="w-5 h-5 text-[#4a3728]/60" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 8a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 8a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-                        </svg>
-                    </button>
-                    {openMenuId === 'menu' && (
-                        <div className="absolute right-0 top-8 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] z-50 min-w-[180px]">
-                            <button
-                                onClick={handleDeleteRepost}
-                                disabled={isDeleting}
-                                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center gap-2"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                {isDeleting ? 'Removing...' : 'Remove Repost'}
-                            </button>
-                        </div>
-                    )}
-                </div>
+                {/* 3-dot menu — owner only (delete/remove repost is a mutation) */}
+                {isOwnProfile && (
+                    <div className="relative flex-shrink-0">
+                        <button
+                            onClick={() => setOpenMenuId(openMenuId ? null : 'menu')}
+                            className="p-2 hover:bg-[#4a3728]/10 rounded-full transition-all duration-200"
+                        >
+                            <svg className="w-5 h-5 text-[#4a3728]/60" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 8a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 8a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                            </svg>
+                        </button>
+                        {openMenuId === 'menu' && (
+                            <div className="absolute right-0 top-8 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] z-50 min-w-[180px]">
+                                <button
+                                    onClick={handleDeleteRepost}
+                                    disabled={isDeleting}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    {isDeleting ? 'Removing...' : 'Remove Repost'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Quote thought (if quote repost) */}
             {repost.repostType === 'quote' && repost.thoughtText && (
                 <p className="text-sm text-[#4a3728]/80 italic mb-4 px-2 border-l-2 border-[#4a3728]/30">
-                    "{repost.thoughtText}"
+                    &ldquo;{repost.thoughtText}&rdquo;
                 </p>
             )}
 
@@ -360,6 +364,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     isLoadingReposts = false,
     onCreateRepost,
     onDeleteRepost,
+    isOwnProfile = true, // 👈 NAYA — default true, apni profile pe purana behavior nahi tootega
 }) => {
     const [activeTab, setActiveTab] = useState('Posts');
     const [showAllModal, setShowAllModal] = useState(false);
@@ -547,6 +552,12 @@ const scrollRight = () => {
     };
 
     const handlePostAction = async (action: string, idx: number) => {
+        // 🔒 Guard: only the owner may mutate posts via these actions.
+        // (Belt-and-braces alongside the isOwnProfile prop passed to PostCard/PostHeader.)
+        if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
+            return;
+        }
+
         const post = posts[idx];
         if (!post) return;
         const postId = post.entryId || post.postId;
@@ -635,16 +646,20 @@ const scrollRight = () => {
                             ))}
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowCreatePostModal(true)}
-                        className="group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        <span className="relative z-10">Create a post</span>
-                    </button>
+
+                    {/* 🔒 Owner-only: Create a post button */}
+                    {isOwnProfile && (
+                        <button
+                            onClick={() => setShowCreatePostModal(true)}
+                            className="group px-6 py-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] rounded-2xl text-sm font-semibold transition-all duration-300 flex items-center gap-3 relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <svg className="w-5 h-5 relative z-10 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            <span className="relative z-10">Create a post</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* ── Tab Content ── */}
@@ -658,7 +673,7 @@ const scrollRight = () => {
                                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4a3728]" />
                                 </div>
                             ) : combinedItems.length === 0 ? (
-                                <EmptyState label="No posts yet. Create your first post!" />
+                                <EmptyState label={isOwnProfile ? "No posts yet. Create your first post!" : "No posts yet."} />
                             ) : (
                                 <>
                                     <div className="relative w-full min-w-0 group/slider">
@@ -711,6 +726,7 @@ const scrollRight = () => {
                                                                 profileImage={profileImage}
                                                                 fullName={fullName}
                                                                 currentUserId={currentUserId}
+                                                                isOwnProfile={isOwnProfile}
                                                             />
                                                         </div>
                                                     );
@@ -729,6 +745,7 @@ const scrollRight = () => {
                                                         <PostCard
                                                             post={post}
                                                             index={idxToUse}
+                                                            isOwnProfile={isOwnProfile}
                                                             profileImage={profileImage}
                                                             fullName={fullName}
                                                             headline={headline}
@@ -736,15 +753,15 @@ const scrollRight = () => {
                                                             openMenuId={handlers.openMenuId}
                                                             setOpenMenuId={handlers.setOpenMenuId}
                                                             onLikeToggle={handlers.handleLikeToggle}
-                                                            onPinPost={handlers.handlePinPost}
+                                                            onPinPost={isOwnProfile ? handlers.handlePinPost : undefined}
                                                             onSavePost={handlers.handleSavePost}
-                                                            onDeletePost={handlers.handleDeletePost}
-                                                            onArchivePost={handlers.handleArchivePost}
-                                                            onOpenUpdateModal={(i: any, title: any) => {
+                                                            onDeletePost={isOwnProfile ? handlers.handleDeletePost : undefined}
+                                                            onArchivePost={isOwnProfile ? handlers.handleArchivePost : undefined}
+                                                            onOpenUpdateModal={isOwnProfile ? (i: any, title: any) => {
                                                                 handlers.setUpdatePostId(i);
                                                                 handlers.setUpdatePostTitle(title);
                                                                 handlers.setShowUpdateModal(true);
-                                                            }}
+                                                            } : undefined}
                                                             openCommentsIndex={handlers.openCommentsIndex === idxToUse ? postKey : null}
                                                             onToggleComments={handlers.toggleCommentsPanel}
                                                             commentsByPost={handlers.commentsByPost}
@@ -814,12 +831,6 @@ const scrollRight = () => {
                     )}
 
                     {activeTab === 'Comments' && (() => {
-                        console.log("Profile Comments tab details:", {
-                            "userComments.length": userComments.length,
-                            "visibleCommentsCount": visibleCommentsCount,
-                            "slicedComments": userComments.slice(0, visibleCommentsCount)
-                        });
-
                         return (
                             <div className="space-y-6">
                                 {isLoadingUserComments ? (
@@ -957,25 +968,31 @@ const scrollRight = () => {
                 onLikeToggle={handlers.handleLikeToggle}
             />
 
-            <UpdatePostModal
-                postId={posts[handlers.updatePostId || 0]?.entryId || posts[handlers.updatePostId || 0]?.postId || ''}
-                isOpen={handlers.showUpdateModal}
-                onClose={() => {
-                    handlers.setShowUpdateModal(false);
-                    handlers.setUpdatePostId(null);
-                }}
-                currentTitle={handlers.updatePostTitle}
-                onUpdate={handlers.handleUpdatePost}
-            />
+            {/* 🔒 Owner-only: editing another user's post is never valid */}
+            {isOwnProfile && (
+                <UpdatePostModal
+                    postId={posts[handlers.updatePostId || 0]?.entryId || posts[handlers.updatePostId || 0]?.postId || ''}
+                    isOpen={handlers.showUpdateModal}
+                    onClose={() => {
+                        handlers.setShowUpdateModal(false);
+                        handlers.setUpdatePostId(null);
+                    }}
+                    currentTitle={handlers.updatePostTitle}
+                    onUpdate={handlers.handleUpdatePost}
+                />
+            )}
 
-            <CreatePostModal
-                isOpen={showCreatePostModal}
-                onClose={() => setShowCreatePostModal(false)}
-                onSubmit={async () => {
-                    setShowCreatePostModal(false);
-                    onPostCreated?.();
-                }}
-            />
+            {/* 🔒 Owner-only: creating a post "as" another user's profile is never valid */}
+            {isOwnProfile && (
+                <CreatePostModal
+                    isOpen={showCreatePostModal}
+                    onClose={() => setShowCreatePostModal(false)}
+                    onSubmit={async () => {
+                        setShowCreatePostModal(false);
+                        onPostCreated?.();
+                    }}
+                />
+            )}
 
             <RepostWithPerspectiveModal
                 isOpen={isRepostWithPerspectiveOpen}

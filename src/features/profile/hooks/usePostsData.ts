@@ -6,9 +6,9 @@ import { useState, useCallback } from 'react';
 export const usePostsData = (userId?: string) => {
     const [userPosts, setUserPosts] = useState<TransformedPost[]>([]);
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+    // FIX: naya state — batata hai ki fetch fail hua ya genuinely posts nahi hain
+    const [postsError, setPostsError] = useState<string | null>(null);
 
-    // FIX: ab yeh target userId leta hai. Agar userId diya hai (dusre user ki
-    // profile), to usi user ke posts fetch honge — apne login user ke nahi.
     const fetchUserPosts = useCallback(async (targetUserId?: string) => {
         const idToFetch = targetUserId ?? userId;
 
@@ -20,17 +20,26 @@ export const usePostsData = (userId?: string) => {
 
         try {
             setIsLoadingPosts(true);
-
-            // ✅ Naya userId ke liye purana data clear karo, warna jab tak
-            // naya data na aaye, purani profile ke posts dikhte reh sakte hain
-            setUserPosts([]);
+            setPostsError(null);
+            setUserPosts([]); // naya userId ke liye purana data clear karo
 
             const posts = await postsApi.fetchUserPosts(idToFetch);
             setUserPosts(posts);
 
         } catch (error: any) {
             console.error('❌ [HOOK] Failed to fetch posts:', error);
-            setUserPosts([]);
+
+            // FIX: rate-limit (429) ya kisi bhi fetch failure ko ALAG track karo,
+            // taaki UI "No posts yet" na dikhaye — balki "failed to load, retry" dikhaye
+            const isRateLimited = error?.response?.status === 429
+                || error?.message?.toLowerCase().includes('too many');
+
+            setPostsError(
+                isRateLimited
+                    ? 'Too many requests — please refresh in a moment.'
+                    : 'Failed to load posts. Please try again.'
+            );
+            setUserPosts([]); // UI still empty rahega, but ab error bhi pata chalega
         } finally {
             setIsLoadingPosts(false);
         }
@@ -39,6 +48,7 @@ export const usePostsData = (userId?: string) => {
     return {
         userPosts,
         isLoadingPosts,
+        postsError,
         fetchUserPosts,
     };
 };

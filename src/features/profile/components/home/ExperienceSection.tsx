@@ -403,8 +403,9 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
     const currentExp = experiences[currentIndex];
 
     return (
-        <div className='max-w-4/6 ml-5'>
-            <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-[#e0d8cf]/50 mb-8">
+        // FIX: min-w-0 taaki yeh outer wrapper bhi grid child ke andar shrink kar sake
+        <div className='max-w-4/6 ml-5 min-w-0'>
+            <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-[#e0d8cf]/50 mb-8 min-w-0">
 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
@@ -492,8 +493,15 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                 </div>
 
                 {/* Timeline + Details */}
-                <div className="grid grid-cols-5 gap-3">
-                    <div className="col-span-2 relative">
+                {/* FIX: min-w-0 on the grid container — without this, CSS Grid's
+                    default `min-width: auto` on children lets long unbroken
+                    text (e.g. Nisita's long "Role Overview" paragraph) force
+                    this grid, and everything above it up to <body>/<nav>,
+                    to grow wider than the viewport → horizontal page scroll.
+                    Users with short descriptions (e.g. Ankit) never hit this,
+                    so the bug looked "random" between accounts. */}
+                <div className="grid grid-cols-5 gap-3 min-w-0">
+                    <div className="col-span-2 relative min-w-0">
                         <div className="absolute left-5 top-12 bottom-12 w-0.5 bg-gradient-to-b from-[#8b6f47] via-[#d4c4b5] to-[#8b6f47]/30"></div>
                         <div className="space-y-10 relative">
                             {experiences.slice(0, 3).map((exp, i) => {
@@ -501,7 +509,7 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                                 return (
                                     <div
                                         key={exp.experienceId}
-                                        className="flex items-center gap-5 group cursor-pointer"
+                                        className="flex items-center gap-5 group cursor-pointer min-w-0"
                                         onClick={() => setCurrentIndex(i)}
                                     >
                                         <div className="relative z-10 flex-shrink-0">
@@ -517,15 +525,15 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                                             </div>
                                         </div>
 
-                                        <div className={`transition-all duration-500 ${active ? 'translate-y-0' : 'translate-y-1'}`}>
+                                        <div className={`transition-all duration-500 min-w-0 ${active ? 'translate-y-0' : 'translate-y-1'}`}>
                                             <h4
-                                                className={`font-bold text-sm leading-tight ${active ? 'text-[#4a3728]' : 'text-[#8b6f47]/80 group-hover:text-[#6b5038]'
+                                                className={`font-bold text-sm leading-tight break-words ${active ? 'text-[#4a3728]' : 'text-[#8b6f47]/80 group-hover:text-[#6b5038]'
                                                     }`}
                                             >
                                                 {exp.company.split(' (')[0]}
                                             </h4>
                                             {exp.company.includes('(') && (
-                                                <p className="text-xs font-medium text-[#8b6f47]/70">
+                                                <p className="text-xs font-medium text-[#8b6f47]/70 break-words">
                                                     ({exp.company.split(' (')[1].replace(')', '')})
                                                 </p>
                                             )}
@@ -557,14 +565,17 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                     </div>
 
                     {/* Right Side */}
-                    <div className="col-span-3 space-y-3">
+                    {/* FIX: min-w-0 here is the important one — this column
+                        holds the long description text and was the actual
+                        source of the overflow. */}
+                    <div className="col-span-3 space-y-3 min-w-0">
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <div className="flex items-center gap-2 mb-1">
                                 <h5 className="text-xs font-bold text-[#4a3728] uppercase">Company</h5>
                             </div>
-                            <p className="text-sm font-bold text-[#6b5038]">{currentExp.company}</p>
+                            <p className="text-sm font-bold text-[#6b5038] break-words">{currentExp.company}</p>
                             <div className="flex items-center gap-2 mt-1">
-                                <svg className="w-3 h-3 text-[#8b6f47]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-3 h-3 text-[#8b6f47] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                                 <span className="text-xs text-[#8b6f47] font-semibold">{currentExp.period}</span>
@@ -578,28 +589,33 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
 
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <h5 className="text-xs font-bold text-[#4a3728] uppercase mb-2">Position</h5>
-                            <p className="text-lg font-black text-[#4a3728]">{currentExp.position}</p>
+                            <p className="text-lg font-black text-[#4a3728] break-words">{currentExp.position}</p>
                         </div>
 
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <h5 className="text-xs font-bold text-[#4a3728] uppercase mb-2">Role Overview</h5>
-                            <p className="text-[#4a3728]/70 text-xs leading-relaxed">{currentExp.description}</p>
+                            {/* FIX: break-words + whitespace-pre-wrap — this is
+                                the exact <p> that was forcing the overflow on
+                                long descriptions like Nisita's. */}
+                            <p className="text-[#4a3728]/70 text-xs leading-relaxed break-words whitespace-pre-wrap">
+                                {currentExp.description}
+                            </p>
                         </div>
 
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <h5 className="text-xs font-bold text-[#4a3728] uppercase mb-2">Key Achievements</h5>
                             <div className="space-y-1.5">
                                 {currentExp.achievements.map((a, i) => (
-                                    <div key={i} className="flex items-center gap-2 group">
+                                    <div key={i} className="flex items-start gap-2 group min-w-0">
                                         <svg
-                                            className="w-3 h-3 text-[#8b6f47] group-hover:translate-x-1 transition-transform"
+                                            className="w-3 h-3 text-[#8b6f47] group-hover:translate-x-1 transition-transform flex-shrink-0 mt-0.5"
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
                                         >
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
-                                        <span className="text-xs text-[#4a3728]/70 font-medium">{a}</span>
+                                        <span className="text-xs text-[#4a3728]/70 font-medium break-words">{a}</span>
                                     </div>
                                 ))}
                             </div>

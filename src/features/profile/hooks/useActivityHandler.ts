@@ -241,7 +241,10 @@ export const useActivityHandlers = ({
         replyingTo, setReplyingTo,
         replyingToCommentId, setReplyingToCommentId,
         replyText, setReplyText,
+        // ✅ FIXED: setIsDeletingCommentId ab return ho raha hai
+        // (pehle sirf getter export tha, setter bhool gaya tha)
         isDeletingCommentId,
+        setIsDeletingCommentId,
         showEmojiPicker, setShowEmojiPicker,
 
         // Comments hook data

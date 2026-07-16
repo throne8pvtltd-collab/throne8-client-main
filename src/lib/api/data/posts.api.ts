@@ -10,15 +10,26 @@ const transformPosts = (rawPosts: any[]): TransformedPost[] => {
         postId: post.postId,
         title: post.title,
         text: post.content,
-        image: post.images[0]?.cloudinarySecureUrl || '',
+        // FIX: post.images can be UNDEFINED (not just empty array) when a post
+        // only has videos/documents (e.g. "Motivation video" post). Doing
+        // post.images[0] on undefined throws and silently kills the whole
+        // .map(), which made fetchUserPosts fail and show "No posts yet"
+        // even though the backend returned valid posts. Using optional
+        // chaining on the array itself (post.images?.[0]) fixes this, and
+        // we fall back to the first video's thumbnail-worthy url if needed.
+        image: post.images?.[0]?.cloudinarySecureUrl
+            || post.videos?.[0]?.cloudinarySecureUrl
+            || '',
         likes: post.likesCount || 0,
         isLiked: post.isLikedByCurrentUser || false,
-        comments: 0,
+        comments: post.commentsCount || 0,
         reposts: 0,
         time: calculateTimeAgo(post.createdAt),
-        images: post.images,
-        videos: post.videos,
-        documents: post.documents,
+        // FIX: default to [] instead of leaving undefined, so any component
+        // doing images.length / images.map() downstream doesn't also crash.
+        images: post.images || [],
+        videos: post.videos || [],
+        documents: post.documents || [],
         createdAt: post.createdAt,
         isPinned: post.isPinned || false,
         isSaved: post.isSaved || false,

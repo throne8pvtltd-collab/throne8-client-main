@@ -80,6 +80,10 @@ export interface Document {
 }
 
 // ✅ FIXED: repost-related fields add ki gayi
+// 🔒 FIXED: isOwnProfile add kiya — owner-only actions (Create/Edit/Delete/
+// Pin/Archive post, Remove repost) ab isi flag se gate honge. Default true
+// rakha hai taaki apni profile ka purana behavior na toote agar koi caller
+// yeh prop pass karna bhool jaaye.
 export interface ActivitySectionProps {
     posts: Post[];
     onPostCreated?: () => void;
@@ -93,6 +97,7 @@ export interface ActivitySectionProps {
     isLoadingReposts?: boolean;
     onCreateRepost?: (postId: string, type: 'repost' | 'quote', thoughts?: string) => Promise<any>;
     onDeleteRepost?: (repostId: string) => Promise<any>;
+    isOwnProfile?: boolean;
 }
 
 export interface PostLikeState {
