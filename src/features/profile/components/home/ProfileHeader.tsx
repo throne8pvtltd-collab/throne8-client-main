@@ -9,10 +9,10 @@ import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData'
 
 interface ProfileHeaderProps {
     currentUserId?: string;
-    isOwnProfile?: boolean; // ✅ NAYA PROP
+    isOwnProfile?: boolean;
     profileImage: string;
     name: string;
-    pronouns: string;
+    // ✅ pronouns poori tarah hataya — backend mein field exist nahi karti
     headline: string;
     company: string;
     description: string;
@@ -36,7 +36,6 @@ interface ProfileHeaderProps {
     };
     educationList?: any[];
     experienceList?: any[];
-    // ✅ NAYE PROPS - public profile ke actions ke liye
     isFollowing?: boolean;
     isConnected?: boolean;
     connectionPending?: boolean;
@@ -47,10 +46,9 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     currentUserId,
-    isOwnProfile = true, // ✅ default true (backward-compatible: purana behavior nahi tootega)
+    isOwnProfile = true,
     profileImage,
     name,
-    pronouns,
     headline,
     company,
     description,
@@ -151,7 +149,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     </div>
                     <div className="border border-[#e0d8cf] rounded-3xl p-6 shadow-xl bg-white/60 backdrop-blur-sm">
                         <div className="flex-1 text-center md:text-left pt-2">
-                            {/* ✅ Sirf apni profile pe edit button dikhega */}
                             {isOwnProfile && (
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
@@ -163,9 +160,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                 <div className="relative">
                                     <h1 className="text-3xl font-bold text-[#4a3728] flex items-center gap-2 justify-center md:justify-start mt-8 hover:text-[#5a4738] transition-colors duration-300">
                                         {name}
-                                        <span className="text-sm text-[#4a3728]/70 font-normal bg-[#f6ede8] px-2 py-1 rounded-full border">
-                                            ({pronouns})
-                                        </span>
                                     </h1>
                                 </div>
                                 <div className="relative">
@@ -212,7 +206,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     </p>
                                 </div>
 
-                                {/* ✅ Contact info sirf apni profile pe, ya agar backend permission de */}
                                 {isOwnProfile && <Contactact />}
 
                                 <div className="flex gap-3 justify-center md:justify-start flex-wrap">
@@ -239,7 +232,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     </button>
                                 </div>
 
-                                {/* ✅ PUBLIC PROFILE ACTIONS — sirf tab dikhega jab doosre ki profile ho */}
                                 {!isOwnProfile && (
                                     <div className="flex gap-3 justify-center md:justify-start flex-wrap mt-4">
                                         {isConnected ? (
@@ -321,7 +313,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </div>
             </div>
 
-            {/* ✅ Sirf apni profile ke modals render honge */}
             {isOwnProfile && (
                 <>
                     <EditIntroModal
@@ -330,7 +321,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         initialData={{
                             firstName: firstName || name?.split(' ')[0] || '',
                             lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
-                            pronouns,
                             headline: headline,
                             company,
                             location,

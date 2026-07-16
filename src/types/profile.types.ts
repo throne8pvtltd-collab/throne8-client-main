@@ -2,7 +2,7 @@ export interface UserProfileData {
     firstName: string;
     lastName: string;
     email: string;
-    phoneNumber?: string;   // ✅ FIXED: ab optional hai
+    phoneNumber?: string;
     location: string;
     profilePhotoId?: string;
     coverPhotoId?: string;
@@ -31,7 +31,7 @@ export interface UserProfileData {
 }
 
 export interface ProfileData {
-    [x: string]: string | undefined;
+    // ✅ FIX: stray index signature hataya — yehi TS error ka root cause tha
     bannerImage: string;
     profileImage: string;
     pronouns: string;

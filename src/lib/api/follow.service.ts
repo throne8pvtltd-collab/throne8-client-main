@@ -59,6 +59,19 @@ class FollowService {
             return null;
         }
     }
+
+    // FollowService mein add karo
+static async getUserFollowingCompanies(userId: string) {
+    try {
+        const { data } = await api.get(
+            `${config?.NEXT_PUBLIC_FOLLOW_ENDPOINT || process.env.NEXT_PUBLIC_FOLLOW_ENDPOINT}/user/${userId}/companies`
+        );
+        return data;
+    } catch (error: any) {
+        console.error('[GET_FOLLOWING_COMPANIES] Failed:', error);
+        throw new Error(error.response?.data?.message || 'Failed to fetch followed companies');
+    }
+}
 }
 
 export default FollowService;
