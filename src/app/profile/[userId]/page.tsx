@@ -63,6 +63,7 @@ export default function SearchUserProfilePage() {
     } = useConnectionsData();
 
     const [isFollowing, setIsFollowing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
     const [connectionPending, setConnectionPending] = useState(false);
     const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
@@ -86,6 +87,21 @@ export default function SearchUserProfilePage() {
         checkStatus();
     }, [userId, user?.userId]);
 
+<<<<<<< HEAD
+=======
+
+    useEffect(() => {
+        if (!userId) return;
+        const loadFollowCounts = async () => {
+            const res = await FollowService.getFollowCounts(userId);
+            setFollowersCount(res?.data?.followersCount ?? 0);
+        };
+        loadFollowCounts();
+    }, [userId]);
+
+    // Real connection status check — uses current user's own connections list
+    // and looks for the target userId in it (fromUserId/toUserId, status active).
+>>>>>>> f5f08fd090c69a7334c4504cb63eec9db8b06785
     useEffect(() => {
         if (!user?.userId || !userId) return;
         const checkConnection = async () => {
@@ -160,6 +176,13 @@ export default function SearchUserProfilePage() {
             await ConnectionService.acceptConnectionRequest(incomingRequestId);
             setIncomingRequestId(null);
             setIsConnected(true);
+
+            // updated
+
+            if (userId) {
+                await fetchConnectionsData(userId);
+            }
+
         } catch (error: any) {
             alert(error.message || 'Failed to accept request');
         }
@@ -175,6 +198,25 @@ export default function SearchUserProfilePage() {
         }
     };
 
+    // const handleFollow = async () => {
+    //     if (!userId || isFollowActionLoading) return;
+    //     try {
+    //         setIsFollowActionLoading(true);
+    //         if (isFollowing) {
+    //             await FollowService.unfollowUser(userId);
+    //             setIsFollowing(false);
+    //         } else {
+    //             await FollowService.followUser(userId);
+    //             setIsFollowing(true);
+    //         }
+    //     } catch (error: any) {
+    //         alert(error.message || 'Failed to update follow status');
+    //     } finally {
+    //         setIsFollowActionLoading(false);
+    //     }
+    // };
+
+
     const handleFollow = async () => {
         if (!userId || isFollowActionLoading) return;
         try {
@@ -182,9 +224,11 @@ export default function SearchUserProfilePage() {
             if (isFollowing) {
                 await FollowService.unfollowUser(userId);
                 setIsFollowing(false);
+                setFollowersCount(prev => Math.max(0, prev - 1));
             } else {
                 await FollowService.followUser(userId);
                 setIsFollowing(true);
+                setFollowersCount(prev => prev + 1);
             }
         } catch (error: any) {
             alert(error.message || 'Failed to update follow status');
@@ -192,6 +236,9 @@ export default function SearchUserProfilePage() {
             setIsFollowActionLoading(false);
         }
     };
+
+
+
 
     const handleMessage = () => {
         router.push(`/message/${userId}`);
@@ -316,7 +363,10 @@ export default function SearchUserProfilePage() {
                         company={profileData.company}
                         description={profileData.description}
                         location={profileData.location}
-                        followers={followersList.length}
+                        // followers={followersList.length}
+                        followers={followersCount}
+
+                        
                         connections={totalConnections.toString()}
                         firstName={userProfileData?.firstName || ''}
                         lastName={userProfileData?.lastName || ''}
