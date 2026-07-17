@@ -1,307 +1,385 @@
-# Dashboard Page - Responsive Design Improvements
+'use client';
 
-## Overview
-The dashboard page has been completely redesigned for **optimal responsiveness across all devices** including:
-- Desktop (1920px and above)
-- Laptops (1024px - 1920px)
-- Tablets (768px - 1024px)
-- Large phones (480px - 768px)
-- Small phones (320px - 480px)
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
 
-## Key Changes
+// Import components
+import ProfileNavbar from '../../../features/profile/components/home/ProfileNavbar';
+import ProfileBanner from '../../../features/profile/components/home/ProfileBanner';
+import ProfileHeader from '../../../features/profile/components/home/ProfileHeader';
+import ProfessionalJourney from '../../../features/profile/components/home/ProfessionalJourney';
+import AboutSection from '../../../features/profile/components/home/AboutSection';
+import EducationSection from '../../../features/profile/components/home/EducationSection';
+import ExperienceSection from '../../../features/profile/components/home/ExperienceSection';
+import ActivitySection from '../../../features/profile/components/home/ActivitySection';
+import SkillsSection from '../../../features/profile/components/home/SkillsSection';
+import InterestsSection from '../../../features/profile/components/home/InterestsSection';
+import PeopleYouMayKnow from '../../../features/profile/components/home/PeopleYouMayKnow';
+import { transformToProfileData } from '@/shared/utils/profileTransformers';
 
-### 1. **Main Container Layout**
-**Before:**
-```
-<div className="flex mt-24 px-2 md:px-8 mx-auto gap-8 max-w-[2200px]">
-```
+import { useSearchUserProfileData } from '@/features/profile/hooks/useSearchUserProfileData';
+import { usePostsData } from '@/features/profile/hooks/usePostsData';
+import { useAboutData } from '@/features/profile/hooks/useAboutData';
+import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
+import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData';
+import AnalyticsService from '@/lib/api/analytics.service';
+import ConnectionService from '@/lib/api/connection.service';
+import FollowService from '@/lib/api/follow.service';
 
-**After:**
-```
-<div className="flex flex-col md:flex-row mt-20 sm:mt-24 px-1 sm:px-3 md:px-4 lg:px-8 mx-auto gap-2 sm:gap-4 md:gap-6 lg:gap-8 max-w-full md:max-w-[1400px] lg:max-w-[2200px] w-full">
-```
+export default function SearchUserProfilePage() {
+    const params = useParams();
+    const router = useRouter();
+    const userId = params.userId as string;
+    const { user } = useAuth();
+    const {
+        userProfileData,
+        profileImageUrl,
+        bannerUrl,
+        coverPhotoId,
+        aboutId,
+        headlineId,
+        isLoadingProfile,
+        profileError,
+        fetchUserProfileById,
+    } = useSearchUserProfileData(userId);
 
-**Improvements:**
-- ✅ Mobile-first flex layout (`flex-col md:flex-row`)
-- ✅ Responsive padding: `px-1 sm:px-3 md:px-4 lg:px-8`
-- ✅ Responsive gap: `gap-2 sm:gap-4 md:gap-6 lg:gap-8`
-- ✅ Better max-width management for different breakpoints
-- ✅ Prevents horizontal overflow on small screens
+    // ✅ FIX: stable reference — warna har render pe naya [] array banega
+    // aur ExperienceSection ke andar wala useEffect infinite loop mein
+    // chala jayega, jo backend ko continuously hit karke 429 rate-limit
+    // laga deta hai, jiski wajah se About/Experience dono fail ho jaate hain
+    const experienceIds = useMemo(
+        () => userProfileData?.experienceIds || [],
+        [userProfileData?.experienceIds]
+    );
 
-### 2. **Post Creator Modal**
-**Desktop View:** Modal slides from right side
-**Mobile View:** Modal slides from bottom (sheet-like experience)
+    const {
+        followingList,
+        followersList,
+        totalConnections,
+        isLoadingConnections,
+        fetchConnectionsData,
+    } = useConnectionsData();
 
-**Responsive Changes:**
-```
-- Modal width: w-full sm:w-[95%] md:w-[90%] lg:w-[520px]
-- Modal height: max-h-[95vh] sm:max-h-[90vh]
-- Positioning: items-end sm:items-center md:justify-end md:pr-[2%]
-- Padding: p-4 sm:p-5 md:p-6
-- Close button size: w-4 sm:w-5 h-4 sm:h-5
-```
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
+    const [connectionPending, setConnectionPending] = useState(false);
+    const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
 
-**Features:**
-- 📱 Bottom sheet experience on mobile
-- 💻 Right-side slide on desktop
-- 🎯 Optimal visibility on all screen sizes
-- ✨ Smooth transitions between breakpoints
+    useEffect(() => {
+        if (userId) {
+            fetchConnectionsData(userId);
+        }
+    }, [userId, fetchConnectionsData]);
 
-### 3. **Modal Header**
-**Responsive Typography:**
-```
-- Title: text-base sm:text-lg font-bold (was text-lg)
-- Avatar: w-10 h-10 sm:w-12 sm:h-12 (was w-12 h-12)
-- Subtitle: text-xs (remains consistent)
-- Better spacing: gap-2 sm:gap-3 mb-4 sm:mb-5
-```
+    useEffect(() => {
+        if (!userId || !user?.userId || userId === user.userId) return;
+        const checkStatus = async () => {
+            try {
+                const followRes = await FollowService.checkFollowStatus(userId);
+                setIsFollowing(!!followRes?.data?.isFollowing);
+            } catch {
+                setIsFollowing(false);
+            }
+        };
+        checkStatus();
+    }, [userId, user?.userId]);
 
-### 4. **Mood Selection Section**
-**Mobile Optimization:**
-```
-- Buttons: px-2 sm:px-3 py-1 sm:py-1.5
-- Text size: text-xs sm:text-sm
-- Gap between buttons: gap-1.5 sm:gap-2
-- All buttons remain accessible on small screens
-```
+    useEffect(() => {
+        if (!user?.userId || !userId) return;
+        const checkConnection = async () => {
+            try {
+                const res = await ConnectionService.getUserConnections(user.userId);
+                const connections = res?.data?.data || res?.data || [];
+                const connected = connections.some(
+                    (c: any) =>
+                        (c.fromUserId === userId || c.toUserId === userId) &&
+                        c.status === 'active'
+                );
+                setIsConnected(connected);
+            } catch {
+                setIsConnected(false);
+            }
+        };
+        checkConnection();
+    }, [userId, user?.userId]);
 
-### 5. **Text Input Area**
-**Responsive Adjustments:**
-```
-- Height: h-24 sm:h-28 (reduced on mobile)
-- Padding: px-3 sm:px-4 py-2 sm:py-3
-- Font size: text-xs sm:text-sm
-- Character counter: responsive positioning
-```
+    useEffect(() => {
+        if (!user?.userId || !userId || userId === user.userId) return;
+        const checkPendingStatus = async () => {
+            try {
+                const res = await ConnectionService.getOutgoingRequests(user.userId);
+                const outgoingRequests = res?.data?.data || res?.data || [];
+                const isPending = outgoingRequests.some(
+                    (r: any) => r.toUserId === userId
+                );
+                setConnectionPending(isPending);
+            } catch {
+                setConnectionPending(false);
+            }
+        };
+        checkPendingStatus();
+    }, [userId, user?.userId]);
 
-### 6. **Action Buttons Row**
-**Major Improvements:**
-```
-- Horizontal scroll on mobile: overflow-x-auto
-- Flex shrink prevention: flex-shrink-0
-- Responsive sizing: px-2 sm:px-3 py-1.5 sm:py-2
-- Hidden text on mobile: hidden sm:inline
-- Icon-only mode on mobile to save space
-- Gap: gap-1 sm:gap-2 (compact on mobile)
-```
+    const [incomingRequestId, setIncomingRequestId] = useState<string | null>(null);
 
-**Example:**
-```
-Mobile: [📷] [🎥] [📊] [📅] [📆]
-Desktop: [Photo 2] [Video] [Poll] [Event] [Schedule]
-```
+    useEffect(() => {
+        if (!user?.userId || !userId || userId === user.userId) return;
+        const checkIncomingRequest = async () => {
+            try {
+                const res = await ConnectionService.getIncomingRequests(user.userId);
+                const incomingRequests = res?.data?.data || res?.data || [];
+                const matchedRequest = incomingRequests.find(
+                    (r: any) => r.fromUserId === userId
+                );
+                setIncomingRequestId(matchedRequest?.requestId || null);
+            } catch {
+                setIncomingRequestId(null);
+            }
+        };
+        checkIncomingRequest();
+    }, [userId, user?.userId]);
 
-### 7. **Privacy Toggle & Share Button**
-**Bottom Section:**
-```
-- Flex gap: gap-2 sm:gap-4
-- Button padding: px-3 sm:px-6 py-2 sm:py-2.5
-- Text size: text-xs sm:text-sm
-- Button shrink: flex-shrink-0 (prevents overflow)
-- Text truncation on mobile: "Schedule" instead of "Schedule Post"
-```
+    const handleConnect = async () => {
+        if (!userId || connectionPending) return;
+        try {
+            setConnectionPending(true);
+            await ConnectionService.sendConnectionRequest({ toUserId: userId });
+            alert('Connection request sent!');
+        } catch (error: any) {
+            alert(error.message?.includes('already exists') ? 'Connection request already sent' : (error.message || 'Failed to send connection request'));
+        } finally {
+            setConnectionPending(false);
+        }
+    };
 
-### 8. **Post Analytics Modal**
-**Fully Responsive:**
-```
-- Modal width: w-full sm:w-[95%] md:w-[90%] lg:w-[520px]
-- Padding: p-4 sm:p-6 md:p-8
-- Title: text-lg sm:text-2xl
-- Icon size: w-5 sm:w-6 h-5 sm:h-6
-```
+    const handleAcceptRequest = async () => {
+        if (!incomingRequestId) return;
+        try {
+            await ConnectionService.acceptConnectionRequest(incomingRequestId);
+            setIncomingRequestId(null);
+            setIsConnected(true);
+        } catch (error: any) {
+            alert(error.message || 'Failed to accept request');
+        }
+    };
 
-**Stats Grid:**
-```
-- Gap: gap-2 sm:gap-4
-- Padding: p-3 sm:p-4
-- Text: text-xs sm:text-sm
-- Numbers: text-2xl sm:text-3xl
-```
+    const handleDeclineRequest = async () => {
+        if (!incomingRequestId) return;
+        try {
+            await ConnectionService.declineConnectionRequest(incomingRequestId);
+            setIncomingRequestId(null);
+        } catch (error: any) {
+            alert(error.message || 'Failed to decline request');
+        }
+    };
 
-**Posts List:**
-```
-- Image size: w-14 h-14 sm:w-16 sm:h-16
-- Card padding: p-3 sm:p-4
-- Item gap: gap-3 sm:space-y-4
-- Text: text-xs sm:text-sm
-```
+    const handleFollow = async () => {
+        if (!userId || isFollowActionLoading) return;
+        try {
+            setIsFollowActionLoading(true);
+            if (isFollowing) {
+                await FollowService.unfollowUser(userId);
+                setIsFollowing(false);
+            } else {
+                await FollowService.followUser(userId);
+                setIsFollowing(true);
+            }
+        } catch (error: any) {
+            alert(error.message || 'Failed to update follow status');
+        } finally {
+            setIsFollowActionLoading(false);
+        }
+    };
 
-### 9. **Typography Scaling**
-**Consistent responsive font sizes across all text:**
-```
-- Headings: text-base sm:text-lg, text-lg sm:text-2xl
-- Body text: text-xs sm:text-sm
-- Small text: text-xs (remains consistent)
-- Numbers: text-xl sm:text-2xl, text-2xl sm:text-3xl
-```
+    const handleMessage = () => {
+        router.push(`/message/${userId}`);
+    };
 
-### 10. **Spacing System**
-**Responsive padding and margins:**
-```
-xs (mobile): 8px - 12px
-sm (tablet): 12px - 16px
-md (laptop): 16px - 24px
-lg (desktop): 24px - 32px
-```
+    const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData(userId);
 
-## Breakpoints Used
-```
-xs: 0px (no prefix)
-sm: 640px
-md: 768px
-lg: 1024px
-xl: 1280px
-2xl: 1536px
-```
+    const {
+        aboutData,
+        videoUrl,
+        isLoadingAbout,
+        fetchAboutData,
+    } = useAboutData(aboutId);
 
-## Device Compatibility
+    const { headlineData, isLoadingHeadline, fetchHeadlineData } = useHeadlineData(headlineId);
 
-| Device Type | Screen Width | Experience |
-|---|---|---|
-| iPhone SE | 375px | ✅ Optimized |
-| iPhone 12/13 | 390px | ✅ Optimized |
-| iPhone 14/15 | 393px | ✅ Optimized |
-| iPhone Plus | 430px | ✅ Optimized |
-| iPad Mini | 768px | ✅ Optimized |
-| iPad Air | 820px | ✅ Optimized |
-| iPad Pro | 1024px | ✅ Optimized |
-| Laptop | 1366px+ | ✅ Optimized |
-| Desktop | 1920px+ | ✅ Optimized |
+    const profileData = transformToProfileData(userProfileData, profileImageUrl, headlineData);
 
-## CSS Features Implemented
+    const fullName = userProfileData
+        ? `${userProfileData.firstName} ${userProfileData.lastName}`.trim()
+        : 'Loading...';
 
-### 1. **Flexbox Wrapping**
-- Mobile-first flex-col with md:flex-row
-- Proper gap spacing at each breakpoint
+    useEffect(() => {
+        if (userId) {
+            fetchUserProfileById();
+        }
+    }, [userId, fetchUserProfileById]);
 
-### 2. **Overflow Handling**
-- `overflow-x-auto` for horizontal scrolling on mobile
-- `overflow-y-auto` for modals with max-height
-- `overflow-hidden` on main container to prevent horizontal scroll
+    useEffect(() => {
+        if (user?.userId && userId && user.userId !== userId) {
+            AnalyticsService.recordProfileView(userId, {
+                viewerId: user.userId,
+                viewerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            });
+        }
+    }, [user, userId]);
 
-### 3. **Text Truncation**
-- `truncate` class for long text on mobile
-- `min-w-0` for flex items containing text
+    useEffect(() => {
+        if (aboutId) {
+            fetchAboutData();
+        }
+    }, [aboutId, fetchAboutData]);
 
-### 4. **Touch-Friendly Sizing**
-- Minimum tap target: 44x44px
-- All buttons properly sized for mobile interaction
-- Adequate padding around interactive elements
+    useEffect(() => {
+        if (headlineId) {
+            fetchHeadlineData();
+        }
+    }, [headlineId, fetchHeadlineData]);
 
-### 5. **Performance Optimizations**
-- `flex-shrink-0` prevents unintended shrinking
-- Efficient use of Tailwind breakpoints
-- Minimal custom CSS
+    useEffect(() => {
+        if (userId) {
+            fetchUserPosts(userId);
+        }
+    }, [userId, fetchUserPosts]);
 
-## Visual Improvements
+    const searchParams = useSearchParams();
 
-### Before vs After
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section) {
+            setTimeout(() => {
+                const el = document.getElementById(section);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 3000);
+        }
+    }, [searchParams]);
 
-**Post Creator Modal:**
-- ❌ Before: Fixed 520px width, not responsive
-- ✅ After: Full width on mobile, responsive on all screens
+    if (isLoadingProfile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-[#4a3728] mx-auto" />
+                    <p className="mt-4 text-gray-600">Loading profile...</p>
+                </div>
+            </div>
+        );
+    }
 
-**Modal Positioning:**
-- ❌ Before: Right-slide only
-- ✅ After: Bottom-sheet on mobile, right-slide on desktop
+    if (profileError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f1ed] to-[#e8dfd7]">
+                <div className="text-center">
+                    <p className="text-red-600 text-lg">{profileError}</p>
+                    <button
+                        onClick={() => window.history.back()}
+                        className="mt-4 px-6 py-2 bg-[#4a3728] text-white rounded-lg"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-**Typography:**
-- ❌ Before: Fixed sizes
-- ✅ After: Scales from xs to xl devices
+    return (
+        <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans overflow-x-hidden">
+            <ProfileNavbar
+                profileImage={profileData.profileImage}
+                userName={profileData.userName}
+                currentUserId={user?.userId}
+            />
 
-**Spacing:**
-- ❌ Before: Fixed padding/gap
-- ✅ After: Responsive at each breakpoint
+           <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
+               <div className="flex-1 min-w-0 pt-20">
+                    <ProfileBanner
+                        bannerImage={bannerUrl}
+                        onBannerUpdate={() => { }}
+                        onDataRefresh={() => { }}
+                        coverId={coverPhotoId}
+                        isOwnProfile={false}
+                    />
 
-## Testing Recommendations
+                    <ProfileHeader
+                        isOwnProfile={false}
+                        currentUserId={userId}
+                        profileImage={profileImageUrl}
+                        name={profileData.name}
+                        pronouns={profileData.pronouns}
+                        headline={headlineData?.title || profileData.headline}
+                        headlineId={headlineId}
+                        onHeadlineCreated={() => { }}
+                        company={profileData.company}
+                        description={profileData.description}
+                        location={profileData.location}
+                        followers={followersList.length}
+                        connections={totalConnections.toString()}
+                        firstName={userProfileData?.firstName || ''}
+                        lastName={userProfileData?.lastName || ''}
+                        currentPosition={userProfileData?.currentPosition || ''}
+                        education={userProfileData?.education || ''}
+                        contactInfo={userProfileData?.contactInfo || ''}
+                        onDataRefresh={() => { }}
+                        onProfileImageUpdate={() => { }}
+                        isFollowing={isFollowing}
+                        isConnected={isConnected}
+                        connectionPending={connectionPending}
+                        onFollow={handleFollow}
+                        onConnect={handleConnect}
+                        onMessage={handleMessage}
+                    />
+                    <div id="about">
+                        <AboutSection
+                            isOwnProfile={false}
+                            aboutData={aboutData}
+                            isLoading={isLoadingAbout}
+                            onAboutCreated={() => { }}
+                            aboutId={aboutId}
+                            videoUrl={videoUrl}
+                            isUploadingVideo={false}
+                        />
+                    </div>
 
-### Mobile Testing
-```
-1. Test on actual devices (iOS & Android)
-2. Test landscape orientation
-3. Test with keyboard open (mobile browsers)
-4. Test touch interactions
-5. Test network throttling (slow 3G)
-```
+                    <EducationSection
+                        isOwnProfile={false}
+                        userId={userId}
+                        collegeName={profileData.education.collegeName}
+                        degree={profileData.education.degree}
+                        fieldOfStudy={profileData.education.fieldOfStudy}
+                        graduationYear={profileData.education.graduationYear}
+                    />
 
-### Desktop Testing
-```
-1. Test at 1366px, 1920px, 2560px
-2. Test browser zoom levels (75%, 100%, 125%)
-3. Test with different sidebar states
-4. Test modal positioning
-```
+                    {/* ✅ FIXED: stable experienceIds reference */}
+                    <ExperienceSection
+                        experienceIds={experienceIds}
+                        userId={userId}
+                        isOwnProfile={false}
+                    />
 
-### Browser Compatibility
-```
-Chrome (Latest)
-Firefox (Latest)
-Safari (Latest)
-Edge (Latest)
-iOS Safari
-Chrome Mobile
-```
+                    <div id="activity">
+                        <ActivitySection
+                            posts={userPosts as any}
+                            onPostCreated={() => { }}
+                            isLoading={isLoadingPosts}
+                            profileImage={profileImageUrl}
+                            fullName={fullName}
+                            headline={profileData.headline}
+                            isOwnProfile={false}
+                        />
+                    </div>
 
-## Future Enhancements
+                    <SkillsSection userId={userId} isOwnProfile={false} />
+                    <InterestsSection />
+                </div>
 
-1. **Dark Mode Improvements**
-   - Better contrast on OLED screens
-   - Reduced motion settings
-
-2. **Accessibility**
-   - Focus indicators for keyboard navigation
-   - ARIA labels for screen readers
-   - Better color contrast ratios
-
-3. **Performance**
-   - Image lazy loading for posts
-   - Code splitting for modals
-   - CSS-in-JS optimization
-
-4. **Additional Features**
-   - Gesture support for mobile
-   - Swipe to close modals
-   - Pull-to-refresh functionality
-
-## Notes for Developers
-
-- Always test changes on at least 3 different device sizes
-- Use `sm:`, `md:`, `lg:` prefixes consistently
-- Keep touch targets at least 44x44px
-- Test with both light and dark modes
-- Check overflow on narrow screens
-- Verify modal behavior on mobile keyboards
-
-## Quick Reference
-
-### Common Responsive Patterns Used
-
-**Full-width on mobile, controlled width on desktop:**
-```jsx
-className="w-full sm:w-[95%] md:w-[90%] lg:w-[520px]"
-```
-
-**Stack on mobile, flex on desktop:**
-```jsx
-className="flex flex-col md:flex-row"
-```
-
-**Hide text on mobile, show on desktop:**
-```jsx
-<span className="hidden sm:inline">Text</span>
-<span className="sm:hidden">Icon</span>
-```
-
-**Responsive sizing:**
-```jsx
-className="w-10 h-10 sm:w-12 sm:h-12"
-```
-
-## Questions or Issues?
-
-If responsive issues are found:
-1. Check the breakpoint being triggered
-2. Verify flex/grid properties
-3. Check for overflow issues
-4. Test on actual device (not just browser DevTools)
-5. Verify Tailwind config is correct
+                <aside className="hidden xl:block w-[340px] shrink-0 sticky top-24">
+    <PeopleYouMayKnow />
+</aside>
+            </div>
+        </div>
+    );
+}
