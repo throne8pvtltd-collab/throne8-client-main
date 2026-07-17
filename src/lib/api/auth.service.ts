@@ -596,6 +596,51 @@ class AuthService {
 
 }
 
+////////////////////////////////
+/////////////////////////////////////////
+//Changed Modified code Pasted
+/**
+ * Ensures we have a valid access token before opening the socket.
+ * Refreshes it if expired, using the same endpoint/logic as the axios interceptor.
+ */
+
+export const ensureFreshAccessToken = async (): Promise<string | null> => {
+    if (!TokenStorage.isTokenExpired()) {
+        return TokenStorage.getAccessToken();
+    }
+
+    const refreshToken = TokenStorage.getRefreshToken();
+    if (!refreshToken) {
+        console.warn('⚠️ [SOCKET AUTH] No refresh token available');
+        return null;
+    }
+
+    try {
+        console.log('🔄 [SOCKET AUTH] Access token expired, refreshing before connecting...');
+        const { data } = await axios.post(
+            `${API_BASE_URL}${config?.NEXT_PUBLIC_REFRESH_TOKEN_ENDPOINT || process.env.NEXT_PUBLIC_REFRESH_TOKEN_ENDPOINT}`,
+            { refreshToken }
+        );
+
+        const newAccessToken = data.data.tokens.accessToken;
+        TokenStorage.setAuthData(data.data.tokens, data.data.user);
+
+        console.log('✅ [SOCKET AUTH] Token refreshed successfully');
+        return newAccessToken;
+    } catch (err) {
+        console.error('❌ [SOCKET AUTH] Failed to refresh token:', err);
+        return null;
+    }
+};
+
+
+
+
+
+
+
+
+
 export default AuthService;
 export { api };
 export type { LoginCredentials, LoginResponse, ApiError, GetAllMentorsResponse };

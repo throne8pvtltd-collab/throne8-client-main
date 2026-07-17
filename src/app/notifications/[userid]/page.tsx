@@ -1,13 +1,21 @@
 // src/app/notifications/[userid]/page.tsx
 "use client";
+import TokenStorage from "@/store/token.storage";
+
 import config from "@/config/env.config";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     Bell, MessageCircle, Users, Edit3, CheckCircle, X, Heart, MessageSquare, Share2, Bookmark, Search, Filter, Settings, Moon, Sun, Volume2, VolumeX, Zap, TrendingUp, Award, Calendar, MapPin, Eye, EyeOff, Loader2, Wifi, WifiOff, RefreshCw, Trash2 } from "lucide-react";
-import { io, Socket } from "socket.io-client";
+
 import NotificationService from "@/lib/api/notification.service";
 import { Stats, Notification } from "@/features/notification/interface";
+import { useAppSelector, useAppDispatch } from "@/core/store/store.hooks";
+import { fetchCurrentUser } from "@/hooks/auth/thunks";
+import ProfileService from "@/lib/api/profile.service";
 
+////////////////////////////////////// changed modified
+import ConnectionService from "@/lib/api/connection.service";
+import FollowService from "@/lib/api/follow.service";
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -56,10 +64,80 @@ const NotificationsPage = () => {
     });
     const [animateCards, setAnimateCards] = useState(false);
 
-    const socketRef = useRef<Socket | null>(null);
+
+    ////////////////////////////////////Changed Modified
+    
+
+
+    ////////////////////////////////////changed modified
+ const dispatch = useAppDispatch();
+    const profile = useAppSelector((state) => state.login.profile);
+    const authUser = useAppSelector((state) => state.login.user);
+    const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+const [connectionStats, setConnectionStats] = useState<{ connections: number } | null>(null);
+const [followStats, setFollowStats] = useState<{ followers: number; following: number } | null>(null);
+
+    useEffect(() => {
+        dispatch(fetchCurrentUser());
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (profile?.profilePhotoId) {
+            ProfileService.getProfilePhotoById(profile.profilePhotoId)
+                .then((res) => {
+                    setProfilePhotoUrl(res?.data?.photo?.cloudinarySecureUrl || null);
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch profile photo:', err);
+                });
+        }
+    }, [profile?.profilePhotoId]);
+
+
+    /////////////////////////////// changed modified 
+  useEffect(() => {
+    const userId = profile?.userId || (profile as any)?.id || (profile as any)?._id || authUser?.userId || (authUser as any)?.id;
+    if (userId) {
+        ConnectionService.getConnectionStats(userId)
+            .then((res) => {
+                const stats = res?.data;
+                setConnectionStats({
+                    connections: stats?.accepted?.total ?? 0,
+                });
+            })
+            .catch((err) => {
+                console.error('Failed to fetch connection stats:', err);
+                setConnectionStats({ connections: 0 });
+            });
+    }
+}, [profile?.userId, (profile as any)?.id, (profile as any)?._id, authUser?.userId, (authUser as any)?.id]);
+
+
+
+useEffect(() => {
+    const userId = profile?.userId || (profile as any)?.id || (profile as any)?._id || authUser?.userId || (authUser as any)?.id;
+    if (userId) {
+        FollowService.getFollowCounts(userId)
+            .then((res) => {
+                const data = res?.data;
+                setFollowStats({
+                    followers: data?.followersCount ?? 0,
+                    following: data?.followingCount ?? 0,
+                });
+            })
+            .catch((err) => {
+                console.error('Failed to fetch follow counts:', err);
+                setFollowStats({ followers: 0, following: 0 });
+            });
+    }
+}, [profile?.userId, (profile as any)?.id, (profile as any)?._id, authUser?.userId, (authUser as any)?.id]);
+
+
+
+    
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const WS_URL = config?.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_WS_URL;
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    // const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     // const token =
     //     typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
@@ -69,11 +147,18 @@ const NotificationsPage = () => {
             if (append) setLoadingMore(true);
             else setIsLoading(true);
 
-            try {
+             try {
                 const json = await NotificationService.getNotifications({ page: pageNum, limit: 20 });
-                if (json.status === "success") {
+
+                //////////////////////////////Changed Modified
+                if (json.success) {
+
+
                     const data: Notification[] = json.data.notifications || [];
+                    console.log('NOTIFICATIONS DATA:', JSON.stringify(data, null, 2));
                     setNotifications((prev) => (append ? [...prev, ...data] : data));
+
+
                     setHasMore(data.length === 20);
                     setStats({
                         unreadCount: json.data.unreadCount || 0,
@@ -81,7 +166,8 @@ const NotificationsPage = () => {
                         engagementRate: 85,
                     });
                 }
-            } catch (_) {
+            } catch (err) {
+                  console.error("Failed to fetch notifications:", err);
                 // socket se live aate rahenge
             } finally {
                 setIsLoading(false);
@@ -96,42 +182,58 @@ const NotificationsPage = () => {
         fetchNotifications(1, false);
     }, [fetchNotifications]);
 
-    // ── Socket.IO real-time connection ────────────────────────────────────────
+
+    
+  
+
+
+//////////////////////////////////changed Modified 
+// ── Poll for new notifications every 15 seconds (frontend-only) ──
     useEffect(() => {
-        if (!realTimeEnabled || !token) return;
+        if (!realTimeEnabled) return;
 
-        const socket = io(WS_URL, {
-            auth: { token },
-            transports: ["websocket", "polling"],
-        });
-        socketRef.current = socket;
+        setIsConnected(true);
 
-        socket.on("connect", () => {
-            setIsConnected(true);
-            socket.emit("notification:get:unread:count");
-        });
-        socket.on("disconnect", () => setIsConnected(false));
+        const interval = setInterval(async () => {
+            try {
+                const json = await NotificationService.getNotifications({ page: 1, limit: 20 });
+                if (json.success) {
+                    const data: Notification[] = json.data.notifications || [];
 
-        socket.on("notification:new", (payload: Notification) => {
-            setNotifications((prev) => [payload, ...prev]);
-            setStats((prev) => ({
-                ...prev,
-                unreadCount: prev.unreadCount + 1,
-                todayCount: prev.todayCount + 1,
-            }));
-            setNewAlert(true);
-            setTimeout(() => setNewAlert(false), 3500);
-            if (soundEnabled) playNotifSound();
-        });
+                    setNotifications((prev) => {
+                        const prevIds = new Set(prev.map((n) => n.notificationId));
+                        const hasNew = data.some((n) => !prevIds.has(n.notificationId));
 
-        socket.on("notification:unread:count", ({ count }: { count: number }) => {
-            setStats((prev) => ({ ...prev, unreadCount: count }));
-        });
+                        if (hasNew) {
+                            setNewAlert(true);
+                            setTimeout(() => setNewAlert(false), 3500);
+                            if (soundEnabled) playNotifSound();
+                        }
 
-        return () => {
-            socket.disconnect();
-        };
-    }, [realTimeEnabled, token, soundEnabled]);
+                        return data;
+                    });
+
+                    setStats((prev) => ({
+                        ...prev,
+                        unreadCount: json.data.unreadCount || 0,
+                        todayCount: data.filter((n) => isTodayDate(n.createdAt)).length,
+                    }));
+                }
+            } catch (err) {
+                console.error("Polling failed:", err);
+                setIsConnected(false);
+            }
+        }, 15000);
+
+        return () => clearInterval(interval);
+    }, [realTimeEnabled, soundEnabled]);
+
+
+
+
+
+
+
 
     // ── Auto mark-read ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -171,9 +273,8 @@ const NotificationsPage = () => {
             unreadCount: Math.max(0, prev.unreadCount - 1),
         }));
 
-        try {
+       try {
             await NotificationService.markNotificationRead(notificationId);
-            socketRef.current?.emit("notification:read", { notificationId });
         } catch (_) { }
     };
 
@@ -313,8 +414,13 @@ const NotificationsPage = () => {
                         <div className="flex flex-col items-center text-center">
                             <div className="relative mb-6">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#4a3728] to-[#7a5c3e] rounded-full blur-lg opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
-                                <img
-                                    src="https://randomuser.me/api/portraits/men/88.jpg"
+
+                                {/* //////////////////Changed Modified */}
+                                 <img
+                                    src={
+                                        profilePhotoUrl ||
+                                        `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.firstName || 'User'}`
+                                    }
                                     alt="Profile"
                                     className="relative w-20 h-20 rounded-2xl object-cover border-4 border-white/50 shadow-xl hover:border-white/80 transition-all duration-500"
                                     onError={(e) => {
@@ -326,23 +432,20 @@ const NotificationsPage = () => {
                             <div className="space-y-3">
                                 <div>
                                     <h2 className="text-xl font-bold bg-gradient-to-r from-[#4a3728] to-[#6a5748] bg-clip-text text-transparent">
-                                        Honey Sharma
+                                        {profile ? `${profile.firstName} ${profile.lastName || ''}`.trim() : 'Loading...'}
                                     </h2>
-                                    <div className="flex items-center justify-center gap-2 mt-1">
-                                        <CheckCircle
-                                            className="w-4 h-4 text-blue-500"
-                                            fill="currentColor"
-                                        />
-                                        <span className="text-sm font-medium text-blue-600">
-                                            Verified Creator
-                                        </span>
-                                    </div>
+                                    {profile?.emailVerified && (
+                                        <div className="flex items-center justify-center gap-2 mt-1">
+                                            <CheckCircle className="w-4 h-4 text-blue-500" fill="currentColor" />
+                                            <span className="text-sm font-medium text-blue-600">Verified</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
-                                    <p
-                                        className={`text-sm font-semibold ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-                                    >
-                                        Co-Founder @Throne8
+                                    <p className={`text-sm font-semibold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                                        {profile?.onboarding?.workingProfile?.jobTitle && profile?.onboarding?.workingProfile?.companyName
+                                            ? `${profile.onboarding.workingProfile.jobTitle} @${profile.onboarding.workingProfile.companyName}`
+                                            : 'Role not set'}
                                     </p>
                                     <p
                                         className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"} leading-relaxed`}
@@ -351,26 +454,26 @@ const NotificationsPage = () => {
                                     </p>
                                     <div className="flex items-center justify-center gap-1 text-xs text-[#4a3728]">
                                         <MapPin className="w-3 h-3" />
-                                        <span>Bhopal, Madhya Pradesh</span>
+                                        <span>{profile?.location || 'Location not set'}</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-center gap-6 pt-3">
-                                    <div className="text-center">
-                                        <p className={`text-lg font-bold ${textClass}`}>2.5K</p>
-                                        <p
-                                            className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-                                        >
-                                            Connections
-                                        </p>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className={`text-lg font-bold ${textClass}`}>1.2K</p>
-                                        <p
-                                            className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-                                        >
-                                            Followers
-                                        </p>
-                                    </div>
+                                  <div className="text-center">
+    <p className={`text-lg font-bold ${textClass}`}>{connectionStats?.connections ?? '—'}</p>
+    <p
+        className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}
+    >
+        Connections
+    </p>
+</div>
+<div className="text-center">
+    <p className={`text-lg font-bold ${textClass}`}>{followStats?.followers ?? '—'}</p>
+    <p
+        className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}
+    >
+        Followers
+    </p>
+</div>
                                     <div className="text-center">
                                         <p className={`text-lg font-bold ${textClass}`}>
                                             {stats.engagementRate}%
@@ -391,7 +494,7 @@ const NotificationsPage = () => {
                         className={`${cardClass} backdrop-blur-xl rounded-3xl p-6 shadow-2xl transition-all duration-500`}
                     >
                         <h3 className="text-lg font-bold text-[#4a3728] mb-4">
-                            Today's Activity
+                            Todays Activity
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="text-center p-3 bg-[#f6ede8] rounded-xl">

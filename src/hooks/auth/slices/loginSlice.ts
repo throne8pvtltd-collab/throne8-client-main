@@ -1,7 +1,7 @@
 // src/store/features/auth/slices/loginSlice.ts
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { loginUser, logoutUser, checkAuthStatus } from '../thunks';
+import { loginUser, logoutUser, checkAuthStatus, fetchCurrentUser  } from '../thunks';
 import { LoginState } from '@/features/auth/interface';
 
 const initialState: LoginState = {
@@ -83,6 +83,22 @@ const loginSlice = createSlice({
                 state.loading = false;
                 state.isAuthenticated = false;
                 state.user = null;
+            });
+   
+
+///////////////////////////////Changed 
+  // ==================== FETCH CURRENT USER PROFILE ====================
+        builder
+            .addCase(fetchCurrentUser.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+                state.loading = false;
+                state.profile = action.payload;
+            })
+            .addCase(fetchCurrentUser.rejected, (state, action) => {
+                state.loading = false;
+                console.error('❌ [SLICE] Fetch profile failed:', action.payload);
             });
     },
 });

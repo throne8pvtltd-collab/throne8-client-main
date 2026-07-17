@@ -59,6 +59,20 @@ class FollowService {
             return null;
         }
     }
+
+    ////////////////////////////changed
+    /**
+     * 📊 GET FOLLOW COUNTS FOR A USER (followers + following)
+     */
+    static async getFollowCounts(userId: string) {
+        try {
+            const { data } = await api.get(`${config.NEXT_PUBLIC_FOLLOW_COUNTS_ENDPOINT || process.env.NEXT_PUBLIC_FOLLOW_COUNTS_ENDPOINT}/${userId}`);
+            return data;
+        } catch (error: any) {
+            console.error('❌ [GET_FOLLOW_COUNTS] Failed:', error);
+            throw new Error(error.response?.data?.message || 'Failed to fetch follow counts');
+        }
+    }
 }
 
 export default FollowService;

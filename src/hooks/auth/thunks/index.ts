@@ -1,3 +1,3 @@
 // src/store/features/auth/thunks/index.ts
-
-export { loginUser, logoutUser, checkAuthStatus } from './loginThunks';
+//////////////////////////////////// changed modified
+export { loginUser, logoutUser, checkAuthStatus,fetchCurrentUser } from './loginThunks';

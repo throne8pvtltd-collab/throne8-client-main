@@ -142,3 +142,18 @@ export const checkAuthStatus = createAsyncThunk
       }
     }
   );
+
+  /**  /////////////////changed modified
+ * 👤 Fetch Current User's Full Profile (name, photo, stats, etc.)
+ */
+export const fetchCurrentUser = createAsyncThunk<any, void, { rejectValue: string }>(
+    'auth/fetchCurrentUser',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await AuthService.getUserProfile();
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch profile');
+        }
+    }
+);
