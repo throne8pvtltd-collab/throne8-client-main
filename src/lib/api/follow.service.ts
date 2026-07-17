@@ -72,6 +72,25 @@ static async getUserFollowingCompanies(userId: string) {
         throw new Error(error.response?.data?.message || 'Failed to fetch followed companies');
     }
 }
+
+
+/**
+     * Get follow counts (followers & following) for a user
+     * GET /api/v1/follow/counts/:userId
+     */
+static async getFollowCounts(userId: string) {
+    try {
+        const { data } = await api.get(
+            `${config?.NEXT_PUBLIC_FOLLOW_ENDPOINT || process.env.NEXT_PUBLIC_FOLLOW_ENDPOINT}/counts/${userId}`
+        );
+        return data;
+    } catch (error: any) {
+        console.error('[GET_FOLLOW_COUNTS] Failed:', error);
+        return null;
+    }
 }
+}
+
+
 
 export default FollowService;

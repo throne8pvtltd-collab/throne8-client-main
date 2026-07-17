@@ -220,11 +220,22 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
                                         <svg className="w-5 h-5 text-[#4a3728] group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+
                                         </svg>
-                                        <span className="font-semibold">
+                                        {/* <span className="font-semibold">
                                             {isLoadingConnections ? '' : followersList.length}
-                                        </span> followers
+                                        </span> followers */}
+
+                                  <span className="font-semibold">
+                                      {followers}
+                                  </span> followers
+
                                     </button>
+
+
+
+                                    
 
                                     <button
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white"
@@ -251,12 +262,25 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     </button>
 ) : incomingRequestId ? (
     <>
-        <button
+        {/* <button
             onClick={onAcceptRequest}
             className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
         >
             Accept
-        </button>
+        </button> */}
+
+
+<button
+    onClick={async () => {
+        await onAcceptRequest?.();
+        if (currentUserId) {
+            await fetchConnectionsData(currentUserId);
+        }
+    }}
+    className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+>
+    Accept
+</button>
         <button
             onClick={onDeclineRequest}
             className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -311,12 +335,26 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                                         onClick={() => setIsMoreMenuOpen(false)}
                                                     ></div>
                                                    <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
-    <button
+    {/* <button
         onClick={() => { onFollow?.(); setIsMoreMenuOpen(false); }}
         className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
     >
         {isFollowing ? 'Unfollow' : 'Follow'}
-    </button>
+    </button> */}
+    <button
+    onClick={async () => {
+        setIsMoreMenuOpen(false);
+        await onFollow?.();
+        if (currentUserId) {
+            await fetchConnectionsData(currentUserId);
+        }
+    }}
+    className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+>
+    {isFollowing ? 'Unfollow' : 'Follow'}
+</button>
+
+
 
     <button
         onClick={() => {
