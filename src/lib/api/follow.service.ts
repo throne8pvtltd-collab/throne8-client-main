@@ -14,16 +14,21 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
-            console.error('[FOLLOW_USER] Failed:', error);
+            console.error("[FOLLOW_USER] Failed:", error);
 
             if (error.response?.status === 409) {
-                throw new Error('Already following this user');
-            }
-            if (error.response?.status === 400) {
-                throw new Error(error.response?.data?.message || 'Invalid request');
+                throw new Error("Already following this user");
             }
 
-            throw new Error(error.response?.data?.message || 'Failed to follow user');
+            if (error.response?.status === 400) {
+                throw new Error(
+                    error.response?.data?.message || "Invalid request"
+                );
+            }
+
+            throw new Error(
+                error.response?.data?.message || "Failed to follow user"
+            );
         }
     }
 
@@ -38,13 +43,15 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
-            console.error('[UNFOLLOW_USER] Failed:', error);
-            throw new Error(error.response?.data?.message || 'Failed to unfollow user');
+            console.error("[UNFOLLOW_USER] Failed:", error);
+            throw new Error(
+                error.response?.data?.message || "Failed to unfollow user"
+            );
         }
     }
 
     /**
-     * Check follow status between current user and target user
+     * Check follow status
      * GET /api/v1/follow/status/:userId
      */
     static async checkFollowStatus(userId: string) {
@@ -54,14 +61,17 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
-            console.error('[CHECK_FOLLOW_STATUS] Failed:', error);
-            // Non-fatal: caller should treat this as "not following"
+            console.error("[CHECK_FOLLOW_STATUS] Failed:", error);
             return null;
         }
     }
 
     /**
+<<<<<<< HEAD
      * 📊 GET FOLLOW COUNTS FOR A USER (followers + following)
+=======
+     * Get followers & following count
+>>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
      * GET /api/v1/follow/counts/:userId
      */
     static async getFollowCounts(userId: string) {
@@ -71,13 +81,21 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
+<<<<<<< HEAD
             console.error('[GET_FOLLOW_COUNTS] Failed:', error);
+=======
+            console.error("[GET_FOLLOW_COUNTS] Failed:", error);
+>>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
             return null;
         }
     }
 
     /**
+<<<<<<< HEAD
      * Get companies a user is following
+=======
+     * Get companies followed by user
+>>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
      * GET /api/v1/follow/user/:userId/companies
      */
     static async getUserFollowingCompanies(userId: string) {
@@ -87,8 +105,16 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
+<<<<<<< HEAD
             console.error('[GET_FOLLOWING_COMPANIES] Failed:', error);
             throw new Error(error.response?.data?.message || 'Failed to fetch followed companies');
+=======
+            console.error("[GET_FOLLOWING_COMPANIES] Failed:", error);
+            throw new Error(
+                error.response?.data?.message ||
+                    "Failed to fetch followed companies"
+            );
+>>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
         }
     }
 }
