@@ -2,7 +2,7 @@
 
 import { useAuth, useProtectedRoute } from '@/features/auth/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import ProfileNavbar from '../../features/profile/components/home/ProfileNavbar';
 import ProfileBanner from '../../features/profile/components/home/ProfileBanner';
@@ -52,6 +52,15 @@ export default function ProfilePage() {
         createRepost,
         removeRepost,
     } = useProfile();
+
+    // ✅ FIX: stable reference — warna har render pe naya [] array banega
+    // aur ExperienceSection ke andar wala useEffect infinite loop mein
+    // chala jayega, jo backend ko continuously hit karke 429 rate-limit
+    // laga deta hai, jiski wajah se baaki APIs (About, etc.) bhi fail hone lagti hain
+    const experienceIds = useMemo(
+        () => userProfileData?.experienceIds || [],
+        [userProfileData?.experienceIds]
+    );
 
     // ✅ Scroll to activity section after data loads
     useEffect(() => {
@@ -189,12 +198,6 @@ export default function ProfilePage() {
                     {/* Analytics Dashboard */}
                     <AnalyticsDashboard userId={user?.userId || ''} />
 
-                    {/* Professional Journey */}
-                    <ProfessionalJourney
-                        userProfileData={userProfileData}
-                        educationList={educationList}
-                        experienceList={experienceList}
-                    />
 
                     {/* About Section */}
                     <AboutSection
@@ -215,9 +218,9 @@ export default function ProfilePage() {
                         graduationYear={profileData.education.graduationYear}
                     />
 
-                    {/* ✅ FIXED: Experience Section — apni profile ke liye, isOwnProfile default true hai */}
+                    {/* ✅ FIXED: Experience Section — stable experienceIds reference */}
                     <ExperienceSection
-                        experienceIds={userProfileData?.experienceIds || []}
+                        experienceIds={experienceIds}
                     />
 
                     {/* Premium Features */}

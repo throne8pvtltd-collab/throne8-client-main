@@ -9,10 +9,10 @@ import { useConnectionsData } from '@/features/profile/hooks/useConnectionsData'
 
 interface ProfileHeaderProps {
     currentUserId?: string;
-    isOwnProfile?: boolean; // ✅ NAYA PROP
+    isOwnProfile?: boolean;
     profileImage: string;
     name: string;
-    pronouns: string;
+    // ✅ pronouns poori tarah hataya — backend mein field exist nahi karti
     headline: string;
     company: string;
     description: string;
@@ -36,21 +36,22 @@ interface ProfileHeaderProps {
     };
     educationList?: any[];
     experienceList?: any[];
-    // ✅ NAYE PROPS - public profile ke actions ke liye
     isFollowing?: boolean;
     isConnected?: boolean;
     connectionPending?: boolean;
     onFollow?: () => void;
     onConnect?: () => void;
     onMessage?: () => void;
+    incomingRequestId?: string | null;
+    onAcceptRequest?: () => void;
+    onDeclineRequest?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     currentUserId,
-    isOwnProfile = true, // ✅ default true (backward-compatible: purana behavior nahi tootega)
+    isOwnProfile = true,
     profileImage,
     name,
-    pronouns,
     headline,
     company,
     description,
@@ -75,6 +76,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     onFollow,
     onConnect,
     onMessage,
+    incomingRequestId = null,
+    onAcceptRequest,
+    onDeclineRequest,
 }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
@@ -129,10 +133,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
     return (
         <>
-            <div className="relative px-6 pb-6">
-                <div className="flex flex-col md:flex-row items-start gap-6 -mt-12">
+            {/* ✅ FIX: min-w-0 added so this flex row can shrink properly instead of
+                forcing the page wider than the viewport when a child has long text. */}
+            <div className="relative z-20 px-6 pb-6 min-w-0">
+                <div className="flex flex-col lg:flex-row items-start gap-6 -mt-12 min-w-0">
                     <div
-                        className={`profileImageClick relative w-36 h-36 group ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                        className={`profileImageClick relative w-36 h-36 group flex-shrink-0 ${isOwnProfile ? 'cursor-pointer' : ''}`}
                         onClick={() => {
                             if (isOwnProfile) setIsProfileImageModalOpen(true);
                         }}
@@ -149,9 +155,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                             <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                         )}
                     </div>
-                    <div className="border border-[#e0d8cf] rounded-3xl p-6 shadow-xl bg-white/60 backdrop-blur-sm">
-                        <div className="flex-1 text-center md:text-left pt-2">
-                            {/* ✅ Sirf apni profile pe edit button dikhega */}
+                    {/* ✅ FIX: added w-full + min-w-0 so this flex item shrinks to fit
+                        its row instead of expanding to its content's natural width
+                        (which is what was pushing the page past the viewport and
+                        causing the horizontal scrollbar on profiles with long text). */}
+                    <div className="border border-[#e0d8cf] rounded-3xl p-6 shadow-xl bg-white/60 backdrop-blur-sm w-full min-w-0">
+                        <div className="flex-1 text-center md:text-left pt-2 min-w-0">
                             {isOwnProfile && (
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
@@ -159,21 +168,25 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     ✏
                                 </button>
                             )}
-                            <div className="space-y-3">
-                                <div className="relative">
-                                    <h1 className="text-3xl font-bold text-[#4a3728] flex items-center gap-2 justify-center md:justify-start mt-8 hover:text-[#5a4738] transition-colors duration-300">
+                            <div className="space-y-3 min-w-0">
+                                <div className="relative min-w-0">
+                                    {/* ✅ FIX: break-words so a long name/word can't force
+                                        the row wider than the container */}
+                                    <h1 className="text-3xl font-bold text-[#4a3728] flex items-center gap-2 justify-center md:justify-start mt-8 hover:text-[#5a4738] transition-colors duration-300 break-words">
                                         {name}
-                                        <span className="text-sm text-[#4a3728]/70 font-normal bg-[#f6ede8] px-2 py-1 rounded-full border">
-                                            ({pronouns})
-                                        </span>
                                     </h1>
                                 </div>
-                                <div className="relative">
-                                    <h2 className="text-md w-[80%] font-semibold text-[#4a3728] bg-gradient-to-r from-[#4a3728] to-[#6a5748] bg-clip-text text-transparent">
+                                <div className="relative min-w-0">
+                                    {/* ✅ FIX: removed fixed w-[80%], added w-full + break-words */}
+                                    <h2 className="text-md w-full font-semibold text-[#4a3728] bg-gradient-to-r from-[#4a3728] to-[#6a5748] bg-clip-text text-transparent break-words">
                                         {headline}
                                     </h2>
                                 </div>
-                                <p className="mt-2 text-sm w-[40vw] text-[#4a3728] font-bold leading-relaxed relative">
+                                {/* ✅ FIX: removed fixed w-[40vw] (viewport-relative width,
+                                    ignores the actual parent container), replaced with
+                                    w-full + break-words so long college/company names wrap
+                                    instead of overflowing horizontally */}
+                                <p className="mt-2 text-sm w-full text-[#4a3728] font-bold leading-relaxed relative break-words">
                                     {educationList && educationList.length > 0 && educationList[0]?.schoolCollegeName && (
                                         <>
                                             {educationList[0].schoolCollegeName}
@@ -202,17 +215,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
                                     <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#4a3728]/20 to-transparent rounded-full"></div>
                                 </p>
-                                <div className="flex items-center gap-2 justify-center md:justify-start bg-white/50 rounded-full px-3 py-2 backdrop-blur-sm border border-[#e0d8cf]/50">
-                                    <svg className="w-5 h-5 text-[#4a3728] animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="flex items-center gap-2 justify-center md:justify-start bg-white/50 rounded-full px-3 py-2 backdrop-blur-sm border border-[#e0d8cf]/50 min-w-0">
+                                    <svg className="w-5 h-5 text-[#4a3728] animate-pulse flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <p className="text-sm text-[#4a3728]">
+                                    {/* ✅ FIX: break-words so a long location string can't
+                                        overflow the pill / push the row wider */}
+                                    <p className="text-sm text-[#4a3728] break-words min-w-0">
                                         <span className="font-semibold">Location:</span> {location}
                                     </p>
                                 </div>
 
-                                {/* ✅ Contact info sirf apni profile pe, ya agar backend permission de */}
                                 {isOwnProfile && <Contactact />}
 
                                 <div className="flex gap-3 justify-center md:justify-start flex-wrap">
@@ -221,11 +235,22 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white">
                                         <svg className="w-5 h-5 text-[#4a3728] group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+
                                         </svg>
-                                        <span className="font-semibold">
+                                        {/* <span className="font-semibold">
                                             {isLoadingConnections ? '' : followersList.length}
-                                        </span> followers
+                                        </span> followers */}
+
+                                  <span className="font-semibold">
+                                      {followers}
+                                  </span> followers
+
                                     </button>
+
+
+
+                                    
 
                                     <button
                                         className="connectionsShowButton group px-4 py-2 bg-white text-[#4a3728] rounded-full text-sm shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 border border-[#e0d8cf] hover:scale-105 hover:bg-gradient-to-r hover:from-[#f6ede8] hover:to-white"
@@ -239,10 +264,55 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                     </button>
                                 </div>
 
-                                {/* ✅ PUBLIC PROFILE ACTIONS — sirf tab dikhega jab doosre ki profile ho */}
                                 {!isOwnProfile && (
                                     <div className="flex gap-3 justify-center md:justify-start flex-wrap mt-4">
-                                        {isConnected ? (
+
+
+{isConnected ? (
+    <button
+        onClick={onMessage}
+        className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+    >
+        Message
+    </button>
+) : incomingRequestId ? (
+    <>
+        {/* <button
+            onClick={onAcceptRequest}
+            className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+            Accept
+        </button> */}
+
+
+<button
+    onClick={async () => {
+        await onAcceptRequest?.();
+        if (currentUserId) {
+            await fetchConnectionsData(currentUserId);
+        }
+    }}
+    className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+>
+    Accept
+</button>
+        <button
+            onClick={onDeclineRequest}
+            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#e0d8cf] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+            Decline
+        </button>
+    </>
+) : (
+    <button
+        onClick={onConnect}
+        disabled={connectionPending}
+        className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-60"
+    >
+        {connectionPending ? 'Pending...' : 'Connect'}
+    </button>
+)}
+                                        {/* {isConnected ? (
                                             <button
                                                 onClick={onMessage}
                                                 className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -257,14 +327,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                             >
                                                 {connectionPending ? 'Pending...' : 'Connect'}
                                             </button>
-                                        )}
+                                        )} */}
 
-                                        <button
+                                        {/* <button
                                             onClick={onFollow}
                                             className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#4a3728] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                                         >
                                             {isFollowing ? 'Following' : 'Follow'}
-                                        </button>
+                                        </button> */}
 
                                         <div className="relative">
                                             <button
@@ -279,37 +349,71 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                                         className="fixed inset-0 z-40"
                                                         onClick={() => setIsMoreMenuOpen(false)}
                                                     ></div>
-                                                    <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
-                                                        <button
-                                                            onClick={() => {
-                                                                const profileUrl = `${window.location.origin}/profile/${currentUserId}`;
-                                                                navigator.clipboard.writeText(profileUrl);
-                                                                alert('Profile link copied to clipboard!');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
-                                                        >
-                                                            Share Profile
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert('Report feature coming soon');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
-                                                        >
-                                                            Report
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert('Block feature coming soon');
-                                                                setIsMoreMenuOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
-                                                        >
-                                                            Block
-                                                        </button>
-                                                    </div>
+                                                   <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
+    {/* <button
+        onClick={() => { onFollow?.(); setIsMoreMenuOpen(false); }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        {isFollowing ? 'Unfollow' : 'Follow'}
+    </button> */}
+    <button
+    onClick={async () => {
+        setIsMoreMenuOpen(false);
+        await onFollow?.();
+        if (currentUserId) {
+            await fetchConnectionsData(currentUserId);
+        }
+    }}
+    className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+>
+    {isFollowing ? 'Unfollow' : 'Follow'}
+</button>
+
+
+
+    <button
+        onClick={() => {
+            setIsMoreMenuOpen(false);
+            const el = document.getElementById('about');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        About this member
+    </button>
+
+    <button
+        onClick={() => {
+            const profileUrl = `${window.location.origin}/profile/${currentUserId}`;
+            navigator.clipboard.writeText(profileUrl);
+            alert('Profile link copied to clipboard!');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        Share Profile
+    </button>
+
+    <button
+        onClick={() => {
+            alert('Report feature coming soon');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
+    >
+        Report
+    </button>
+
+    <button
+        onClick={() => {
+            alert('Block feature coming soon');
+            setIsMoreMenuOpen(false);
+        }}
+        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+    >
+        Block
+    </button>
+</div>
                                                 </>
                                             )}
                                         </div>
@@ -321,7 +425,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </div>
             </div>
 
-            {/* ✅ Sirf apni profile ke modals render honge */}
             {isOwnProfile && (
                 <>
                     <EditIntroModal
@@ -330,7 +433,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         initialData={{
                             firstName: firstName || name?.split(' ')[0] || '',
                             lastName: lastName || name?.split(' ').slice(1).join(' ') || '',
-                            pronouns,
                             headline: headline,
                             company,
                             location,

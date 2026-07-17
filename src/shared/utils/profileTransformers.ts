@@ -1,4 +1,4 @@
-// src/profile/utils/profileTransformers.ts
+// src/shared/utils/profileTransformers.ts
 import { UserProfileData, ProfileData } from '../../types/profile.types';
 
 export const transformToProfileData = (
@@ -11,10 +11,10 @@ export const transformToProfileData = (
         : 'Loading...';
 
     return {
-        bannerImage: 'https://images.unsplash.com/photo-1761960084255-7b45bd632251?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1744',
+        bannerImage: '', // ✅ hardcoded unsplash URL hataya — pages already alag bannerUrl use kar rahe hain
         profileImage: profileImageUrl,
-        pronouns: 'He/Her',
-        description: 'Empowering Professional Networking for Millions with AI, Security, and Scalable Innovation',
+        pronouns: userProfileData?.pronouns || '', // ✅ hardcode hataya; abhi empty rahega jab tak backend field na bheje
+        description: userProfileData?.bio || '', // ✅ hardcode hataya; abhi empty rahega jab tak backend field na bheje
         followers: 0,
         connections: '',
         userName: userProfileData?.firstName || '',
@@ -32,7 +32,7 @@ export const transformToProfileData = (
     };
 };
 
-// Add this transformation function //for activity section to extract first image from post's images array and format createdAt to "x minutes/hours/days ago"
+// Transform posts data for activity section - extract first image from post's images array and format createdAt to "x minutes/hours/days ago"
 export const transformPostsData = (posts: any[]) => {
     return posts.map(post => ({
         ...post,
@@ -50,7 +50,7 @@ export const transformPostsData = (posts: any[]) => {
     }));
 };
 
-// Add this helper function at top:
+// Helper function to format post time
 const formatPostTime = (createdAt: string) => {
     const now = new Date();
     const created = new Date(createdAt);

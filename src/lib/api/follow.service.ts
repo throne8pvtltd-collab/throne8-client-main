@@ -60,6 +60,7 @@ class FollowService {
         }
     }
 
+<<<<<<< HEAD
     ////////////////////////////changed
     /**
      * 📊 GET FOLLOW COUNTS FOR A USER (followers + following)
@@ -72,7 +73,39 @@ class FollowService {
             console.error('❌ [GET_FOLLOW_COUNTS] Failed:', error);
             throw new Error(error.response?.data?.message || 'Failed to fetch follow counts');
         }
+=======
+    // FollowService mein add karo
+static async getUserFollowingCompanies(userId: string) {
+    try {
+        const { data } = await api.get(
+            `${config?.NEXT_PUBLIC_FOLLOW_ENDPOINT || process.env.NEXT_PUBLIC_FOLLOW_ENDPOINT}/user/${userId}/companies`
+        );
+        return data;
+    } catch (error: any) {
+        console.error('[GET_FOLLOWING_COMPANIES] Failed:', error);
+        throw new Error(error.response?.data?.message || 'Failed to fetch followed companies');
+>>>>>>> 681cb260c8e2d2412496be482710c6a9b71a3eee
     }
 }
+
+
+/**
+     * Get follow counts (followers & following) for a user
+     * GET /api/v1/follow/counts/:userId
+     */
+static async getFollowCounts(userId: string) {
+    try {
+        const { data } = await api.get(
+            `${config?.NEXT_PUBLIC_FOLLOW_ENDPOINT || process.env.NEXT_PUBLIC_FOLLOW_ENDPOINT}/counts/${userId}`
+        );
+        return data;
+    } catch (error: any) {
+        console.error('[GET_FOLLOW_COUNTS] Failed:', error);
+        return null;
+    }
+}
+}
+
+
 
 export default FollowService;

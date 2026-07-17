@@ -32,7 +32,7 @@ const PostCard = ({
           <PostHeader
             currentUserId={currentUserId}
             post={post}
-            index={index}
+            index={postKey}
             isOwnProfile={isOwnProfile}
             isDarkMode={isDarkMode}
             openMenuIndex={openMenuIndex}
@@ -50,7 +50,6 @@ const PostCard = ({
           post={post}
           index={index}
           isDarkMode={isDarkMode}
-          // likes={likes}
           likedPosts={likedPosts}
           handleLike={handleLike}
           openRepostIndex={openRepostIndex}

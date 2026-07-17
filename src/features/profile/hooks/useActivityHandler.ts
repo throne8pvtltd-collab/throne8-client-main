@@ -18,7 +18,7 @@ export const useActivityHandlers = ({
     profileImage
 }: UseActivityHandlersProps) => {
     // ── Post UI state ──────────────────────────────────────────────
-    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [updatePostId, setUpdatePostId] = useState<number | null>(null);
     const [updatePostTitle, setUpdatePostTitle] = useState('');
