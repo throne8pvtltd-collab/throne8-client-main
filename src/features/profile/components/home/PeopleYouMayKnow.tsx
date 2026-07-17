@@ -4,7 +4,7 @@ import React from 'react';
 
 const PeopleYouMayKnow: React.FC = () => {
     return (
-        <div className="top-20 bg-[#f6ede8]/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/50 relative overflow-hidden">
+        <div className="w-full bg-[#f6ede8]/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-[#e0d8cf]/50 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#f6ede8]/50 to-[#e0d8cf]/50 rounded-3xl"></div>
             <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">

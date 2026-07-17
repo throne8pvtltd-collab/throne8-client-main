@@ -1,10 +1,10 @@
-// app/(dashboard)/components/feed/PostMenuDropdown.tsx
+// profile/components/feed/PostMenuDropdown.tsx
 import React from 'react';
 
 const PostMenuDropdown = ({ isDarkMode, index, handlePostAction, post, currentUserId }: {
   isDarkMode: boolean;
-  index: number;
-  handlePostAction: (action: string, index: number) => void,
+  index: string;
+  handlePostAction: (action: string, index: string) => void,
   post: any; // The post object
   currentUserId: string; // ID of the currently logged-in user
 }) => {

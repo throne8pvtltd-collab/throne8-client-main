@@ -3,7 +3,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 // Import components
 import ProfileNavbar from '../../../features/profile/components/home/ProfileNavbar';
@@ -45,6 +45,15 @@ export default function SearchUserProfilePage() {
         fetchUserProfileById,
     } = useSearchUserProfileData(userId);
 
+    // ✅ FIX: stable reference — warna har render pe naya [] array banega
+    // aur ExperienceSection ke andar wala useEffect infinite loop mein
+    // chala jayega, jo backend ko continuously hit karke 429 rate-limit
+    // laga deta hai, jiski wajah se About/Experience dono fail ho jaate hain
+    const experienceIds = useMemo(
+        () => userProfileData?.experienceIds || [],
+        [userProfileData?.experienceIds]
+    );
+
     const {
         followingList,
         followersList,
@@ -60,7 +69,7 @@ export default function SearchUserProfilePage() {
 
     useEffect(() => {
         if (userId) {
-            fetchConnectionsData(userId);  // 👈 target profile ka userId pass ho raha hai
+            fetchConnectionsData(userId);
         }
     }, [userId, fetchConnectionsData]);
 
@@ -77,8 +86,6 @@ export default function SearchUserProfilePage() {
         checkStatus();
     }, [userId, user?.userId]);
 
-    // Real connection status check — uses current user's own connections list
-    // and looks for the target userId in it (fromUserId/toUserId, status active).
     useEffect(() => {
         if (!user?.userId || !userId) return;
         const checkConnection = async () => {
@@ -98,9 +105,6 @@ export default function SearchUserProfilePage() {
         checkConnection();
     }, [userId, user?.userId]);
 
-    // Pending connection status check — checks if current user already sent
-    // a pending request to this profile's userId
-
     useEffect(() => {
         if (!user?.userId || !userId || userId === user.userId) return;
         const checkPendingStatus = async () => {
@@ -118,27 +122,24 @@ export default function SearchUserProfilePage() {
         checkPendingStatus();
     }, [userId, user?.userId]);
 
-
-    // Check if this profile's user sent ME a pending request
-
     const [incomingRequestId, setIncomingRequestId] = useState<string | null>(null);
 
-useEffect(() => {
-    if (!user?.userId || !userId || userId === user.userId) return;
-    const checkIncomingRequest = async () => {
-        try {
-            const res = await ConnectionService.getIncomingRequests(user.userId);
-            const incomingRequests = res?.data?.data || res?.data || [];
-            const matchedRequest = incomingRequests.find(
-                (r: any) => r.fromUserId === userId
-            );
-            setIncomingRequestId(matchedRequest?.requestId || null);
-        } catch {
-            setIncomingRequestId(null);
-        }
-    };
-    checkIncomingRequest();
-}, [userId, user?.userId]);
+    useEffect(() => {
+        if (!user?.userId || !userId || userId === user.userId) return;
+        const checkIncomingRequest = async () => {
+            try {
+                const res = await ConnectionService.getIncomingRequests(user.userId);
+                const incomingRequests = res?.data?.data || res?.data || [];
+                const matchedRequest = incomingRequests.find(
+                    (r: any) => r.fromUserId === userId
+                );
+                setIncomingRequestId(matchedRequest?.requestId || null);
+            } catch {
+                setIncomingRequestId(null);
+            }
+        };
+        checkIncomingRequest();
+    }, [userId, user?.userId]);
 
     const handleConnect = async () => {
         if (!userId || connectionPending) return;
@@ -153,7 +154,6 @@ useEffect(() => {
         }
     };
 
-
     const handleAcceptRequest = async () => {
         if (!incomingRequestId) return;
         try {
@@ -164,7 +164,7 @@ useEffect(() => {
             alert(error.message || 'Failed to accept request');
         }
     };
-    
+
     const handleDeclineRequest = async () => {
         if (!incomingRequestId) return;
         try {
@@ -197,7 +197,7 @@ useEffect(() => {
         router.push(`/message/${userId}`);
     };
 
-   const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData(userId);
+    const { userPosts, isLoadingPosts, fetchUserPosts } = usePostsData(userId);
 
     const {
         aboutData,
@@ -242,10 +242,10 @@ useEffect(() => {
     }, [headlineId, fetchHeadlineData]);
 
     useEffect(() => {
-    if (userId) {
-        fetchUserPosts(userId);
-    }
-}, [userId, fetchUserPosts]);
+        if (userId) {
+            fetchUserPosts(userId);
+        }
+    }, [userId, fetchUserPosts]);
 
     const searchParams = useSearchParams();
 
@@ -287,15 +287,15 @@ useEffect(() => {
     }
 
     return (
-        <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans">
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-                <ProfileNavbar
-                    profileImage={profileData.profileImage}
-                    userName={profileData.userName}
-                    currentUserId={user?.userId}
-                />
+        <div className="min-h-screen bg-[#f6ede8] py-12 px-4 font-sans overflow-x-hidden">
+            <ProfileNavbar
+                profileImage={profileData.profileImage}
+                userName={profileData.userName}
+                currentUserId={user?.userId}
+            />
 
-                <div className="flex-1 pt-20">
+           <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
+               <div className="flex-1 min-w-0 pt-20">
                     <ProfileBanner
                         bannerImage={bannerUrl}
                         onBannerUpdate={() => { }}
@@ -332,19 +332,17 @@ useEffect(() => {
                         onConnect={handleConnect}
                         onMessage={handleMessage}
                     />
-
-                    <ProfessionalJourney userProfileData={userProfileData} />
                     <div id="about">
-                     <AboutSection
-                        isOwnProfile={false}
-                        aboutData={aboutData}
-                        isLoading={isLoadingAbout}
-                        onAboutCreated={() => { }}
-                        aboutId={aboutId}
-                        videoUrl={videoUrl}
-                        isUploadingVideo={false}
-                    />
-                 </div>
+                        <AboutSection
+                            isOwnProfile={false}
+                            aboutData={aboutData}
+                            isLoading={isLoadingAbout}
+                            onAboutCreated={() => { }}
+                            aboutId={aboutId}
+                            videoUrl={videoUrl}
+                            isUploadingVideo={false}
+                        />
+                    </div>
 
                     <EducationSection
                         isOwnProfile={false}
@@ -355,8 +353,9 @@ useEffect(() => {
                         graduationYear={profileData.education.graduationYear}
                     />
 
+                    {/* ✅ FIXED: stable experienceIds reference */}
                     <ExperienceSection
-                        experienceIds={userProfileData?.experienceIds || []}
+                        experienceIds={experienceIds}
                         userId={userId}
                         isOwnProfile={false}
                     />
@@ -377,9 +376,9 @@ useEffect(() => {
                     <InterestsSection />
                 </div>
 
-                <div className="w-full md:w-80 md:min-w-[20rem]">
-                    <PeopleYouMayKnow />
-                </div>
+                <aside className="hidden xl:block w-[340px] shrink-0 sticky top-24">
+    <PeopleYouMayKnow />
+</aside>
             </div>
         </div>
     );

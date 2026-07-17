@@ -141,7 +141,9 @@ const AboutSection: React.FC<AboutSectionProps> = ({
 
     return (
         <>
-            <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-[#e0d8cf]/50 mb-8 relative overflow-hidden group">
+            {/* ✅ FIX: min-w-0 so this whole card can never force the page
+                wider than the viewport when the about text is long */}
+            <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-[#e0d8cf]/50 mb-8 relative overflow-hidden group min-w-0">
                 <div className="absolute top-0 left-0 w-full h-full">
                     <div className="absolute top-4 right-8 w-20 h-20 bg-gradient-to-br from-[#4a3728]/8 to-transparent rounded-full animate-pulse"></div>
                     <div className="absolute bottom-6 left-6 w-16 h-16 bg-gradient-to-tr from-[#4a3728]/5 to-transparent rounded-full animate-pulse delay-1000"></div>
@@ -166,9 +168,9 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                         </svg>
                     </div>
                 </div>
-                <div className="relative z-10">
+                <div className="relative z-10 min-w-0">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="relative">
+                        <div className="relative flex-shrink-0">
                             <div className="w-12 h-12 bg-gradient-to-br from-[#4a3728] via-[#6b4e3d] to-[#8b6f47] rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500">
                                 <svg className="w-6 h-6 text-[#f6ede8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -179,17 +181,25 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                             <h3 className="text-2xl font-bold text-[#4a3728] tracking-wide group-hover:text-[#6b4e3d] transition-colors duration-300">About</h3>
                         </div>
                     </div>
-                    <div className="relative">
-                        <div className="relative bg-gradient-to-br from-[#e0d8cf]/80 via-[#e0d8cf]/60 to-[#e0d8cf]/40 p-6 rounded-2xl shadow-lg transition-all duration-500 border border-[#e0d8cf]/30 backdrop-blur-sm">
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="bg-gradient-to-br from-[#e0d8cf]/60 via-[#e0d8cf]/50 to-[#e0d8cf]/40 rounded-2xl border border-[#4a3728]/20 p-5 shadow-md hover:shadow-lg transition scale-[1] hover:scale-[1.02] duration-300 relative">
+                    <div className="relative min-w-0">
+                        <div className="relative bg-gradient-to-br from-[#e0d8cf]/80 via-[#e0d8cf]/60 to-[#e0d8cf]/40 p-6 rounded-2xl shadow-lg transition-all duration-500 border border-[#e0d8cf]/30 backdrop-blur-sm min-w-0">
+                            {/* ✅ FIX: min-w-0 on the grid — grid children default to
+                                min-width:auto, so a long unbroken about-text word
+                                or a long video-upload label could force this
+                                2-column grid (and everything above it) wider than
+                                the viewport. */}
+                            <div className="grid md:grid-cols-2 gap-6 min-w-0">
+                                <div className="bg-gradient-to-br from-[#e0d8cf]/60 via-[#e0d8cf]/50 to-[#e0d8cf]/40 rounded-2xl border border-[#4a3728]/20 p-5 shadow-md hover:shadow-lg transition scale-[1] hover:scale-[1.02] duration-300 relative min-w-0">
                                     <h3 className="text-xl font-semibold bg-gradient-to-r from-[#4a3728] to-[#6b4e3d] bg-clip-text text-transparent mb-3">
                                         About Me
                                     </h3>
 
                                     {aboutData?.aboutText ? (
                                         <>
-                                            <p className="text-[#4a3728]/90 leading-relaxed font-medium tracking-wide text-sm whitespace-pre-wrap">
+                                            {/* ✅ FIX: break-words added — whitespace-pre-wrap alone
+                                                preserves line breaks but does NOT wrap a single long
+                                                unbroken word/URL; break-words does. */}
+                                            <p className="text-[#4a3728]/90 leading-relaxed font-medium tracking-wide text-sm whitespace-pre-wrap break-words">
                                                 {aboutData.aboutText}
                                             </p>
                                             {/* ✅ Edit button sirf apni profile pe */}
@@ -217,7 +227,7 @@ const AboutSection: React.FC<AboutSectionProps> = ({
 
                                 {/* ✅ Video section — public profile pe sirf tab dikhega jab video already hai, upload option nahi */}
                                 {videoUrl ? (
-                                    <div className="relative">
+                                    <div className="relative min-w-0">
                                         <video
                                             className="w-full h-40 rounded-xl object-cover"
                                             controls
@@ -240,11 +250,11 @@ const AboutSection: React.FC<AboutSectionProps> = ({
                                         )}
                                     </div>
                                 ) : isOwnProfile ? (
-                                    <div className="rounded-xl bg-[#4a3728]/10 border border-[#4a3728]/30 w-full h-40 flex flex-col items-center justify-center gap-2">
-                                        <div className="w-10 h-10 rounded-full bg-[#4a3728]/20 border border-[#4a3728]/30 flex items-center justify-center text-[#4a3728]/70">
+                                    <div className="rounded-xl bg-[#4a3728]/10 border border-[#4a3728]/30 w-full h-40 flex flex-col items-center justify-center gap-2 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-[#4a3728]/20 border border-[#4a3728]/30 flex items-center justify-center text-[#4a3728]/70 flex-shrink-0">
                                             🎬
                                         </div>
-                                        <p className="text-[#4a3728]/70 text-sm font-medium text-center px-2">
+                                        <p className="text-[#4a3728]/70 text-sm font-medium text-center px-2 break-words">
                                             {isUploadingVideo ? 'Uploading video...' : 'Upload your introduction video'}
                                         </p>
 

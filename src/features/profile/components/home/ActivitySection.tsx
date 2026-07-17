@@ -551,58 +551,54 @@ const scrollRight = () => {
         }
     };
 
-    const handlePostAction = async (action: string, idx: number) => {
-        // 🔒 Guard: only the owner may mutate posts via these actions.
-        // (Belt-and-braces alongside the isOwnProfile prop passed to PostCard/PostHeader.)
-        if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
-            return;
-        }
+   const handlePostAction = async (action: string, postId: string) => {
+    if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
+        return;
+    }
+    const post = posts.find(p => (p.entryId || p.postId) === postId);
+    if (!post) return;
 
-        const post = posts[idx];
-        if (!post) return;
-        const postId = post.entryId || post.postId;
-        
-        switch (action) {
-            case 'pin':
-                await handlers.handlePinPost(postId, post.isPinned || false);
-                break;
-            case 'save':
-                await handlers.handleSavePost(postId, post.isSaved || false);
-                break;
-            case 'delete':
-                await handlers.handleDeletePost(postId);
-                break;
-            case 'archive':
-                await handlers.handleArchivePost(postId);
-                break;
-            case 'copy':
-                try {
-                    const postUrl = `${window.location.origin}/post/${postId}`;
-                    await navigator.clipboard.writeText(postUrl);
-                    alert('Post link copied to clipboard!');
-                } catch (err) {
-                    console.error('Failed to copy text: ', err);
-                }
-                break;
-            case 'embed':
-                try {
-                    const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
-                    await navigator.clipboard.writeText(embedCode);
-                    alert('Embed iframe code copied to clipboard!');
-                } catch (err) {
-                    console.error('Failed to copy embed code: ', err);
-                }
-                break;
-            case 'analytics':
-                setSelectedAnalyticsPost(post);
-                break;
-            case 'hide':
-                await handlers.handleArchivePost(postId);
-                break;
-            default:
-                break;
-        }
-    };
+    switch (action) {
+        case 'pin':
+            await handlers.handlePinPost(postId, post.isPinned || false);
+            break;
+        case 'save':
+            await handlers.handleSavePost(postId, post.isSaved || false);
+            break;
+        case 'delete':
+            await handlers.handleDeletePost(postId);
+            break;
+        case 'archive':
+            await handlers.handleArchivePost(postId);
+            break;
+        case 'copy':
+            try {
+                const postUrl = `${window.location.origin}/post/${postId}`;
+                await navigator.clipboard.writeText(postUrl);
+                alert('Post link copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+            break;
+        case 'embed':
+            try {
+                const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
+                await navigator.clipboard.writeText(embedCode);
+                alert('Embed iframe code copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy embed code: ', err);
+            }
+            break;
+        case 'analytics':
+            setSelectedAnalyticsPost(post);
+            break;
+        case 'hide':
+            await handlers.handleArchivePost(postId);
+            break;
+        default:
+            break;
+    }
+};
 
     return (
         <>
@@ -809,7 +805,7 @@ const scrollRight = () => {
                                                             handleCommentReaction={handlers.likeCommentToggle}
                                                             postComments={handlers.commentsByPost}
                                                             emojiList={undefined}
-                                                            togglePostMenu={(i: number) => handlers.setOpenMenuId(handlers.openMenuId === i ? null : i)}
+                                                            togglePostMenu={(key: string) => handlers.setOpenMenuId(handlers.openMenuId === key ? null : key)}
                                                             toggleRepostMenu={(i: number) => setOpenRepostIndex(openRepostIndex === i ? null : i)}
                                                             onOpenWithPerspectiveModal={openRepostWithPerspectiveModal}
                                                             handleRepostInstant={handleRepostInstant}

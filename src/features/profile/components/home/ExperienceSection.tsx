@@ -23,14 +23,14 @@ interface Experience {
 
 interface ExperienceSectionProps {
     experienceIds?: string[];
-    userId?: string; // ✅ NAYA PROP - target user ka id
-    isOwnProfile?: boolean; // ✅ NAYA PROP
+    userId?: string;
+    isOwnProfile?: boolean;
 }
 
 const ExperienceSection: React.FC<ExperienceSectionProps> = ({
     experienceIds = [],
     userId,
-    isOwnProfile = true, // ✅ default true - purana behavior nahi tootega
+    isOwnProfile = true,
 }) => {
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -45,7 +45,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
 
     const [experiences, setExperiences] = useState<Experience[]>([]);
 
-    // Form states
     const [company, setCompany] = useState<string>('');
     const [position, setPosition] = useState<string>('');
     const [description, setDescription] = useState<string>('');
@@ -56,16 +55,22 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
     const [achievementInput, setAchievementInput] = useState<string>('');
     const [achievementsList, setAchievementsList] = useState<string[]>([]);
 
-    // ✅ Fetch experiences on mount or when experienceIds/userId change
+    // ✅ FIX: array reference (experienceIds) pe depend karne ke bajaye
+    // uske content (joined string) pe depend karo. Parent se agar
+    // har render pe naya [] array aaye bhi to ye effect sirf tab
+    // trigger hoga jab actual IDs badlein — infinite loop / 429 rate-limit
+    // isi wajah se lag raha tha.
+    const experienceIdsKey = (experienceIds || []).join(',');
+
     useEffect(() => {
         fetchExperiences();
-    }, [experienceIds, userId, isOwnProfile]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [experienceIdsKey, userId, isOwnProfile]);
 
     const fetchExperiences = async () => {
         try {
             setIsLoading(true);
 
-            // ✅ Public profile pe userId ke sath fetch karo, apni profile pe normal
             const response = isOwnProfile
                 ? await ProfileService.getAllExperiences()
                 : await ProfileService.getAllExperiencesByUserId(userId as string);
@@ -303,29 +308,17 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
         }
     };
 
-    // ✅ Loading state
     if (isLoading) {
-        return (
-            <div className='max-w-4/6 ml-5'>
-                <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-[#e0d8cf]/50 mb-8">
-                    <div className="flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-[#4a3728]" />
-                        <p className="ml-3 text-[#4a3728]">Loading experiences...</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return null;
     }
 
-    // ✅ Empty state
     if (experiences.length === 0) {
-        // ✅ Public profile pe agar koi experience nahi, poora section hide
         if (!isOwnProfile) {
             return null;
         }
 
         return (
-            <div className='max-w-4/6 ml-5'>
+            <div className='max-w-4/6 ml-5 min-w-0'>
                 <div className="bg-gradient-to-br from-[#f6ede8] to-[#f0e6d8] backdrop-blur-md rounded-2xl p-12 shadow-2xl border border-[#e0d8cf]/50 mb-8 min-h-[400px] flex items-center justify-center">
                     <div className="text-center max-w-md">
                         <div className="mb-6 flex justify-center">
@@ -403,17 +396,14 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
     const currentExp = experiences[currentIndex];
 
     return (
-        // FIX: min-w-0 taaki yeh outer wrapper bhi grid child ke andar shrink kar sake
         <div className='max-w-4/6 ml-5 min-w-0'>
             <div className="bg-[#f6ede8]/80 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-[#e0d8cf]/50 mb-8 min-w-0">
 
-                {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-xl font-bold text-[#4a3728] mb-1">Experience</h3>
                         <p className="text-xs text-[#8b6f47]">Professional Journey ({currentIndex + 1}/{experiences.length})</p>
                     </div>
-                    {/* ✅ Action buttons sirf apni profile pe */}
                     {isOwnProfile && (
                         <div className="flex gap-2">
                             <Tooltip text="Add New Experience">
@@ -492,14 +482,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                     )}
                 </div>
 
-                {/* Timeline + Details */}
-                {/* FIX: min-w-0 on the grid container — without this, CSS Grid's
-                    default `min-width: auto` on children lets long unbroken
-                    text (e.g. Nisita's long "Role Overview" paragraph) force
-                    this grid, and everything above it up to <body>/<nav>,
-                    to grow wider than the viewport → horizontal page scroll.
-                    Users with short descriptions (e.g. Ankit) never hit this,
-                    so the bug looked "random" between accounts. */}
                 <div className="grid grid-cols-5 gap-3 min-w-0">
                     <div className="col-span-2 relative min-w-0">
                         <div className="absolute left-5 top-12 bottom-12 w-0.5 bg-gradient-to-b from-[#8b6f47] via-[#d4c4b5] to-[#8b6f47]/30"></div>
@@ -564,10 +546,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                         </div>
                     </div>
 
-                    {/* Right Side */}
-                    {/* FIX: min-w-0 here is the important one — this column
-                        holds the long description text and was the actual
-                        source of the overflow. */}
                     <div className="col-span-3 space-y-3 min-w-0">
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <div className="flex items-center gap-2 mb-1">
@@ -594,9 +572,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
 
                         <div className="bg-[#e0d8cf]/70 rounded-lg p-3 border border-[#d4c4b5] shadow-md">
                             <h5 className="text-xs font-bold text-[#4a3728] uppercase mb-2">Role Overview</h5>
-                            {/* FIX: break-words + whitespace-pre-wrap — this is
-                                the exact <p> that was forcing the overflow on
-                                long descriptions like Nisita's. */}
                             <p className="text-[#4a3728]/70 text-xs leading-relaxed break-words whitespace-pre-wrap">
                                 {currentExp.description}
                             </p>
@@ -624,7 +599,6 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({
                 </div>
             </div>
 
-            {/* ✅ Modals sirf apni profile pe */}
             {isOwnProfile && (
                 <>
                     <ExperienceModal
