@@ -26,6 +26,7 @@ export default function AnalyticsDetailsPage() {
 
     const { user } = useAuth();
 
+    
     const [analytics, setAnalytics] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [timeRange, setTimeRange] = useState<7 | 30 | 90>(30);

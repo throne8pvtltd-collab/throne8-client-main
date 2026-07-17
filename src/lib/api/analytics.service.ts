@@ -94,9 +94,14 @@ class AnalyticsService {
     static async getProfileViewsCount(dateRange: number = 90): Promise<any> {
         try {
             // console.log('👀 [ANALYTICS] Fetching profile views count...');
-            const { data } = await api.get('/api/v1/profile/analytics/profile-views/count', {
+            // const { data } = await api.get('/api/v1/profile/analytics/profile-views/count', {
+            //     params: { dateRange }/
+
+            const { data } = await api.get('/profile/analytics/profile-views/count', {
                 params: { dateRange }
             });
+
+
             // console.log('✅ [ANALYTICS] Profile views fetched:', data);
             return data;
         } catch (error: any) {
@@ -149,8 +154,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
     static async getPostImpressionsCount(limit: number = 20): Promise<any> {
         try {
             // console.log('📊 [ANALYTICS] Fetching post impressions count...');
-            const { data } = await api.get('/api/v1/profile/analytics/post-impressions/count', {
+            // const { data } = await api.get('/api/v1/profile/analytics/post-impressions/count', {
+            //     params: { limit }
+
+            const { data } = await api.get('/profile/analytics/post-impressions/count', {
                 params: { limit }
+            
             });
             // console.log('✅ [ANALYTICS] Post impressions count fetched');
             return data;
@@ -170,7 +179,8 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
             const { data } = await api.get('/api/v1/profile/analytics/post-impressions/detail', {
                 params: { page, limit }
             });
-            // console.log('✅ [ANALYTICS] Post impressions detail fetched');
+            // console.log('✅ [ANALYTICS] Post impressions detail fetched
+            // ');
             return data;
         } catch (error: any) {
             console.error('❌ [ANALYTICS] Failed to fetch post impressions detail:', error);
@@ -203,7 +213,10 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
     static async getSearchAppearancesCount(): Promise<any> {
         try {
             // console.log('🔍 [ANALYTICS] Fetching search appearances count...');
-            const { data } = await api.get('/api/v1/profile/analytics/search-appearances/count');
+            // const { data } = await api.get('/api/v1/profile/analytics/search-appearances/count');
+
+            const { data } = await api.get('/profile/analytics/search-appearances/count');
+
             // console.log('✅ [ANALYTICS] Search appearances count fetched');
             return data;
         } catch (error: any) {

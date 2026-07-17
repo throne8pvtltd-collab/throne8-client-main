@@ -18,10 +18,12 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
         postImpressions: { total: 0, last7Days: 0, last30Days: 0 },
         searchAppearances: { total: 0, last7Days: 0, last30Days: 0 }
     });
+    
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchAnalytics = async () => {
+
             try {
                 setIsLoading(true);
 
@@ -31,6 +33,10 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                     AnalyticsService.getPostImpressionsCount(20),
                     AnalyticsService.getSearchAppearancesCount()
                 ]);
+
+                console.log('🔍 PROFILE VIEWS RAW:', profileViews);
+            console.log('🔍 POST IMPRESSIONS RAW:', postImpressions);
+            console.log('🔍 SEARCH APPEARANCES RAW:', searchAppearances);
 
                 setAnalytics({
                     profileViews: profileViews.data || { total: 0, last7Days: 0, last30Days: 0 },

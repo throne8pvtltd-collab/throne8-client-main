@@ -2,7 +2,7 @@
 
 import { useAuth, useProtectedRoute } from '@/features/auth/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import ProfileNavbar from '../../features/profile/components/home/ProfileNavbar';
 import ProfileBanner from '../../features/profile/components/home/ProfileBanner';
@@ -22,6 +22,11 @@ import PeopleYouMayKnow from '../../features/profile/components/home/PeopleYouMa
 
 // ✅ Import transformer
 import { transformToProfileData } from '@/shared/utils/profileTransformers';
+import FollowService from '@/lib/api/follow.service';
+
+import { useSocket } from '@/core/realtime/useSocket';
+import { SOCKET_EVENTS } from '@/core/realtime/socket.events';
+
 import { useEducation } from '@/features/profile/hooks/useEducation';
 import { useExperienceData } from '@/features/profile/hooks/useExperienceData';
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -29,9 +34,11 @@ import { useAboutData } from '@/features/profile/hooks/useAboutData';
 import { useHeadlineData } from '@/features/profile/hooks/useHeadlineData';
 import { useSkillsData } from '@/features/profile/hooks/useSkillsData';
 
+
 export default function ProfilePage() {
     const { isChecking } = useProtectedRoute();
     const { user, isLoading } = useAuth();
+    const [followersCount, setFollowersCount] = useState(0);
     const {
         userProfileData,
         profileImageUrl,
@@ -99,6 +106,41 @@ export default function ProfilePage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
+
+
+    useEffect(() => {
+        if (!user?.userId) return;
+        const loadFollowersCount = async () => {
+            const res = await FollowService.getFollowCounts(user.userId);
+            setFollowersCount(res?.data?.followersCount ?? 0);
+        };
+        loadFollowersCount();
+    }, [user?.userId]);
+
+
+    const { socket } = useSocket();
+
+useEffect(() => {
+    if (!socket) return;
+
+    const handleFollowReceived = () => {
+        setFollowersCount(prev => prev + 1);
+    };
+
+    const handleFollowRemoved = () => {
+        setFollowersCount(prev => Math.max(0, prev - 1));
+    };
+
+    socket.on(SOCKET_EVENTS.FOLLOW_RECEIVED, handleFollowReceived);
+    socket.on(SOCKET_EVENTS.FOLLOW_REMOVED, handleFollowRemoved);
+
+    return () => {
+        socket.off(SOCKET_EVENTS.FOLLOW_RECEIVED, handleFollowReceived);
+        socket.off(SOCKET_EVENTS.FOLLOW_REMOVED, handleFollowRemoved);
+    };
+}, [socket]);
+
+
 
     useEffect(() => {
         if (aboutId) {
@@ -178,7 +220,8 @@ export default function ProfilePage() {
                         company={profileData.company}
                         description={profileData.description}
                         location={profileData.location}
-                        followers={profileData.followers}
+                        // followers={profileData.followers}
+                        followers={followersCount}
                         connections={profileData.connections}
                         firstName={userProfileData?.firstName || ''}
                         lastName={userProfileData?.lastName || ''}
