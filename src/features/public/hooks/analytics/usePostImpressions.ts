@@ -16,6 +16,8 @@ export const usePostImpressions = (options: UsePostImpressionsOptions = {}) => {
     const [impressions, setImpressions] = useState<PostImpression[]>([]);
     const [timeline, setTimeline] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);
+    const [change, setChange] = useState<any>(null);   // 👈 NEW
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,13 +29,17 @@ export const usePostImpressions = (options: UsePostImpressionsOptions = {}) => {
             // console.log('📊 [usePostImpressions] Fetching...', { days, postId });
 
             // Fetch in parallel
-            const [detailResponse, timelineResponse] = await Promise.all([
+            const [detailResponse, timelineResponse,changeResponse] = await Promise.all([
                 AnalyticsService.getPostImpressionsDetail(1, 50),
-                AnalyticsService.getPostImpressionsTimeline(days, postId)
+                AnalyticsService.getPostImpressionsTimeline(days, postId),
+                AnalyticsService.getPostImpressionsChange(days)   // 👈 NEW
+
             ]);
 
             setImpressions(detailResponse.data.impressions || []);
             setTimeline(timelineResponse.data);
+            setChange(changeResponse.data);   // 👈 NEW
+
 
             // If specific post, get stats
             if (postId) {
@@ -77,6 +83,8 @@ export const usePostImpressions = (options: UsePostImpressionsOptions = {}) => {
         impressions,
         timeline,
         stats,
+        change,          // 👈 NEW
+
         isLoading,
         error,
         fetchImpressions,

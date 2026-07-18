@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePostImpressions } from '@/hooks/analytics/usePostImpressions';
 import { X, TrendingUp, BarChart3, Users, Eye, MousePointer, Share2 } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -116,6 +117,7 @@ const PostImpressionsModal: React.FC<PostImpressionsModalProps> = ({
     const [graphType, setGraphType] = useState<'impressions' | 'engagements'>('impressions');
     const [showCustomInput, setShowCustomInput] = useState(false);
     const [customDays, setCustomDays] = useState('');
+    const { change, isLoading: changeLoading } = usePostImpressions({ days: timeRange });
 
     if (!isOpen) return null;
 
@@ -349,14 +351,28 @@ const PostImpressionsModal: React.FC<PostImpressionsModalProps> = ({
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold text-[#4a3728] mb-4">Discovery</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-white rounded-xl p-4 shadow border border-[#e0d8cf]">
+                                <div className="bg-white rounded-xl p-4 shadow border border-[#e0d8cf]">
                                         <div className="flex items-center gap-3 mb-2">
                                             <Eye className="w-5 h-5 text-blue-500" />
                                             <span className="text-sm text-[#7a5c3e]">Total Impressions</span>
                                         </div>
-                                        <p className="text-2xl font-bold text-[#4a3728]">
-                                            {analytics?.postImpressions?.total || 0}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-2xl font-bold text-[#4a3728]">
+                                                {analytics?.postImpressions?.total || 0}
+                                            </p>
+                                            {!changeLoading && change?.change && (
+                                                <span
+                                                    className={`text-xs font-semibold ${
+                                                        change.change.trend === 'up'
+                                                            ? 'text-green-600'
+                                                            : 'text-red-600'
+                                                    }`}
+                                                >
+                                                    {change.change.trend === 'up' ? '▲' : '▼'}{' '}
+                                                    {Math.abs(change.change.percentage)}%
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="bg-white rounded-xl p-4 shadow border border-[#e0d8cf]">
                                         <div className="flex items-center gap-3 mb-2">

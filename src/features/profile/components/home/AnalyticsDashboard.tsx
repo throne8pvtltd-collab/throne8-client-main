@@ -18,7 +18,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
         postImpressions: { total: 0, last7Days: 0, last30Days: 0 },
         searchAppearances: { total: 0, last7Days: 0, last30Days: 0 }
     });
-    
+
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -34,9 +34,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                     AnalyticsService.getSearchAppearancesCount()
                 ]);
 
-                console.log('🔍 PROFILE VIEWS RAW:', profileViews);
-            console.log('🔍 POST IMPRESSIONS RAW:', postImpressions);
-            console.log('🔍 SEARCH APPEARANCES RAW:', searchAppearances);
 
                 setAnalytics({
                     profileViews: profileViews.data || { total: 0, last7Days: 0, last30Days: 0 },
@@ -57,13 +54,13 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
 
     if (isLoading) {
         return (
-            <div className="bg-white/60 rounded-3xl p-6 border border-[#4a3728]/20">
+            <div className="bg-white/60 rounded-2xl p-4 border border-[#4a3728]/20">
                 <div className="animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-                    <div className="space-y-3">
-                        <div className="h-20 bg-gray-200 rounded"></div>
-                        <div className="h-20 bg-gray-200 rounded"></div>
-                        <div className="h-20 bg-gray-200 rounded"></div>
+                    <div className="h-5 bg-gray-200 rounded w-1/3 mb-3"></div>
+                    <div className="space-y-2">
+                        <div className="h-16 bg-gray-200 rounded"></div>
+                        <div className="h-16 bg-gray-200 rounded"></div>
+                        <div className="h-16 bg-gray-200 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -71,56 +68,56 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
     }
 
     return (
-        <div className="bg-white/60 rounded-3xl p-6 border border-[#4a3728]/20 shadow-lg mb-4">
-            <h3 className="text-xl font-bold text-[#4a3728] mb-4 flex items-center gap-2">
-                <BarChart2 className="w-5 h-5" />
+        <div className="bg-white/60 rounded-2xl p-4 border border-[#4a3728]/20 shadow-lg mb-4">
+            <h3 className="text-lg font-bold text-[#4a3728] mb-3 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4" />
                 Your Analytics
             </h3>
 
-            <div className="finalAnalyticsDesignDiv grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="finalAnalyticsDesignDiv grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Profile Views */}
                 <div
                     onClick={() => router.push(`/profile/analytics/${currentUser?.userId}`)}
-                    className="group bg-[#e0d8cf] rounded-2xl p-6 shadow-xl border border-[#c9bfb4] hover:shadow-[0_0_22px_#c9bfb4] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                            <Eye className="w-7 h-7 text-white" />
+                    className="group bg-[#e0d8cf] rounded-xl p-4 shadow-md border border-[#c9bfb4] hover:shadow-[0_0_16px_#c9bfb4] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                            <Eye className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-sm font-semibold text-green-600">
+                        <p className="text-xs font-semibold text-green-600">
                             +12%
                         </p>
                     </div>
 
                     {/* Main Value */}
-                    <div className="mb-2">
-                        <h2 className="text-4xl font-bold text-[#4a3728]">
-                            {analytics.profileViews.last30Days.toLocaleString()}
+                    <div className="mb-1">
+                        <h2 className="text-2xl font-bold text-[#4a3728]">
+                            {analytics.profileViews.last7Days.toLocaleString()}
                         </h2>
-                        <p className="text-xs text-[#7a5c3e] mt-1">
+                        <p className="text-xs text-[#7a5c3e] mt-0.5">
                             out of {analytics.profileViews.total.toLocaleString()} total
                         </p>
                     </div>
 
-                    <p className="text-base font-semibold text-[#4a3728]/80 mb-2">
+                    <p className="text-sm font-semibold text-[#4a3728]/80 mb-1">
                         Profile Views
                     </p>
 
                     {/* Progress Bar */}
-                    <div className="mt-4">
-                        <div className="w-full h-2 bg-[#d1c5b9] rounded-full overflow-hidden">
+                    <div className="mt-1.5">
+                        <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
-                                className="h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-700"
+                                className="h-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-700"
                                 style={{ width: '70%' }}
                             ></div>
                         </div>
                     </div>
 
-                    <p className="text-xs text-[#4a3728]/70 mt-3">
+                    <p className="text-xs text-[#4a3728]/70 mt-1.5">
                         People visiting your profile.
                     </p>
 
                     {/* Footer */}
-                    <div className="mt-5 pt-4 border-t border-[#c9bfb4]/60 flex justify-between items-center">
+                    <div className="mt-2 pt-1.5 border-t border-[#c9bfb4]/60 flex justify-between items-center">
                         <span className="text-[#4a3728]/60 text-xs font-medium">
                             Last 7 days
                         </span>
@@ -130,46 +127,46 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                 {/* Post Impressions */}
                 <div
                     onClick={() => router.push(`/profile/analytics/${currentUser?.userId}`)}
-                    className="group bg-[#e0d8cf] rounded-2xl p-6 shadow-xl border border-[#c9bfb4] hover:shadow-[0_0_22px_#c9bfb4] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                            <TrendingUp className="w-7 h-7 text-white" />
+                    className="group bg-[#e0d8cf] rounded-xl p-4 shadow-md border border-[#c9bfb4] hover:shadow-[0_0_16px_#c9bfb4] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                            <TrendingUp className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-sm font-semibold text-green-600">
+                        <p className="text-xs font-semibold text-green-600">
                             +60%
                         </p>
                     </div>
 
                     {/* Main Value */}
-                    <div className="mb-2">
-                        <h2 className="text-4xl font-bold text-[#4a3728]">
-                            {analytics.postImpressions.last30Days.toLocaleString()}
+                    <div className="mb-1">
+                        <h2 className="text-2xl font-bold text-[#4a3728]">
+                            {analytics.postImpressions.last7Days.toLocaleString()}
                         </h2>
-                        <p className="text-xs text-[#7a5c3e] mt-1">
+                        <p className="text-xs text-[#7a5c3e] mt-0.5">
                             out of {analytics.postImpressions.total.toLocaleString()} total
                         </p>
                     </div>
 
-                    <p className="text-base font-semibold text-[#4a3728]/80 mb-2">
+                    <p className="text-sm font-semibold text-[#4a3728]/80 mb-1">
                         Post Impressions
                     </p>
 
                     {/* Progress Bar */}
-                    <div className="mt-4">
-                        <div className="w-full h-2 bg-[#d1c5b9] rounded-full overflow-hidden">
+                    <div className="mt-1.5">
+                        <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
-                                className="h-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700"
+                                className="h-1.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700"
                                 style={{ width: '85%' }}
                             ></div>
                         </div>
                     </div>
 
-                    <p className="text-xs text-[#4a3728]/70 mt-3">
+                    <p className="text-xs text-[#4a3728]/70 mt-1.5">
                         Engagement on your posts.
                     </p>
 
                     {/* Footer */}
-                    <div className="mt-5 pt-4 border-t border-[#c9bfb4]/60 flex justify-between items-center">
+                    <div className="mt-2 pt-1.5 border-t border-[#c9bfb4]/60 flex justify-between items-center">
                         <span className="text-[#4a3728]/60 text-xs font-medium">
                             Last 7 days
                         </span>
@@ -179,46 +176,46 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                 {/* Search Appearances */}
                 <div
                     onClick={() => router.push(`/profile/analytics/${currentUser?.userId}`)}
-                    className="group bg-[#e0d8cf] rounded-2xl p-6 shadow-xl border border-[#c9bfb4] hover:shadow-[0_0_22px_#c9bfb4] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                            <Users className="w-7 h-7 text-white" />
+                    className="group bg-[#e0d8cf] rounded-xl p-4 shadow-md border border-[#c9bfb4] hover:shadow-[0_0_16px_#c9bfb4] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                            <Users className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-sm font-semibold text-green-600">
+                        <p className="text-xs font-semibold text-green-600">
                             +40%
                         </p>
                     </div>
 
                     {/* Main Value */}
-                    <div className="mb-2">
-                        <h2 className="text-4xl font-bold text-[#4a3728]">
-                            {analytics.searchAppearances.last30Days.toLocaleString()}
+                    <div className="mb-1">
+                        <h2 className="text-2xl font-bold text-[#4a3728]">
+                            {analytics.searchAppearances.last7Days.toLocaleString()}
                         </h2>
-                        <p className="text-xs text-[#7a5c3e] mt-1">
+                        <p className="text-xs text-[#7a5c3e] mt-0.5">
                             out of {analytics.searchAppearances.total.toLocaleString()} total
                         </p>
                     </div>
 
-                    <p className="text-base font-semibold text-[#4a3728]/80 mb-2">
+                    <p className="text-sm font-semibold text-[#4a3728]/80 mb-1">
                         Search Appearances
                     </p>
 
                     {/* Progress Bar */}
-                    <div className="mt-4">
-                        <div className="w-full h-2 bg-[#d1c5b9] rounded-full overflow-hidden">
+                    <div className="mt-1.5">
+                        <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
-                                className="h-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700"
+                                className="h-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700"
                                 style={{ width: '60%' }}
                             ></div>
                         </div>
                     </div>
 
-                    <p className="text-xs text-[#4a3728]/70 mt-3">
+                    <p className="text-xs text-[#4a3728]/70 mt-1.5">
                         Times you appeared in searches.
                     </p>
 
                     {/* Footer */}
-                    <div className="mt-5 pt-4 border-t border-[#c9bfb4]/60 flex justify-between items-center">
+                    <div className="mt-2 pt-1.5 border-t border-[#c9bfb4]/60 flex justify-between items-center">
                         <span className="text-[#4a3728]/60 text-xs font-medium">
                             Last 7 days
                         </span>

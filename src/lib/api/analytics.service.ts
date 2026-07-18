@@ -22,7 +22,8 @@ class AnalyticsService {
             //     position
             // });
 
-            const { data } = await api.post('/api/v1/profile/analytics/record-search', {
+            // const { data } = await api.post('/api/v1/profile/analytics/record-search', {
+                const { data } = await api.post('/profile/analytics/record-search', {
                 searchedUserId,
                 searchQuery,
                 wasClicked,
@@ -55,7 +56,8 @@ class AnalyticsService {
             //     viewerData
             // });
 
-            const { data } = await api.post('/api/v1/profile/analytics/record-profile-view', {
+            // const { data } = await api.post('/api/v1/profile/analytics/record-profile-view', {
+                const { data } = await api.post('/profile/analytics/record-profile-view', {
                 profileOwnerId,
                 ...viewerData
             });
@@ -73,12 +75,12 @@ class AnalyticsService {
 
     /**
      * 1️⃣ Toggle Analytics Privacy
-     * PUT /api/v1/profile/analytics/privacy
+     * PUT /profile/analytics/privacy
      */
     static async togglePrivacy(isPrivate: boolean): Promise<any> {
         try {
             // console.log('🔐 [ANALYTICS] Toggling privacy:', isPrivate);
-            const { data } = await api.put('/api/v1/profile/analytics/privacy', { isPrivate });
+            const { data } = await api.put('/profile/analytics/privacy', { isPrivate });
             // console.log('✅ [ANALYTICS] Privacy toggled successfully');
             return data;
         } catch (error: any) {
@@ -89,7 +91,7 @@ class AnalyticsService {
 
     /**
      * 2️⃣ Get Profile Views Count
-     * GET /api/v1/profile/analytics/profile-views/count
+     * GET /profile/analytics/profile-views/count
      */
     static async getProfileViewsCount(dateRange: number = 90): Promise<any> {
         try {
@@ -112,7 +114,7 @@ class AnalyticsService {
 
     /**
      * 3️⃣ Get Profile Views Detail (Who Viewed)
-     * GET /api/v1/profile/analytics/profile-views/detail
+     * GET /profile/analytics/profile-views/detail
      */
     static async getProfileViewsDetail(
         isPremium: boolean = false,
@@ -121,7 +123,7 @@ class AnalyticsService {
     ): Promise<any> {
         try {
             // console.log('👥 [ANALYTICS] Fetching profile views detail...');
-            const { data } = await api.get('/api/v1/profile/analytics/profile-views/detail', {
+            const { data } = await api.get('/profile/analytics/profile-views/detail', {
                 params: { isPremium, page, limit }
             });
             // console.log('✅ [ANALYTICS] Profile views detail fetched');
@@ -134,11 +136,11 @@ class AnalyticsService {
 
     /**
  * 📈 Get Profile Views % Change
- * GET /api/v1/profile/analytics/profile-views/change
+ * GET /profile/analytics/profile-views/change
  */
 static async getProfileViewsChange(days: number = 30): Promise<any> {
     try {
-        const { data } = await api.get('/api/v1/profile/analytics/profile-views/change', {
+        const { data } = await api.get('/profile/analytics/profile-views/change', {
             params: { days }
         });
         return data;
@@ -147,9 +149,42 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
         throw error;
     }
 }
+
+
+/**
+     * 📈 Get Post Impressions % Change
+     * GET /profile/analytics/post-impressions/change
+     */
+static async getPostImpressionsChange(days: number = 30): Promise<any> {
+    try {
+        const { data } = await api.get('/profile/analytics/post-impressions/change', {
+            params: { days }
+        });
+        return data;
+    } catch (error: any) {
+        console.error('❌ [ANALYTICS] Failed to fetch post impressions change:', error);
+        throw error;
+    }
+}
+
+/**
+ * 📈 Get Search Appearances % Change
+ * GET /profile/analytics/search-appearances/change
+ */
+static async getSearchAppearancesChange(days: number = 30): Promise<any> {
+    try {
+        const { data } = await api.get('/profile/analytics/search-appearances/change', {
+            params: { days }
+        });
+        return data;
+    } catch (error: any) {
+        console.error('❌ [ANALYTICS] Failed to fetch search appearances change:', error);
+        throw error;
+    }
+}
     /**
      * 4️⃣ Get Post Impressions Count
-     * GET /api/v1/profile/analytics/post-impressions/count
+     * GET /profile/analytics/post-impressions/count
      */
     static async getPostImpressionsCount(limit: number = 20): Promise<any> {
         try {
@@ -171,12 +206,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 5️⃣ Get Post Impressions Detail
-     * GET /api/v1/profile/analytics/post-impressions/detail
+     * GET /profile/analytics/post-impressions/detail
      */
     static async getPostImpressionsDetail(page: number = 1, limit: number = 50): Promise<any> {
         try {
             // console.log('📈 [ANALYTICS] Fetching post impressions detail...');
-            const { data } = await api.get('/api/v1/profile/analytics/post-impressions/detail', {
+            const { data } = await api.get('/profile/analytics/post-impressions/detail', {
                 params: { page, limit }
             });
             // console.log('✅ [ANALYTICS] Post impressions detail fetched
@@ -190,12 +225,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 6️⃣ Get Post Impressions by Timeframe
-     * GET /api/v1/profile/analytics/post-impressions/timeframe
+     * GET /profile/analytics/post-impressions/timeframe
      */
     static async getPostImpressionsByTimeframe(days: number = 7): Promise<any> {
         try {
             // console.log('📅 [ANALYTICS] Fetching post impressions timeframe...');
-            const { data } = await api.get('/api/v1/profile/analytics/post-impressions/timeframe', {
+            const { data } = await api.get('/profile/analytics/post-impressions/timeframe', {
                 params: { days }
             });
             // console.log('✅ [ANALYTICS] Post impressions timeframe fetched');
@@ -208,7 +243,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 7️⃣ Get Search Appearances Count
-     * GET /api/v1/profile/analytics/search-appearances/count
+     * GET /profile/analytics/search-appearances/count
      */
     static async getSearchAppearancesCount(): Promise<any> {
         try {
@@ -227,12 +262,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 8️⃣ Get Search Appearances Detail
-     * GET /api/v1/profile/analytics/search-appearances/detail
+     * GET /profile/analytics/search-appearances/detail
      */
     static async getSearchAppearancesDetail(page: number = 1, limit: number = 50): Promise<any> {
         try {
             // console.log('🔎 [ANALYTICS] Fetching search appearances detail...');
-            const { data } = await api.get('/api/v1/profile/analytics/search-appearances/detail', {
+            const { data } = await api.get('/profile/analytics/search-appearances/detail', {
                 params: { page, limit }
             });
             // console.log('✅ [ANALYTICS] Search appearances detail fetched');
@@ -245,12 +280,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 9️⃣ Get All Analytics Summary
-     * GET /api/v1/profile/analytics/all
+     * GET /profile/analytics/all
      */
     static async getAllAnalytics(dateRange: number = 30): Promise<any> {
         try {
             // console.log('📊 [ANALYTICS] Fetching all analytics summary...');
-            const { data } = await api.get('/api/v1/profile/analytics/all', {
+            const { data } = await api.get('/profile/analytics/all', {
                 params: { dateRange }
             });
             // console.log('✅ [ANALYTICS] All analytics fetched:', data);
@@ -263,7 +298,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 🔟 Get Who Viewed Profile (Same as #3)
-     * GET /api/v1/profile/analytics/who-viewed
+     * GET /profile/analytics/who-viewed
      */
     static async getWhoViewedProfile(
         isPremium: boolean = false,
@@ -272,7 +307,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
     ): Promise<any> {
         try {
             // console.log('👁️ [ANALYTICS] Fetching who viewed profile...');
-            const { data } = await api.get('/api/v1/profile/analytics/who-viewed', {
+            const { data } = await api.get('/profile/analytics/who-viewed', {
                 params: { isPremium, page, limit }
             });
             // console.log('✅ [ANALYTICS] Who viewed profile fetched');
@@ -285,12 +320,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 1️⃣1️⃣ Get Viewer Demographics
-     * GET /api/v1/profile/analytics/demographics
+     * GET /profile/analytics/demographics
      */
     static async getViewerDemographics(): Promise<any> {
         try {
             // console.log('👥 [ANALYTICS] Fetching viewer demographics...');
-            const { data } = await api.get('/api/v1/profile/analytics/demographics');
+            const { data } = await api.get('/profile/analytics/demographics');
             // console.log('✅ [ANALYTICS] Viewer demographics fetched');
             return data;
         } catch (error: any) {
@@ -301,12 +336,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 1️⃣2️⃣ Get Search Keywords
-     * GET /api/v1/profile/analytics/search-keywords
+     * GET /profile/analytics/search-keywords
      */
     static async getSearchKeywords(limit: number = 10): Promise<any> {
         try {
             // console.log('🔑 [ANALYTICS] Fetching search keywords...');
-            const { data } = await api.get('/api/v1/profile/analytics/search-keywords', {
+            const { data } = await api.get('/profile/analytics/search-keywords', {
                 params: { limit }
             });
             // console.log('✅ [ANALYTICS] Search keywords fetched');
@@ -319,12 +354,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 1️⃣3️⃣ Get Analytics by Date Range
-     * GET /api/v1/profile/analytics/date-range
+     * GET /profile/analytics/date-range
      */
     static async getAnalyticsByDateRange(startDate: string, endDate: string): Promise<any> {
         try {
             // console.log('📅 [ANALYTICS] Fetching analytics by date range...');
-            const { data } = await api.get('/api/v1/profile/analytics/date-range', {
+            const { data } = await api.get('/profile/analytics/date-range', {
                 params: { startDate, endDate }
             });
             // console.log('✅ [ANALYTICS] Analytics by date range fetched');
@@ -337,12 +372,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 1️⃣4️⃣ Export Analytics
-     * GET /api/v1/profile/analytics/export
+     * GET /profile/analytics/export
      */
     static async exportAnalytics(format: 'csv' | 'excel' = 'csv'): Promise<any> {
         try {
             // console.log('📥 [ANALYTICS] Exporting analytics...');
-            const { data } = await api.get('/api/v1/profile/analytics/export', {
+            const { data } = await api.get('/profile/analytics/export', {
                 params: { format }
             });
             // console.log('✅ [ANALYTICS] Analytics exported');
@@ -355,12 +390,12 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
 
     /**
      * 1️⃣5️⃣ Get Analytics Graphs Data
-     * GET /api/v1/profile/analytics/graphs
+     * GET /profile/analytics/graphs
      */
     static async getAnalyticsGraphData(days: number = 30): Promise<any> {
         try {
             // console.log('📊 [ANALYTICS] Fetching analytics graph data...');
-            const { data } = await api.get('/api/v1/profile/analytics/graphs', {
+            const { data } = await api.get('/profile/analytics/graphs', {
                 params: { days }
             });
             // console.log('✅ [ANALYTICS] Analytics graph data fetched');
@@ -394,7 +429,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
      */
     static async getPostImpressionsTimeline(days: number = 30, postId?: string) {
         try {
-            const { data } = await api.get('/api/v1/profile/analytics/post-impressions/timeline', {
+            const { data } = await api.get('/profile/analytics/post-impressions/timeline', {
                 params: { days, postId }
             });
             return data;
@@ -409,7 +444,7 @@ static async getProfileViewsChange(days: number = 30): Promise<any> {
      */
     static async getPostImpressionStats(postId: string) {
         try {
-            const { data } = await api.get(`/api/v1/profile/analytics/post/${postId}/impression-stats`);
+            const { data } = await api.get(`/profile/analytics/post/${postId}/impression-stats`);
             return data;
         } catch (error: any) {
             console.error('❌ Get post stats failed:', error);

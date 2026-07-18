@@ -14,7 +14,7 @@ const api: AxiosInstance = axios.create({
 });
 
 // ==================== REQUEST INTERCEPTOR ====================
-// हर request में access token लगाओ
+// Har request me access token lagao
 api.interceptors.request.use(
     (config) => {
         const token = TokenStorage.getAccessToken();
