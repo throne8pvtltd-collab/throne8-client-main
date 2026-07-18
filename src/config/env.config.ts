@@ -235,6 +235,11 @@ const _config = {
     NEXT_PUBLIC_CONNECTIONS_CONNECTION_USER_ENDPOINT: optionalEnv('NEXT_PUBLIC_CONNECTIONS_CONNECTION_USER_ENDPOINT'),
     NEXT_PUBLIC_CONNECTIONS_USER_ENDPOINT: optionalEnv('NEXT_PUBLIC_CONNECTIONS_USER_ENDPOINT'),
 
+
+
+
+       ///////////////////////// changed 
+    NEXT_PUBLIC_FOLLOW_COUNTS_ENDPOINT: optionalEnv('NEXT_PUBLIC_FOLLOW_COUNTS_ENDPOINT'),
     // ============================================================
     // 10. MESSAGES ENDPOINTS
     // ============================================================

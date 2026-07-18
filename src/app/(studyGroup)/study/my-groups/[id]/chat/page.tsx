@@ -4,11 +4,7 @@
 import { use, useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/core/store/store.hooks';
 import StudyGroupService from '@/lib/api/studyGroup.service';
-<<<<<<< HEAD
-import GroupChat from '@/features/studyGroup/components/GroupChat';
-=======
 import GroupChat from '../../../../../../features/study-group/components/my-groups/GroupChat';
->>>>>>> ed5e7918466befd6e71595a48758cdf47a8b9a31
 import { Loader2 } from 'lucide-react';
 
 interface PageProps {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AnalyticsService from '@/lib/api/analytics.service';
 import { ProfileView } from '@/types/analytics.types';
+import { useSocket } from '@/core/realtime/useSocket';
 
 interface UseProfileViewsOptions {
     days?: number;
@@ -12,6 +13,7 @@ interface UseProfileViewsOptions {
 
 export const useProfileViews = (options: UseProfileViewsOptions = {}) => {
     const { days = 30, isPremium = false, autoLoad = true } = options;
+    const { socket } = useSocket();
 
     const [views, setViews] = useState<ProfileView[]>([]);
     const [trend, setTrend] = useState<any>(null);
@@ -75,6 +77,25 @@ export const useProfileViews = (options: UseProfileViewsOptions = {}) => {
             fetchViews();
         }
     }, [autoLoad, fetchViews]);
+
+
+
+    // 👇 NEW — real-time listener
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleProfileView = () => {
+            fetchViews();
+        };
+
+        socket.on('analytics:profile-view', handleProfileView);
+
+        return () => {
+            socket.off('analytics:profile-view', handleProfileView);
+        };
+    }, [socket, fetchViews]);
+
+
 
     return {
         views,

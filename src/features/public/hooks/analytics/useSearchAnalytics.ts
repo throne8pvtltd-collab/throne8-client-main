@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import AnalyticsService from '@/lib/api/analytics.service';
 import { SearchAppearance } from '@/types/analytics.types';
 import { debounce } from 'lodash';
+import { useSocket } from '@/core/realtime/useSocket';
 
 interface UseSearchAnalyticsOptions {
     minChars?: number;
@@ -12,6 +13,7 @@ interface UseSearchAnalyticsOptions {
 
 export const useSearchAnalytics = (options: UseSearchAnalyticsOptions = {}) => {
     const { minChars = 3, debounceMs = 500 } = options;
+    const { socket } = useSocket();
 
     const [appearances, setAppearances] = useState<SearchAppearance[]>([]);
     const [keywords, setKeywords] = useState<any[]>([]);
@@ -20,6 +22,8 @@ export const useSearchAnalytics = (options: UseSearchAnalyticsOptions = {}) => {
         last7Days: 0,
         last30Days: 0
     });
+    const [change, setChange] = useState<any>(null);   // 👈 NEW
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,22 +31,26 @@ export const useSearchAnalytics = (options: UseSearchAnalyticsOptions = {}) => {
     const trackedSearchesRef = useRef<Set<string>>(new Set());
     const trackedAppearancesRef = useRef<Map<string, Set<string>>>(new Map());
 
-    const fetchSearchAnalytics = useCallback(async () => {
+    const fetchSearchAnalytics = useCallback(async (days: number = 30) => {
         try {
             setIsLoading(true);
             setError(null);
 
             // console.log('🔍 [useSearchAnalytics] Fetching...');
 
-            const [countResponse, detailResponse, keywordsResponse] = await Promise.all([
+            const [countResponse, detailResponse, keywordsResponse,changeResponse] = await Promise.all([
                 AnalyticsService.getSearchAppearancesCount(),
                 AnalyticsService.getSearchAppearancesWithHighlights(1, 50),
-                AnalyticsService.getSearchKeywords(10)
+                AnalyticsService.getSearchKeywords(10),
+                AnalyticsService.getSearchAppearancesChange(days) // 👈 NEW
+
             ]);
 
             setCount(countResponse.data);
             setAppearances(detailResponse.data.appearances || []);
             setKeywords(keywordsResponse.data.topKeywords || []);
+            setChange(changeResponse.data);   // 👈 NEW
+
 
             // console.log('✅ [useSearchAnalytics] Loaded successfully');
         } catch (err: any) {
@@ -112,6 +120,7 @@ export const useSearchAnalytics = (options: UseSearchAnalyticsOptions = {}) => {
         //     newUsersToTrack: usersToTrack.length
         // });
 
+
         // Track in parallel (non-blocking)
         const trackingPromises = usersToTrack.map((user, index) =>
             trackAppearance(user.userId, normalizedQuery, false, index + 1)
@@ -129,10 +138,30 @@ export const useSearchAnalytics = (options: UseSearchAnalyticsOptions = {}) => {
         // console.log('🧹 [useSearchAnalytics] Tracking cleared');
     }, []);
 
+
+     // 👇 NEW — real-time listener
+     useEffect(() => {
+        if (!socket) return;
+
+        const handleSearchAppearance = () => {
+            fetchSearchAnalytics();
+        };
+
+        socket.on('analytics:search-appearance', handleSearchAppearance);
+
+        return () => {
+            socket.off('analytics:search-appearance', handleSearchAppearance);
+        };
+    }, [socket, fetchSearchAnalytics]);
+
+
+
     return {
         appearances,
         keywords,
         count,
+        change,          // 👈 NEW
+
         isLoading,
         error,
         fetchSearchAnalytics,

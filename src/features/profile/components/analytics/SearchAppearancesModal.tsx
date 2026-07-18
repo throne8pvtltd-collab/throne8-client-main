@@ -105,6 +105,8 @@ const SearchAppearancesModal: React.FC<SearchAppearancesModalProps> = ({
 
     const [searchHistory, setSearchHistory] = useState<any[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [change, setChange] = useState<any>(null);   // 👈 NEW
+
 
     useEffect(() => {
         if (isOpen) {
@@ -115,7 +117,13 @@ const SearchAppearancesModal: React.FC<SearchAppearancesModalProps> = ({
     const loadSearchHistory = async () => {
         try {
             setIsLoadingHistory(true);
-            const response = await AnalyticsService.getSearchAppearancesDetail(1, 50);
+
+            // const response = await AnalyticsService.getSearchAppearancesDetail(1, 50);
+            const [response, changeResponse] = await Promise.all([
+                AnalyticsService.getSearchAppearancesDetail(1, 50),
+                AnalyticsService.getSearchAppearancesChange(timeRange)   // 👈 NEW
+            ]);
+
 
             // Group by search query and count
             const grouped = response.data.appearances.reduce((acc: any, item: any) => {
@@ -135,6 +143,8 @@ const SearchAppearancesModal: React.FC<SearchAppearancesModalProps> = ({
 
             const searchData = Object.values(grouped).sort((a: any, b: any) => b.count - a.count);
             setSearchHistory(searchData);
+            setChange(changeResponse.data);   // 👈 NEW
+
         } catch (error) {
             console.error('Failed to load search history:', error);
         } finally {
@@ -316,9 +326,23 @@ const SearchAppearancesModal: React.FC<SearchAppearancesModalProps> = ({
                                 <Calendar className="w-5 h-5 text-purple-500" />
                                 <span className="text-sm text-[#7a5c3e]">Last 30 Days</span>
                             </div>
-                            <p className="text-2xl font-bold text-[#4a3728]">
-                                {analytics?.searchAppearances?.last30Days || 0}
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-2xl font-bold text-[#4a3728]">
+                                    {analytics?.searchAppearances?.last30Days || 0}
+                                </p>
+                                {change?.change && (
+                                    <span
+                                        className={`text-xs font-semibold ${
+                                            change.change.trend === 'up'
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                        }`}
+                                    >
+                                        {change.change.trend === 'up' ? '▲' : '▼'}{' '}
+                                        {Math.abs(change.change.percentage)}%
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div className="bg-white rounded-xl p-4 shadow border border-[#e0d8cf]">
                             <div className="flex items-center gap-2 mb-2">
