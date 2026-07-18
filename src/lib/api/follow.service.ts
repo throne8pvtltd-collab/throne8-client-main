@@ -67,11 +67,7 @@ class FollowService {
     }
 
     /**
-<<<<<<< HEAD
      * 📊 GET FOLLOW COUNTS FOR A USER (followers + following)
-=======
-     * Get followers & following count
->>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
      * GET /api/v1/follow/counts/:userId
      */
     static async getFollowCounts(userId: string) {
@@ -81,23 +77,12 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
-<<<<<<< HEAD
             console.error('[GET_FOLLOW_COUNTS] Failed:', error);
-=======
+
             console.error("[GET_FOLLOW_COUNTS] Failed:", error);
->>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
             return null;
         }
     }
-
-    /**
-<<<<<<< HEAD
-     * Get companies a user is following
-=======
-     * Get companies followed by user
->>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
-     * GET /api/v1/follow/user/:userId/companies
-     */
     static async getUserFollowingCompanies(userId: string) {
         try {
             const { data } = await api.get(
@@ -105,16 +90,9 @@ class FollowService {
             );
             return data;
         } catch (error: any) {
-<<<<<<< HEAD
+
             console.error('[GET_FOLLOWING_COMPANIES] Failed:', error);
             throw new Error(error.response?.data?.message || 'Failed to fetch followed companies');
-=======
-            console.error("[GET_FOLLOWING_COMPANIES] Failed:", error);
-            throw new Error(
-                error.response?.data?.message ||
-                    "Failed to fetch followed companies"
-            );
->>>>>>> 48414dc2f955f26a8de1551cd465d37c4bf20577
         }
     }
 }
