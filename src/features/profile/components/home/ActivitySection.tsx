@@ -361,6 +361,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     followers = 0,
     currentUserId,
     userReposts = [],
+    userId,
     isLoadingReposts = false,
     onCreateRepost,
     onDeleteRepost,
@@ -383,22 +384,31 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
         setVisibleImagesCount(3);
     }, [activeTab]);
 
-    useEffect(() => {
-        if (activeTab === 'Comments' && currentUserId) {
-            const fetchMyComments = async () => {
-                try {
-                    setIsLoadingUserComments(true);
-                    const response = await ProfileService.getMyComments();
-                    setUserComments(response.data?.comments || response.data || []);
-                } catch (error) {
-                    console.error('Failed to load user comments:', error);
-                } finally {
-                    setIsLoadingUserComments(false);
-                }
-            };
-            fetchMyComments();
+ useEffect(() => {
+    if (activeTab !== 'Comments') return;
+
+    const targetUserId = isOwnProfile ? currentUserId : userId;
+    if (!targetUserId) return;
+
+    const fetchComments = async () => {
+        try {
+            setIsLoadingUserComments(true);
+            // ✅ FIX: apni profile pe apne comments, doosre ki profile pe
+            // us user ke comments — pehle ye hamesha "meri" comments
+            // fetch karta tha chahe kisi ki bhi profile ho
+            const response = isOwnProfile
+                ? await ProfileService.getMyComments()
+                : await ProfileService.getCommentsByUserId(targetUserId);
+            setUserComments(response.data?.comments || response.data || []);
+        } catch (error) {
+            console.error('Failed to load comments:', error);
+            setUserComments([]);
+        } finally {
+            setIsLoadingUserComments(false);
         }
-    }, [activeTab, currentUserId]);
+    };
+    fetchComments();
+}, [activeTab, currentUserId, userId, isOwnProfile]);
 
     const formatRelativeTime = (dateStr: string) => {
         if (!dateStr) return 'Recently';
