@@ -308,7 +308,7 @@ export default function SearchUserProfilePage() {
                         isOwnProfile={false}
                         currentUserId={userId}
                         profileImage={profileImageUrl}
-                        name={profileData.name}
+                        name={profileData.name} 
                         pronouns={profileData.pronouns}
                         headline={headlineData?.title || profileData.headline}
                         headlineId={headlineId}
