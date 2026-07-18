@@ -294,8 +294,8 @@ export default function SearchUserProfilePage() {
                 currentUserId={user?.userId}
             />
 
-           <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
-               <div className="flex-1 min-w-0 pt-20">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+                <div className="flex-1 min-w-0 pt-20">
                     <ProfileBanner
                         bannerImage={bannerUrl}
                         onBannerUpdate={() => { }}
@@ -361,24 +361,26 @@ export default function SearchUserProfilePage() {
                     />
 
                     <div id="activity">
-                        <ActivitySection
-                            posts={userPosts as any}
-                            onPostCreated={() => { }}
-                            isLoading={isLoadingPosts}
-                            profileImage={profileImageUrl}
-                            fullName={fullName}
-                            headline={profileData.headline}
-                            isOwnProfile={false}
-                        />
-                    </div>
+                       <ActivitySection
+                           posts={userPosts as any}
+                           onPostCreated={() => { }}
+                           isLoading={isLoadingPosts}
+                           profileImage={profileImageUrl}
+                           fullName={fullName}
+                           headline={profileData.headline}
+                           followers={followersList.length}
+                           currentUserId={user?.userId}
+                           isOwnProfile={false}
+                       />
+                   </div>
 
                     <SkillsSection userId={userId} isOwnProfile={false} />
                     <InterestsSection />
                 </div>
 
-                <aside className="hidden xl:block w-[340px] shrink-0 sticky top-24">
-    <PeopleYouMayKnow />
-</aside>
+                <div className="w-full md:w-80 md:min-w-[20rem]">
+                    <PeopleYouMayKnow />
+                </div>
             </div>
         </div>
     );

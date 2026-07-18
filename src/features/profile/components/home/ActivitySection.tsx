@@ -98,14 +98,14 @@ const RepostCard = ({
     profileImage,
     fullName,
     currentUserId,
-    isOwnProfile = true, // 👈 NAYA
+    isOwnProfile = true,
 }: {
     repost: any;
     onDeleteRepost?: (repostId: string) => Promise<any>;
     profileImage?: string;
     fullName?: string;
     currentUserId?: string;
-    isOwnProfile?: boolean; // 👈 NAYA
+    isOwnProfile?: boolean;
 }) => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -116,7 +116,7 @@ const RepostCard = ({
 
     useEffect(() => {
         if (!originalPost?.userId) return;
-        
+
         // If it is the current user themselves:
         if (originalPost.userId === currentUserId) {
             setOriginalAuthorName(fullName || 'You');
@@ -364,7 +364,7 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     isLoadingReposts = false,
     onCreateRepost,
     onDeleteRepost,
-    isOwnProfile = true, // 👈 NAYA — default true, apni profile pe purana behavior nahi tootega
+    isOwnProfile = true,
 }) => {
     const [activeTab, setActiveTab] = useState('Posts');
     const [showAllModal, setShowAllModal] = useState(false);
@@ -415,65 +415,65 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
     const handlers = useActivityHandlers({ posts, onPostCreated, profileImage });
 
     const repostedEntryIds = new Set(
-    userReposts
-        .map((r: any) => r.originalPost?.entryId)
-        .filter(Boolean)
-);
-const filteredPosts = posts.filter(
-    (p: any) => !repostedEntryIds.has(p.entryId || p.postId)
-);
-const hasMorePosts = (filteredPosts.length + userReposts.length) > 2;
+        userReposts
+            .map((r: any) => r.originalPost?.entryId)
+            .filter(Boolean)
+    );
+    const filteredPosts = posts.filter(
+        (p: any) => !repostedEntryIds.has(p.entryId || p.postId)
+    );
+    const hasMorePosts = (filteredPosts.length + userReposts.length) > 2;
 
-const combinedItems = [
-    ...userReposts.map((repost: any) => ({ type: 'repost', data: repost })),
-    ...filteredPosts.map((post: any) => ({ type: 'post', data: post })),
-];
+    const combinedItems = [
+        ...userReposts.map((repost: any) => ({ type: 'repost', data: repost })),
+        ...filteredPosts.map((post: any) => ({ type: 'post', data: post })),
+    ];
 
-const scrollRef = useRef<HTMLDivElement>(null);
-const [showLeftArrow, setShowLeftArrow] = useState(false);
-const [showRightArrow, setShowRightArrow] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
 
-const handleScroll = () => {
-    if (scrollRef.current) {
-        const { scrollLeft, clientWidth, scrollWidth } = scrollRef.current;
-        setShowLeftArrow(scrollLeft > 10);
-        setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
-    }
-};
-
-useEffect(() => {
-    const timer = setTimeout(() => {
-        handleScroll();
-    }, 200);
-    return () => clearTimeout(timer);
-}, [combinedItems.length]);
-
-useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (handlers.openMenuId !== null) {
-            const target = event.target as HTMLElement;
-            if (!target.closest('.post-menu-container') && !target.closest('.post-menu-trigger')) {
-                handlers.setOpenMenuId(null);
-            }
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            const { scrollLeft, clientWidth, scrollWidth } = scrollRef.current;
+            setShowLeftArrow(scrollLeft > 10);
+            setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
         }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-}, [handlers.openMenuId, handlers.setOpenMenuId]);
 
-const scrollLeft = () => {
-    if (scrollRef.current) {
-        const { clientWidth } = scrollRef.current;
-        scrollRef.current.scrollBy({ left: -clientWidth / 2, behavior: 'smooth' });
-    }
-};
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            handleScroll();
+        }, 200);
+        return () => clearTimeout(timer);
+    }, [combinedItems.length]);
 
-const scrollRight = () => {
-    if (scrollRef.current) {
-        const { clientWidth } = scrollRef.current;
-        scrollRef.current.scrollBy({ left: clientWidth / 2, behavior: 'smooth' });
-    }
-};
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (handlers.openMenuId !== null) {
+                const target = event.target as HTMLElement;
+                if (!target.closest('.post-menu-container') && !target.closest('.post-menu-trigger')) {
+                    handlers.setOpenMenuId(null);
+                }
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [handlers.openMenuId, handlers.setOpenMenuId]);
+
+    const scrollLeft = () => {
+        if (scrollRef.current) {
+            const { clientWidth } = scrollRef.current;
+            scrollRef.current.scrollBy({ left: -clientWidth / 2, behavior: 'smooth' });
+        }
+    };
+
+    const scrollRight = () => {
+        if (scrollRef.current) {
+            const { clientWidth } = scrollRef.current;
+            scrollRef.current.scrollBy({ left: clientWidth / 2, behavior: 'smooth' });
+        }
+    };
 
     const {
         followersList,
@@ -508,8 +508,6 @@ const scrollRight = () => {
     const allDocuments: { post: any; doc: any }[] = posts.flatMap((p: any) =>
         (p.documents || []).map((doc: any) => ({ post: p, doc }))
     );
-
-    // console.log('📊 [ActivitySection] Rendered with posts:', posts);
 
     const handleRepostInstant = async (idx: number) => {
         const post = posts[idx];
@@ -551,58 +549,58 @@ const scrollRight = () => {
         }
     };
 
-   const handlePostAction = async (action: string, postId: string) => {
-    if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
-        return;
-    }
-    const post = posts.find(p => (p.entryId || p.postId) === postId);
-    if (!post) return;
+    const handlePostAction = async (action: string, postId: string) => {
+        if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
+            return;
+        }
+        const post = posts.find(p => (p.entryId || p.postId) === postId);
+        if (!post) return;
 
-    switch (action) {
-        case 'pin':
-            await handlers.handlePinPost(postId, post.isPinned || false);
-            break;
-        case 'save':
-            await handlers.handleSavePost(postId, post.isSaved || false);
-            break;
-        case 'delete':
-            await handlers.handleDeletePost(postId);
-            break;
-        case 'archive':
-            await handlers.handleArchivePost(postId);
-            break;
-        case 'copy':
-            try {
-                const postUrl = `${window.location.origin}/post/${postId}`;
-                await navigator.clipboard.writeText(postUrl);
-                alert('Post link copied to clipboard!');
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
-            }
-            break;
-        case 'embed':
-            try {
-                const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
-                await navigator.clipboard.writeText(embedCode);
-                alert('Embed iframe code copied to clipboard!');
-            } catch (err) {
-                console.error('Failed to copy embed code: ', err);
-            }
-            break;
-        case 'analytics':
-            setSelectedAnalyticsPost(post);
-            break;
-        case 'hide':
-            await handlers.handleArchivePost(postId);
-            break;
-        default:
-            break;
-    }
-};
+        switch (action) {
+            case 'pin':
+                await handlers.handlePinPost(postId, post.isPinned || false);
+                break;
+            case 'save':
+                await handlers.handleSavePost(postId, post.isSaved || false);
+                break;
+            case 'delete':
+                await handlers.handleDeletePost(postId);
+                break;
+            case 'archive':
+                await handlers.handleArchivePost(postId);
+                break;
+            case 'copy':
+                try {
+                    const postUrl = `${window.location.origin}/post/${postId}`;
+                    await navigator.clipboard.writeText(postUrl);
+                    alert('Post link copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                break;
+            case 'embed':
+                try {
+                    const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
+                    await navigator.clipboard.writeText(embedCode);
+                    alert('Embed iframe code copied to clipboard!');
+                } catch (err) {
+                    console.error('Failed to copy embed code: ', err);
+                }
+                break;
+            case 'analytics':
+                setSelectedAnalyticsPost(post);
+                break;
+            case 'hide':
+                await handlers.handleArchivePost(postId);
+                break;
+            default:
+                break;
+        }
+    };
 
     return (
         <>
-           <div id="activity-section" className="bg-gradient-to-br from-[#f6ede8]/90 via-[#f6ede8]/80 to-[#e0d8cf]/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/60 mb-8 relative overflow-hidden">
+            <div id="activity-section" className="bg-gradient-to-br from-[#f6ede8]/90 via-[#f6ede8]/80 to-[#e0d8cf]/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/60 mb-8 relative overflow-hidden">
                 {/* Background blobs */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#e0d8cf]/20 to-transparent rounded-full blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#4a3728]/10 to-transparent rounded-full blur-2xl" />
@@ -616,7 +614,7 @@ const scrollRight = () => {
                     <div className="flex items-center gap-2 bg-[#4a3728]/10 px-4 py-2 rounded-full backdrop-blur-sm">
                         <div className="w-2 h-2 bg-[#4a3728] rounded-full animate-pulse" />
                         <p className="text-sm font-semibold text-[#4a3728]">
-                            {isLoadingConnections ? '...' : followersList.length} followers
+                            {followers} followers
                         </p>
                     </div>
                 </div>
@@ -673,11 +671,11 @@ const scrollRight = () => {
                             ) : (
                                 <>
                                     <div className="relative w-full min-w-0 group/slider">
-                                        <style dangerouslySetInnerHTML={{__html: `
+                                        <style dangerouslySetInnerHTML={{ __html: `
                                             .no-scrollbar::-webkit-scrollbar {
                                                 display: none !important;
                                             }
-                                        `}} />
+                                        ` }} />
 
                                         {/* Left Arrow Button */}
                                         {showLeftArrow && (
@@ -714,7 +712,7 @@ const scrollRight = () => {
                                                     return (
                                                         <div
                                                             key={`repost-${item.data.repostId}`}
-                                                            className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0 flex flex-col"
+                                                            className="w-[calc(100%-16px)] md:w-[calc(50%-8px)] flex-shrink-0 flex flex-col self-start"
                                                         >
                                                             <RepostCard
                                                                 repost={item.data}
@@ -809,6 +807,7 @@ const scrollRight = () => {
                                                             toggleRepostMenu={(i: number) => setOpenRepostIndex(openRepostIndex === i ? null : i)}
                                                             onOpenWithPerspectiveModal={openRepostWithPerspectiveModal}
                                                             handleRepostInstant={handleRepostInstant}
+                                                            handleRepost={handleRepostInstant}
                                                             postCommentCounts={undefined}
                                                         />
                                                     </div>
@@ -1002,15 +1001,15 @@ const scrollRight = () => {
             />
 
             {selectedAnalyticsPost && (
-                <div 
+                <div
                     onClick={() => setSelectedAnalyticsPost(null)}
                     className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                 >
-                    <div 
+                    <div
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/50 dark:border-slate-700/50 relative text-[#4a3728] dark:text-slate-100"
                     >
-                        <button 
+                        <button
                             onClick={() => setSelectedAnalyticsPost(null)}
                             className="absolute top-4 right-4 p-2.5 rounded-full hover:bg-[#e0d8cf]/40 dark:hover:bg-slate-700/50 transition-colors text-[#4a3728]/70 dark:text-slate-400"
                         >
@@ -1018,7 +1017,7 @@ const scrollRight = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
-                        
+
                         {/* Title */}
                         <div className="flex items-center gap-2 mb-6">
                             <div className="p-2 bg-[#4a3728] text-white rounded-xl">
@@ -1102,10 +1101,10 @@ const scrollRight = () => {
                                 </span>
                             </div>
                             <div className="w-full h-3 bg-[#e0d8cf]/30 dark:bg-slate-700 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                     className="h-full bg-gradient-to-r from-[#8b7355] to-[#4a3728] dark:from-[#9d8466] dark:to-white rounded-full transition-all duration-1000"
-                                    style={{ 
-                                        width: `${Math.min(100, Math.round((((selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0) + (selectedAnalyticsPost.commentsCount || 0) + (selectedAnalyticsPost.sharesCount || selectedAnalyticsPost.shares || 0)) / (selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 1) * 100) * 2))}%` 
+                                    style={{
+                                        width: `${Math.min(100, Math.round((((selectedAnalyticsPost.likesCount || selectedAnalyticsPost.likes || 0) + (selectedAnalyticsPost.commentsCount || 0) + (selectedAnalyticsPost.sharesCount || selectedAnalyticsPost.shares || 0)) / (selectedAnalyticsPost.viewsCount || selectedAnalyticsPost.impressions || 1) * 100) * 2))}%`
                                     }}
                                 />
                             </div>
