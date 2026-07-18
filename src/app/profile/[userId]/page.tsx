@@ -369,6 +369,7 @@ export default function SearchUserProfilePage() {
                            fullName={fullName}
                            headline={profileData.headline}
                            followers={followersList.length}
+                           userId={userId} 
                            currentUserId={user?.userId}
                            isOwnProfile={false}
                        />
