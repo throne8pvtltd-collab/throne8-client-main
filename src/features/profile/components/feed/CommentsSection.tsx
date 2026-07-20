@@ -1,4 +1,4 @@
-// app/(dashboard)/components/feed/CommentsSection.tsx
+// ap/feature/components/feed/CommentsSection.tsx
 import React, { useState } from 'react';
 import CommentItem from './CommentItem';
 import CommentInput from './CommentInput';

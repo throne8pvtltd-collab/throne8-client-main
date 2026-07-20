@@ -1,4 +1,4 @@
-// app/(dashboard)/components/feed/CommentItem.tsx
+// feature/components/feed/CommentItem.tsx
 import React from 'react';
 import CommentMenuDropdown from './CommentMenuDropdown';
 

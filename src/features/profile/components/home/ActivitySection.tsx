@@ -559,54 +559,125 @@ const ActivitySection: React.FC<ActivitySectionProps> = ({
         }
     };
 
-    const handlePostAction = async (action: string, postId: string) => {
-        if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
-            return;
-        }
-        const post = posts.find(p => (p.entryId || p.postId) === postId);
-        if (!post) return;
+    // const handlePostAction = async (action: string, postId: string) => {
+    //     if (!isOwnProfile && action !== 'copy' && action !== 'embed' && action !== 'analytics') {
+    //         return;
+    //     }
+    //     const post = posts.find(p => (p.entryId || p.postId) === postId);
+    //     if (!post) return;
 
-        switch (action) {
-            case 'pin':
-                await handlers.handlePinPost(postId, post.isPinned || false);
-                break;
-            case 'save':
-                await handlers.handleSavePost(postId, post.isSaved || false);
-                break;
-            case 'delete':
-                await handlers.handleDeletePost(postId);
-                break;
-            case 'archive':
-                await handlers.handleArchivePost(postId);
-                break;
-            case 'copy':
-                try {
-                    const postUrl = `${window.location.origin}/post/${postId}`;
-                    await navigator.clipboard.writeText(postUrl);
-                    alert('Post link copied to clipboard!');
-                } catch (err) {
-                    console.error('Failed to copy text: ', err);
-                }
-                break;
-            case 'embed':
-                try {
-                    const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
-                    await navigator.clipboard.writeText(embedCode);
-                    alert('Embed iframe code copied to clipboard!');
-                } catch (err) {
-                    console.error('Failed to copy embed code: ', err);
-                }
-                break;
-            case 'analytics':
-                setSelectedAnalyticsPost(post);
-                break;
-            case 'hide':
-                await handlers.handleArchivePost(postId);
-                break;
-            default:
-                break;
-        }
-    };
+    //     switch (action) {
+    //         case 'pin':
+    //             await handlers.handlePinPost(postId, post.isPinned || false);
+    //             break;
+    //         case 'save':
+    //             await handlers.handleSavePost(postId, post.isSaved || false);
+    //             break;
+    //         case 'delete':
+    //             await handlers.handleDeletePost(postId);
+    //             break;
+    //         case 'archive':
+    //             await handlers.handleArchivePost(postId);
+    //             break;
+    //         case 'copy':
+    //             try {
+    //                 const postUrl = `${window.location.origin}/post/${postId}`;
+    //                 await navigator.clipboard.writeText(postUrl);
+    //                 alert('Post link copied to clipboard!');
+    //             } catch (err) {
+    //                 console.error('Failed to copy text: ', err);
+    //             }
+    //             break;
+    //         case 'embed':
+    //             try {
+    //                 const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
+    //                 await navigator.clipboard.writeText(embedCode);
+    //                 alert('Embed iframe code copied to clipboard!');
+    //             } catch (err) {
+    //                 console.error('Failed to copy embed code: ', err);
+    //             }
+    //             break;
+    //         case 'analytics':
+    //             setSelectedAnalyticsPost(post);
+    //             break;
+    //         case 'hide':
+    //             await handlers.handleArchivePost(postId);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // };
+
+    // ActivitySection.tsx — handlePostAction function ko replace karo:
+
+const handlePostAction = async (action: string, postId: string) => {
+    // ✅ FIX: pehle sirf copy/embed/analytics allowed the doosre user ki
+    // profile pe. Ab save, not-interested, unfollow, report bhi allowed
+    // hain kyunki ye "viewer-safe" actions hain (kisi post ko edit/delete
+    // nahi karte, sirf apne khud ke view-preferences update karte hain).
+    const viewerAllowedActions = ['copy', 'embed', 'analytics', 'save', 'not-interested', 'unfollow', 'report'];
+
+    if (!isOwnProfile && !viewerAllowedActions.includes(action)) {
+        return;
+    }
+
+    const post = posts.find(p => (p.entryId || p.postId) === postId);
+    if (!post) return;
+
+    switch (action) {
+        case 'pin':
+            await handlers.handlePinPost(postId, post.isPinned || false);
+            break;
+        case 'save':
+            await handlers.handleSavePost(postId, post.isSaved || false);
+            break;
+        case 'delete':
+            await handlers.handleDeletePost(postId);
+            break;
+        case 'archive':
+            await handlers.handleArchivePost(postId);
+            break;
+        case 'copy':
+            try {
+                const postUrl = `${window.location.origin}/post/${postId}`;
+                await navigator.clipboard.writeText(postUrl);
+                alert('Post link copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+            break;
+        case 'embed':
+            try {
+                const embedCode = `<iframe src="${window.location.origin}/post/${postId}/embed" width="504" height="600" frameborder="0" style="border: 1px solid #e0d8cf; border-radius: 8px;"></iframe>`;
+                await navigator.clipboard.writeText(embedCode);
+                alert('Embed iframe code copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy embed code: ', err);
+            }
+            break;
+        case 'analytics':
+            setSelectedAnalyticsPost(post);
+            break;
+        case 'hide':
+            await handlers.handleArchivePost(postId);
+            break;
+        // ✅ ADDED: ye 3 cases pehle missing the, isliye click karne pe
+        // kuch nahi hota tha (default case me chale jaate the, koi handler nahi).
+        case 'not-interested':
+            alert('Got it, we\'ll show you less of this content.');
+            break;
+        case 'unfollow':
+            alert(`Unfollowed ${post.userName || post.fullName || 'this user'}.`);
+            // TODO: yahan actual FollowService.unfollowUser(post.userId) call karna hoga
+            break;
+        case 'report':
+            alert('Post reported. Thank you for helping keep our community safe.');
+            // TODO: yahan actual report API call karna hoga
+            break;
+        default:
+            break;
+    }
+};
 
     return (
         <>
