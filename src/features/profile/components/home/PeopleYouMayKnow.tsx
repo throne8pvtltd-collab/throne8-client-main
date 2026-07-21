@@ -1,8 +1,81 @@
-// src/profile/components/PeopleYouMayKnow.tsx (sidebar component)
+// src/features/profile/components/home/PeopleYouMayKnow.tsx
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useNetworkUsers } from '@/features/networks/hooks/useNetworkUsers';
+import ConnectionService from '@/lib/api/connection.service';
 
-const PeopleYouMayKnow: React.FC = () => {
+interface PeopleYouMayKnowProps {
+    userId?: string; // ✅ hamesha LOGIN user ka userId aayega
+}
+
+const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ userId }) => {
+    const router = useRouter();
+    const { networkUsers, isLoadingUsers, fetchNetworkUsers } = useNetworkUsers();
+
+    // ✅ jinko connect kar diya (ya request already pending thi) — inhe list se hide karna hai
+    const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+
+    // ✅ NEW: jinke liye request abhi in-flight hai — duplicate click/submit rokne ke liye
+    const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        if (userId) {
+            fetchNetworkUsers(userId);
+        }
+    }, [userId, fetchNetworkUsers]);
+
+    const handleCardClick = (targetUserId: string) => {
+        router.push(`/profile/${targetUserId}`);
+    };
+
+    const handleConnect = async (e: React.MouseEvent, targetUserId: string) => {
+        e.stopPropagation(); // ✅ card navigation trigger na ho
+
+        // ✅ NEW: agar is user ke liye request already in-flight hai to dobara fire mat karo
+        // (isse ek hi click pe multiple POST /connections/requests jaane se bachte hain,
+        // jo dusri/teesri request ko "already exists" wali state me daal deta tha aur
+        // us wajah se aane wala 500/409 error create ho raha tha)
+        if (connectingIds.has(targetUserId)) {
+            return;
+        }
+
+        setConnectingIds((prev) => new Set(prev).add(targetUserId));
+
+        try {
+            await ConnectionService.sendConnectionRequest({ toUserId: targetUserId });
+        } catch (error: any) {
+            const alreadyExists = error.message?.includes('already exists');
+            if (!alreadyExists) {
+                alert(error.message || 'Failed to send connection request');
+
+                // ✅ NEW: real error pe in-flight flag hata do taaki user retry kar sake
+                setConnectingIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(targetUserId);
+                    return next;
+                });
+                return; // ✅ real error pe list se mat hatao, retry allow karo
+            }
+            // already exists ho to bhi list se hata denge (neeche wahi hoga)
+        }
+
+        // ✅ CONNECT + card dono list se hata do — agla user apne aap queue se aa jayega
+        setHiddenIds((prev) => new Set(prev).add(targetUserId));
+
+        // NOTE: success/already-exists case me connectingIds se hatane ki zaroorat nahi,
+        // kyunki targetUserId ab hiddenIds me chala gaya aur list se hi gayab ho jayega.
+    };
+
+    if (!userId) return null;
+
+    // ✅ Extra safety: khud ko kabhi bhi list me na dikhaye, chahe hook se
+    // kisi wajah se aa jaye. Fir jinhe connect kar diya unhe bhi hide karo,
+    // aur sirf top 4 hi dikhao — baaki queue me safe rehte hain.
+    const visibleUsers = networkUsers
+        .filter((person) => person.id !== userId && !hiddenIds.has(person.id))
+        .slice(0, 4);
+
     return (
         <div className="w-full bg-[#f6ede8]/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-[#e0d8cf]/50 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#f6ede8]/50 to-[#e0d8cf]/50 rounded-3xl"></div>
@@ -18,53 +91,76 @@ const PeopleYouMayKnow: React.FC = () => {
                     </h3>
                 </div>
                 <p className="text-sm text-[#4a3728]/70 mb-6 font-medium">From your industry</p>
-                <div className="space-y-4">
-                    {[
-                        {
-                            name: 'Chhavi Arora',
-                            title: 'AWS Cloud & DevOps | IoT Solutions | Sophomore @ IIIT...',
-                            avatar: 'CA'
-                        },
-                        {
-                            name: 'Manan Telrandhe',
-                            title: 'Tech-savvy Software Developer',
-                            avatar: 'MT'
-                        },
-                        {
-                            name: 'Ankit Shinde',
-                            title: 'Software Engineer @Techvalens || Nodejs Developer ||...',
-                            avatar: 'AS'
-                        },
-                        {
-                            name: 'Harshit Kushwah',
-                            title: 'Software Engineer @NIMBLEdGE | Former iOS...',
-                            avatar: 'HK'
-                        },
-                    ].map((person, idx) => (
-                        <div
-                            key={idx}
-                            className="group flex items-center gap-4 p-5 bg-[#e0d8cf]/70 backdrop-blur-sm rounded-2xl shadow-lg border border-[#e0d8cf]/50 cursor-pointer"
-                        >
-                            <div className="relative">
-                                <div className="w-12 h-12 bg-[#4a3728] rounded-2xl flex items-center justify-center text-[#f6ede8] font-bold text-lg shadow-lg">
-                                    {person.avatar}
+
+                {isLoadingUsers ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="animate-pulse h-24 bg-[#e0d8cf]/50 rounded-2xl" />
+                        ))}
+                    </div>
+                ) : visibleUsers.length === 0 ? (
+                    <p className="text-sm text-[#4a3728]/60 text-center py-6">
+                        No suggestions right now
+                    </p>
+                ) : (
+                    <div className="space-y-4">
+                        {visibleUsers.map((person) => {
+                            const initials = person.name
+                                ? person.name
+                                    .split(' ')
+                                    .map((n: string) => n[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()
+                                : '??';
+
+                            // ✅ NEW: is card ke liye request abhi in-flight hai kya
+                            const isConnecting = connectingIds.has(person.id);
+
+                            return (
+                                <div
+                                    key={person.id}
+                                    onClick={() => handleCardClick(person.id)}
+                                    className="group flex items-center gap-4 p-5 bg-[#e0d8cf]/70 backdrop-blur-sm rounded-2xl shadow-lg border border-[#e0d8cf]/50 cursor-pointer hover:shadow-xl transition-shadow duration-300"
+                                >
+                                    <div className="relative flex-shrink-0">
+                                        {person.image ? (
+                                            <img
+                                                src={person.image}
+                                                alt={person.name}
+                                                className="w-12 h-12 rounded-2xl object-cover shadow-lg"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-[#4a3728] rounded-2xl flex items-center justify-center text-[#f6ede8] font-bold text-lg shadow-lg">
+                                                {initials}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="text-lg font-bold text-[#4a3728] truncate">
+                                                {person.name}
+                                            </p>
+                                        </div>
+                                        <p className="text-sm text-[#4a3728]/70 mb-3 line-clamp-2">
+                                            {person.title || 'Throne8 member'}
+                                        </p>
+                                        <button
+                                            onClick={(e) => handleConnect(e, person.id)}
+                                            disabled={isConnecting}
+                                            className="px-4 py-2 bg-transparent border border-[#4a3728] text-[#4a3728] rounded-xl text-sm font-semibold shadow-lg hover:bg-[#4a3728] hover:text-[#f6ede8] transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#4a3728]"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            {isConnecting ? 'Connecting...' : 'Connect'}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <p className="text-lg font-bold text-[#4a3728]">{person.name}</p>
-                                </div>
-                                <p className="text-sm text-[#4a3728]/70 mb-3 line-clamp-2">{person.title}</p>
-                                <button className="px-4 py-2 bg-transparent border border-[#4a3728] text-[#4a3728] rounded-xl text-sm font-semibold shadow-lg hover:bg-[#4a3728] hover:text-[#f6ede8] transition-all duration-300 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Connect
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );

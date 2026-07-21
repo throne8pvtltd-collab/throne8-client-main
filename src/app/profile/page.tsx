@@ -39,6 +39,12 @@ export default function ProfilePage() {
     const { isChecking } = useProtectedRoute();
     const { user, isLoading } = useAuth();
     const [followersCount, setFollowersCount] = useState(0);
+
+    // ✅ Ye hamesha "apni" profile hai (koi userId param nahi hai is route pe),
+    // isliye explicitly true rakh rahe hain — kisi component ke default
+    // value pe depend nahi karna, taaki future me galti se change na ho
+    const isOwnProfile = true;
+
     const {
         userProfileData,
         profileImageUrl,
@@ -206,10 +212,12 @@ useEffect(() => {
                         }}
                         onDataRefresh={loadProfile}
                         coverId={coverPhotoId}
+                        isOwnProfile={isOwnProfile}
                     />
 
                     {/* Profile Header */}
                     <ProfileHeader
+                        isOwnProfile={isOwnProfile}
                         currentUserId={user?.userId}
                         profileImage={profileImageUrl}
                         name={profileData.name}
@@ -244,6 +252,7 @@ useEffect(() => {
 
                     {/* About Section */}
                     <AboutSection
+                        isOwnProfile={isOwnProfile}
                         aboutData={aboutData}
                         isLoading={isLoadingAbout}
                         onAboutCreated={fetchAboutData}
@@ -255,6 +264,7 @@ useEffect(() => {
 
                     {/* Education Section */}
                     <EducationSection
+                        isOwnProfile={isOwnProfile}
                         collegeName={profileData.education.collegeName}
                         degree={profileData.education.degree}
                         fieldOfStudy={profileData.education.fieldOfStudy}
@@ -263,6 +273,7 @@ useEffect(() => {
 
                     {/* ✅ FIXED: Experience Section — stable experienceIds reference */}
                     <ExperienceSection
+                        isOwnProfile={isOwnProfile}
                         experienceIds={experienceIds}
                     />
 
@@ -271,6 +282,7 @@ useEffect(() => {
 
                     {/* Activity Section */}
                     <ActivitySection
+                        isOwnProfile={isOwnProfile}
                         posts={userPosts}
                         currentUserId={user?.userId}
                         onPostCreated={loadPosts}
@@ -286,7 +298,7 @@ useEffect(() => {
                     />
 
                     {/* Skills Section */}
-                    <SkillsSection />
+                    <SkillsSection isOwnProfile={isOwnProfile} />
 
                     {/* Interests Section */}
                     <InterestsSection />
@@ -306,9 +318,8 @@ useEffect(() => {
                         connectionsCount={profileData.connections}
                         postsCount={userPosts?.length || 0}
                     />
-
                     {/* People You May Know */}
-                    <PeopleYouMayKnow />
+                    <PeopleYouMayKnow userId={user?.userId} />
                 </div>
             </div>
         </div>

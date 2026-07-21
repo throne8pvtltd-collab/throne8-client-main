@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthService from '@/lib/api/auth.service';
 import TokenStorage from '@/lib/store/token.storage';
-import config from '@/config/env.config';
+import api from '@/lib/api/api.intance';
 
 interface UseAuthReturn {
     user: {
@@ -43,7 +43,6 @@ export function useAuth(): UseAuthReturn {
     }, []);
 
     const refreshAuth = () => {
-       
         checkAuth();
     };
 
@@ -84,37 +83,16 @@ export function useProtectedRoute() {
                 return;
             }
 
-            // ✅ AccessToken expire hua? Silent refresh karo
+            // ✅ AccessToken expire hua? Ek authenticated call karo —
+            // agar 401 aaya to api.instance.ts ka interceptor khud refresh
+            // handle karega (shared isRefreshing lock use hoga,
+            // isse duplicate refresh-token call nahi hoga)
             if (TokenStorage.needsTokenRefresh()) {
-                const refreshToken = TokenStorage.getRefreshToken();
                 try {
-                    const response = await fetch(
-                        `${config?.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL}${config?.NEXT_PUBLIC_REFRESH_TOKEN_ENDPOINT || process.env.NEXT_PUBLIC_REFRESH_TOKEN_ENDPOINT}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ refreshToken }),
-                        }
-                    );
-
-                   
-                    if (!response.ok) {
-                        TokenStorage.clearAuthData();
-                        router.replace('/login');
-                        return;
-                    }
-
-                    const data = await response.json();
-                    const { accessToken, refreshToken: newRefreshToken, expiresIn } = data.data.tokens;
-                    TokenStorage.updateAccessToken(accessToken, expiresIn);
-                    TokenStorage.updateRefreshToken(newRefreshToken);
-                    console.log('✅ [useProtectedRoute] Token refreshed successfully', data, {
-                        accessToken,
-                        expiresIn
-                    });
-
+                    await api.get('/auth/profile');
                 } catch {
-                    // Network error — session valid maano, mat redirect karo
+                    // Network/auth error — session valid maano, mat redirect karo
+                    // (agar refresh bhi fail hua to interceptor khud /login pe bhej dega)
                 }
             }
 

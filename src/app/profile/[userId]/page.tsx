@@ -33,6 +33,15 @@ export default function SearchUserProfilePage() {
     const router = useRouter();
     const userId = params.userId as string;
     const { user } = useAuth();
+
+    // ✅ FIX: yahi decide karta hai ki edit buttons / owner-only actions
+    // dikhne chahiye ya nahi. Pehle isOwnProfile={false} hardcoded tha
+    // har jagah, isliye apni profile bhi [userId] route se khulne par
+    // "dusre ki profile" jaisa treat ho rahi thi.
+    // String() isliye taaki agar kabhi ek field ObjectId aur doosra
+    // string ho, to bhi comparison sahi se ho.
+    const isOwnProfile = !!user?.userId && String(user.userId) === String(userId);
+
     const {
         userProfileData,
         profileImageUrl,
@@ -301,11 +310,11 @@ export default function SearchUserProfilePage() {
                         onBannerUpdate={() => { }}
                         onDataRefresh={() => { }}
                         coverId={coverPhotoId}
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                     />
 
                     <ProfileHeader
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                         currentUserId={userId}
                         profileImage={profileImageUrl}
                         name={profileData.name} 
@@ -334,7 +343,7 @@ export default function SearchUserProfilePage() {
                     />
                     <div id="about">
                         <AboutSection
-                            isOwnProfile={false}
+                            isOwnProfile={isOwnProfile}
                             aboutData={aboutData}
                             isLoading={isLoadingAbout}
                             onAboutCreated={() => { }}
@@ -345,7 +354,7 @@ export default function SearchUserProfilePage() {
                     </div>
 
                     <EducationSection
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                         userId={userId}
                         collegeName={profileData.education.collegeName}
                         degree={profileData.education.degree}
@@ -353,11 +362,11 @@ export default function SearchUserProfilePage() {
                         graduationYear={profileData.education.graduationYear}
                     />
 
-                    {/* ✅ FIXED: stable experienceIds reference */}
+                    {/* ✅ stable experienceIds reference */}
                     <ExperienceSection
                         experienceIds={experienceIds}
                         userId={userId}
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                     />
 
                     <div id="activity">
@@ -371,16 +380,16 @@ export default function SearchUserProfilePage() {
                            followers={followersList.length}
                            userId={userId} 
                            currentUserId={user?.userId}
-                           isOwnProfile={false}
+                           isOwnProfile={isOwnProfile}
                        />
                    </div>
 
-                    <SkillsSection userId={userId} isOwnProfile={false} />
+                    <SkillsSection userId={userId} isOwnProfile={isOwnProfile} />
                     <InterestsSection />
                 </div>
 
                 <div className="w-full md:w-80 md:min-w-[20rem]">
-                    <PeopleYouMayKnow />
+                  <PeopleYouMayKnow userId={user?.userId} />
                 </div>
             </div>
         </div>
