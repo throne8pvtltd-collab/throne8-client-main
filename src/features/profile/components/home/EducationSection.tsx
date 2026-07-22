@@ -31,6 +31,8 @@ const EducationSection: React.FC<EducationSectionProps> = ({
     const [isUpdateEducationModalOpen, setIsUpdateEducationModalOpen] = useState(false);
     const [isSelectEducationModalOpen, setIsSelectEducationModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [showAllEducation, setShowAllEducation] = useState(false);
+
 
     // ✅ Apni profile ke liye redux hook (purana behavior)
     const {
@@ -242,7 +244,8 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                         )
                     ) : (
                         <div className="space-y-4 min-w-0">
-                            {educationList.map((rawEducation: any) => {
+                            
+                            {(showAllEducation ? educationList : educationList.slice(0, 2)).map((rawEducation: any) => {         
                                 const education = unpackFutureDate(rawEducation);
                                 return (
                                     <div key={education.educationId} className="relative group min-w-0">
@@ -352,9 +355,22 @@ const EducationSection: React.FC<EducationSectionProps> = ({
                                     </div>
                                 </div>
                             );
+
                         })}
+
+                        {educationList.length > 2 && (
+                            <div className="flex justify-center pt-2">
+                                <button
+                                    onClick={() => setShowAllEducation(!showAllEducation)}
+                                    className="px-6 py-2.5 bg-white/60 hover:bg-white/90 text-[#4a3728] rounded-full text-sm font-semibold border border-[#e0d8cf]/60 shadow-md hover:shadow-lg transition-all duration-300"
+                                >
+                                    {showAllEducation ? 'Show Less' : `Show More (${educationList.length - 2} more)`}
+                                </button>
+                            </div>
+                        )}
                         </div>
                     )}
+                      
 
 
                 </div>

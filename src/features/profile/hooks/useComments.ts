@@ -58,7 +58,6 @@ export const useComments = () => {
             const rawComments: CommentData[] = response.data?.comments || [];
             const enriched = await enrichCommentsWithUsers(rawComments);
 
-            // Init likes state from fetched data
             const likesMap: { [key: string]: { count: number; isLiked: boolean } } = {};
             enriched.forEach(c => {
                 likesMap[c.commentId] = { count: c.likesCount || 0, isLiked: false };
@@ -74,7 +73,6 @@ export const useComments = () => {
     }, []);
 
     // ==================== CREATE COMMENT ====================
-    // Route: POST {NEXT_PUBLIC_ACTIVITY_ENDPOINT}/create-comment/comments
     const createComment = useCallback(async (postId: string, content: string) => {
         const parsed = createCommentSchema.safeParse({ content });
         if (!parsed.success) throw new Error(parsed.error.errors[0].message);
@@ -91,7 +89,6 @@ export const useComments = () => {
     }, [fetchCommentsByPost]);
 
     // ==================== CREATE REPLY ====================
-    // Route: POST{NEXT_PUBLIC_ACTIVITY_ENDPOINT}/comments/:commentId/reply
     const createReply = useCallback(async (postId: string, commentId: string, content: string) => {
         const parsed = createReplySchema.safeParse({ content });
         if (!parsed.success) throw new Error(parsed.error.errors[0].message);
@@ -108,14 +105,12 @@ export const useComments = () => {
     }, [fetchCommentsByPost]);
 
     // ==================== UPDATE COMMENT ====================
-    // Route: PUT{NEXT_PUBLIC_ACTIVITY_ENDPOINT}/update-comments/:commentId
     const updateComment = useCallback(async (postId: string, commentId: string, content: string) => {
         const parsed = updateCommentSchema.safeParse({ content });
         if (!parsed.success) throw new Error(parsed.error.errors[0].message);
 
         try {
             await ProfileService.updateComment(commentId, parsed.data.content);
-            // Optimistic UI - update locally without full refresh
             setCommentsByPost(prev => ({
                 ...prev,
                 [postId]: (prev[postId] || []).map(c =>
@@ -128,11 +123,9 @@ export const useComments = () => {
     }, []);
 
     // ==================== DELETE COMMENT ====================
-    // Route: DELETE{NEXT_PUBLIC_ACTIVITY_ENDPOINT}/delete-comments/:commentId
     const deleteComment = useCallback(async (postId: string, commentId: string) => {
         try {
             await ProfileService.deleteComment(commentId);
-            // Optimistic UI - remove from list
             setCommentsByPost(prev => ({
                 ...prev,
                 [postId]: (prev[postId] || []).filter(c => c.commentId !== commentId)
@@ -143,14 +136,11 @@ export const useComments = () => {
     }, []);
 
     // ==================== LIKE/UNLIKE COMMENT ====================
-    // Like:   POST  {NEXT_PUBLIC_ACTIVITY_ENDPOINT}/comments/:commentId/like
-    // Unlike: DELETE{NEXT_PUBLIC_ACTIVITY_ENDPOINT}/comments/:commentId/like
     const likeCommentToggle = useCallback(async (commentId: string) => {
         const current = commentLikes[commentId] || { count: 0, isLiked: false };
         const newIsLiked = !current.isLiked;
         const newCount = newIsLiked ? current.count + 1 : Math.max(0, current.count - 1);
 
-        // Optimistic update
         setCommentLikes(prev => ({
             ...prev,
             [commentId]: { count: newCount, isLiked: newIsLiked }
@@ -163,54 +153,53 @@ export const useComments = () => {
                 await ProfileService.unlikeComment(commentId);
             }
         } catch (error: any) {
-            // Revert on failure
             setCommentLikes(prev => ({ ...prev, [commentId]: current }));
             console.error('❌ Like toggle failed:', error.message);
         }
     }, [commentLikes]);
 
     // ==================== USER ENRICHMENT ====================
+    // ✅ Ab bulk calls use hote hain — individual getUserProfileById/getHeadlineById loops hata diye
     const enrichCommentsWithUsers = async (comments: CommentData[]): Promise<CommentData[]> => {
         if (comments.length === 0) return [];
         try {
             const uniqueUserIds = [...new Set(comments.map(c => c.userId))];
-            const userResponses = await Promise.all(
-                uniqueUserIds.map(uid => AuthService.getUserProfileById(uid).catch(() => null))
-            );
-            // 
-            const usersData = userResponses.filter(Boolean).map(r => {
-                // 
-                return r!.data;
-            });
+
+            let usersData: any[] = [];
+            if (uniqueUserIds.length > 0) {
+                try {
+                    const bulkResponse = await AuthService.getUsersBulk(uniqueUserIds);
+                    usersData = bulkResponse.data?.users || [];
+                } catch (err) {
+                    console.warn('⚠️ Failed to fetch users in bulk:', err);
+                }
+            }
 
             const photoIds = usersData.map((u: any) => u.profilePhotoId).filter(Boolean);
-            
-            
 
             let photosMap: Record<string, string> = {};
             if (photoIds.length > 0) {
                 const res = await ProfileService.getMultipleProfilePhotosByIds(photoIds).catch(() => null);
-                
                 if (res) {
                     photosMap = res.data.photos.reduce((acc: Record<string, string>, p: any) => {
                         acc[p.photoId] = p.cloudinarySecureUrl; return acc;
                     }, {});
                 }
-                
             }
-
 
             const headlineIds = usersData.map((u: any) => u.headlineId).filter(Boolean);
             let headlinesMap: Record<string, string> = {};
             if (headlineIds.length > 0) {
-                const results = await Promise.all(
-                    headlineIds.map((id: string) =>
-                        ProfileService.getHeadlineById(id).then(r => ({ id, title: r?.data?.title })).catch(() => null)
-                    )
-                );
-                results.filter(Boolean).forEach((r: any) => {
-                    if (r?.id && r?.title) headlinesMap[r.id] = r.title;
-                });
+                try {
+                    const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+                    const headlines = headlinesResponse.data?.headlines || [];
+                    headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+                        acc[headline.headlineId] = headline.title;
+                        return acc;
+                    }, {});
+                } catch {
+                    // headlines optional
+                }
             }
 
             const usersMap = usersData.reduce((acc: Record<string, any>, u: any) => {

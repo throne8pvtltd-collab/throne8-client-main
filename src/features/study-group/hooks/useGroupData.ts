@@ -5,13 +5,13 @@ import AuthService from '@/lib/api/auth.service';
 import StudyGroupService, { GroupResponse, GroupMember, GroupCategory, MyRequestsResponse } from '@/lib/api/studyGroup.service';
 import ProfileService from '@/lib/api/profile.service';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────
 
 export interface UserInfo {
   userId: string;
-  name: string;           // firstName + lastName (from getUserProfileById)
-  avatar: string | null;  // cloudinarySecureUrl (from getMultipleProfilePhotosByIds)
-  headline: string;       // from getHeadlineById
+  name: string;
+  avatar: string | null;
+  headline: string;
   email: string;
 }
 
@@ -20,7 +20,6 @@ export interface EnrichedGroupMember {
   role: 'leader' | 'admin' | 'member';
   joinedAt: string;
   lastActive?: string;
-  // Enriched fields
   name: string;
   avatar: string | null;
   headline: string;
@@ -30,68 +29,53 @@ export interface EnrichedGroupMember {
 const globalUserCache: Record<string, UserInfo> = {};
 const globalJoinRequestsMap: Record<string, MyRequestsResponse> = {};
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hook ─────────────────────────────────────────────────
 
 export const useGroupData = () => {
 
-  // ── 1. All Groups (my groups) ──
   const [allGroups, setAllGroups] = useState<GroupResponse[]>([]);
   const [isLoadingAllGroups, setIsLoadingAllGroups] = useState(false);
 
-  // ── 2. All Users ──
   const [allUsers, setAllUsers] = useState<UserInfo[]>([]);
   const [isLoadingAllUsers, setIsLoadingAllUsers] = useState(false);
 
-  // ── 4. Group Members ──
   const [groupMembers, setGroupMembers] = useState<EnrichedGroupMember[]>([]);
   const [isLoadingGroupMembers, setIsLoadingGroupMembers] = useState(false);
 
-  // ── 5. Group Count ──
   const [groupCount, setGroupCount] = useState(0);
 
-  // ── 6. Public Groups ──
   const [publicGroups, setPublicGroups] = useState<GroupResponse[]>([]);
   const [isLoadingPublicGroups, setIsLoadingPublicGroups] = useState(false);
 
-  // ── 7. Private Groups ──
   const [privateGroups, setPrivateGroups] = useState<GroupResponse[]>([]);
   const [isLoadingPrivateGroups, setIsLoadingPrivateGroups] = useState(false);
 
-  // ── 8. My Join Requests ──
   const [myJoinRequests, setMyJoinRequests] = useState<MyRequestsResponse[]>([]);
   const [isLoadingMyJoinRequests, setIsLoadingMyJoinRequests] = useState(false);
 
-  // ── Helper: groupId se request status nikalo ──
-  // Record<groupId, MyRequestsResponse>
   const myJoinRequestsMap = useRef<Record<string, MyRequestsResponse>>({});
 
   const [error, setError] = useState<string | null>(null);
 
-  // ── Cache: userId → UserInfo — never re-fetch same user twice ──
-  // const userCache = useRef<Record<string, UserInfo>>({});
-
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────
   // INTERNAL: fetch profile + photo + headline for uncached userIds
-  // Exact same 3-step pipeline as useNetworkUsers
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ✅ Ab bulk calls use hote hain (pehle har user ke liye alag call hota tha)
+  // ─────────────────────────────────────────────────────────
 
   const resolveUserIds = useCallback(async (userIds: string[]): Promise<void> => {
     const uncached = userIds.filter(id => id && !globalUserCache[id]);
     if (uncached.length === 0) return;
 
-    // STEP 1 — getUserProfileById for each user
-    // returns: { userId, firstName, lastName, profilePhotoId, headlineId, email, location }
-    const profileResponses = await Promise.all(
-      uncached.map(id =>
-        AuthService.getUserProfileById(id).catch(() => null)
-      )
-    );
-    const profiles = profileResponses
-      .filter(r => r !== null)
-      .map(r => r!.data);
+    // STEP 1 — SINGLE BULK CALL for all uncached users
+    let profiles: any[] = [];
+    try {
+      const bulkResponse = await AuthService.getUsersBulk(uncached);
+      profiles = bulkResponse.data?.users || [];
+    } catch (err) {
+      console.warn('⚠️ Failed to fetch users in bulk:', err);
+    }
 
     // STEP 2 — getMultipleProfilePhotosByIds (batch)
-    // returns: { photos: [{ photoId, cloudinarySecureUrl }] }
     const photoIds = profiles.map((p: any) => p.profilePhotoId).filter(Boolean);
     let photosMap: Record<string, string> = {};
     if (photoIds.length > 0) {
@@ -109,20 +93,20 @@ export const useGroupData = () => {
       }
     }
 
-    // STEP 3 — getHeadlineById for each user that has a headlineId
+    // STEP 3 — SINGLE BULK CALL for headlines
     const headlineIds = profiles.map((p: any) => p.headlineId).filter(Boolean);
     let headlinesMap: Record<string, string> = {};
     if (headlineIds.length > 0) {
-      const headlineRes = await Promise.all(
-        headlineIds.map((hId: string) =>
-          ProfileService.getHeadlineById(hId)
-            .then((r: any) => ({ hId, title: r?.data?.title ?? '' }))
-            .catch(() => null)
-        )
-      );
-      headlineRes
-        .filter((r): r is { hId: string; title: string } => r !== null)
-        .forEach(({ hId, title }) => { headlinesMap[hId] = title; });
+      try {
+        const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+        const headlines = headlinesResponse.data?.headlines || [];
+        headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+          acc[headline.headlineId] = headline.title;
+          return acc;
+        }, {});
+      } catch {
+        // headlines optional
+      }
     }
 
     // STEP 4 — build UserInfo and write to cache
@@ -157,20 +141,13 @@ export const useGroupData = () => {
     });
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 1. fetchAllGroups
-  // Calls: StudyGroupService.getMyGroups()
-  // Returns: GroupResponse[]
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchAllGroups = useCallback(async () => {
     try {
       setIsLoadingAllGroups(true);
       setError(null);
-      // getMyGroups() → returns GroupResponse[] directly
       const groups = await StudyGroupService.getMyGroups();
       setAllGroups(groups);
-      setGroupCount(groups.length); // auto-updates count
+      setGroupCount(groups.length);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch groups');
     } finally {
@@ -178,25 +155,16 @@ export const useGroupData = () => {
     }
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 2. fetchAllUsers
-  // Calls: AuthService.getAllUsers() → then resolves each userId for real name+photo
-  // Returns: UserInfo[] (with name, avatar, headline — NOT just userId)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchAllUsers = useCallback(async () => {
     try {
       setIsLoadingAllUsers(true);
       setError(null);
 
-      // getAllUsers returns: { data: { users: [{ userId, email, ... }], pagination: {} } }
       const res = await AuthService.getAllUsers({ limit: 100 });
       const userIds: string[] = (res.data.users as any[]).map((u: any) => u.userId);
 
-      // Resolve all profiles + photos + headlines for every userId
       await resolveUserIds(userIds);
 
-      // Pull enriched data from cache
       const enriched: UserInfo[] = userIds
         .map(id => globalUserCache[id])
         .filter(Boolean);
@@ -208,12 +176,6 @@ export const useGroupData = () => {
       setIsLoadingAllUsers(false);
     }
   }, [resolveUserIds]);
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 3. getUserInfo — info of a particular user
-  // Async version: always returns correct data (fetches if not cached)
-  // Sync version: returns from cache only (use after fetchAllUsers is done)
-  // ─────────────────────────────────────────────────────────────────────────────
 
   const getUserInfo = useCallback(async (userId: string): Promise<UserInfo> => {
     if (globalUserCache[userId]) return globalUserCache[userId];
@@ -227,7 +189,6 @@ export const useGroupData = () => {
     };
   }, [resolveUserIds]);
 
-  // Use this in render when you KNOW fetchAllUsers() has already completed
   const getUserInfoSync = useCallback((userId: string): UserInfo => {
     return globalUserCache[userId] ?? {
       userId,
@@ -238,27 +199,17 @@ export const useGroupData = () => {
     };
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 4. fetchGroupMembers — all members + leaders of a specific group
-  // Calls: StudyGroupService.getGroupMembers(groupId)
-  // Returns: { total, members: GroupMember[] }
-  // Enriches each member with real name + avatar from profile API
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     try {
       setIsLoadingGroupMembers(true);
       setError(null);
 
-      // getGroupMembers returns: { total: number, members: GroupMember[] }
       const res = await StudyGroupService.getGroupMembers(groupId);
       const rawMembers: GroupMember[] = res.members ?? [];
 
-      // Resolve all member profiles + photos
       const memberUserIds = rawMembers.map(m => m.userId).filter(Boolean);
       await resolveUserIds(memberUserIds);
 
-      // Enrich with real name + avatar
       const enriched: EnrichedGroupMember[] = rawMembers.map(m => {
         const info = globalUserCache[m.userId];
         return {
@@ -280,12 +231,6 @@ export const useGroupData = () => {
     }
   }, [resolveUserIds]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 5. groupCount + fetchGroupCount
-  // groupCount auto-updates when fetchAllGroups() runs
-  // fetchGroupCount() for standalone count without loading full group data
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchGroupCount = useCallback(async () => {
     try {
       const groups = await StudyGroupService.getMyGroups();
@@ -295,12 +240,6 @@ export const useGroupData = () => {
     }
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 6. fetchPublicGroups
-  // Calls: StudyGroupService.getGroups({ visibility: 'public' })
-  // Returns: GroupListResponse → we extract .groups array
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchPublicGroups = useCallback(async (filters?: {
     category?: GroupCategory;
     search?: string;
@@ -309,7 +248,6 @@ export const useGroupData = () => {
     try {
       setIsLoadingPublicGroups(true);
       setError(null);
-      // getGroups() returns GroupListResponse: { groups, total, page, totalPages }
       const res = await StudyGroupService.getGroups({
         visibility: 'public' as any,
         ...filters,
@@ -321,11 +259,6 @@ export const useGroupData = () => {
       setIsLoadingPublicGroups(false);
     }
   }, []);
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 7. fetchPrivateGroups
-  // Calls: StudyGroupService.getGroups({ visibility: 'private' })
-  // ─────────────────────────────────────────────────────────────────────────────
 
   const fetchPrivateGroups = useCallback(async (filters?: {
     category?: GroupCategory;
@@ -347,19 +280,12 @@ export const useGroupData = () => {
     }
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 8. fetchMyJoinRequests
-  // Calls: StudyGroupService.getMyJoinRequests()
-  // App start pe ek baar call karo — cache ho jayega
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const fetchMyJoinRequests = useCallback(async () => {
     try {
       setIsLoadingMyJoinRequests(true);
       const requests = await StudyGroupService.getMyJoinRequests();
       setMyJoinRequests(requests);
 
-      // groupId => request map build karo for O(1) lookup
       myJoinRequestsMap.current = requests.reduce(
         (acc, req) => {
           acc[req.groupId] = req;
@@ -368,14 +294,12 @@ export const useGroupData = () => {
         {} as Record<string, MyRequestsResponse>
       );
     } catch (err: any) {
-      // silent fail — non-critical
       console.error('Failed to fetch join requests:', err.message);
     } finally {
       setIsLoadingMyJoinRequests(false);
     }
   }, []);
 
-  // Get request status for a specific group — O(1) lookup
   const getJoinRequestForGroup = useCallback(
     (groupId: string): MyRequestsResponse | null => {
       return myJoinRequestsMap.current[groupId] ?? null;
@@ -383,7 +307,6 @@ export const useGroupData = () => {
     []
   );
 
-  // Update cache after new request sent
   const addJoinRequestToCache = useCallback(
     (request: MyRequestsResponse) => {
       myJoinRequestsMap.current[request.groupId] = request;
@@ -398,7 +321,6 @@ export const useGroupData = () => {
     []
   );
 
-  // Remove from cache after cancel
   const removeJoinRequestFromCache = useCallback(
     (groupId: string) => {
       delete myJoinRequestsMap.current[groupId];
@@ -407,57 +329,40 @@ export const useGroupData = () => {
     []
   );
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Return
-  // ─────────────────────────────────────────────────────────────────────────────
-
   return {
-    // 1. All Groups (my groups)
-    allGroups,                  // GroupResponse[]
+    allGroups,
     isLoadingAllGroups,
-    fetchAllGroups,             // call on mount: useEffect(() => { fetchAllGroups() }, [])
+    fetchAllGroups,
 
-    // 2. All Users (with real name + avatar + headline)
-    allUsers,                   // UserInfo[]
+    allUsers,
     isLoadingAllUsers,
-    fetchAllUsers,              // call on mount: useEffect(() => { fetchAllUsers() }, [])
+    fetchAllUsers,
 
-    // 3. Single User Info
-    getUserInfo,                // async — await getUserInfo(userId) → UserInfo
-    getUserInfoSync,            // sync  — getUserInfoSync(userId) → UserInfo (use after fetchAllUsers)
+    getUserInfo,
+    getUserInfoSync,
 
-    // 4. Group Members (with real name + avatar)
-    groupMembers,               // EnrichedGroupMember[]
+    groupMembers,
     isLoadingGroupMembers,
-    fetchGroupMembers,          // fetchGroupMembers('group-id') — call when modal opens
+    fetchGroupMembers,
 
-    // 5. Group Count
-    groupCount,                 // number — auto-updated by fetchAllGroups()
-    fetchGroupCount,            // standalone: just updates groupCount without loading groups
+    groupCount,
+    fetchGroupCount,
 
-    // 6. Public Groups
-    publicGroups,               // GroupResponse[]
+    publicGroups,
     isLoadingPublicGroups,
-    fetchPublicGroups,          // fetchPublicGroups({ category: 'JEE', search: 'warriors' })
+    fetchPublicGroups,
 
-    // 7. Private Groups
-    privateGroups,              // GroupResponse[]
+    privateGroups,
     isLoadingPrivateGroups,
-    fetchPrivateGroups,         // fetchPrivateGroups({ category: 'NEET' })
+    fetchPrivateGroups,
 
-    // 8. My Join Requests
-    myJoinRequests,            // MyRequestsResponse[]
+    myJoinRequests,
     isLoadingMyJoinRequests,
-    fetchMyJoinRequests,       // call on app start to populate cache
-    getJoinRequestForGroup,    // getJoinRequestForGroup(groupId) → MyRequestsResponse | null
-    addJoinRequestToCache,     // call after successfully sending a join request
-    removeJoinRequestFromCache, // call after successfully canceling a join request
+    fetchMyJoinRequests,
+    getJoinRequestForGroup,
+    addJoinRequestToCache,
+    removeJoinRequestFromCache,
 
-
-    // Error
     error,
   };
 };
-
-
-

@@ -29,8 +29,7 @@ export const useConnectionRequests = () => {
 
     useEffect(() => {
         if (latestRequest) {
-            
-            fetchIncomingRequests(); 
+            fetchIncomingRequests();
         }
     }, [latestRequest]);
 
@@ -39,7 +38,7 @@ export const useConnectionRequests = () => {
             setIsLoading(true);
             const response = await ConnectionService.getIncomingRequests(user!.userId);
 
-            const requestsArray = response.data.data; 
+            const requestsArray = response.data.data;
 
             if (!Array.isArray(requestsArray)) {
                 console.error('❌ Invalid response format');
@@ -47,34 +46,23 @@ export const useConnectionRequests = () => {
                 return;
             }
 
-            
+            const fromUserIds = [...new Set(requestsArray.map((req: any) => req.fromUserId))] as string[];
 
-            
-            const fromUserIds = [...new Set(requestsArray.map((req: any) => req.fromUserId))];
-            
+            // ✅ SINGLE BULK CALL (pehle yahan har user ke liye alag call hota tha)
+            let usersData: any[] = [];
+            if (fromUserIds.length > 0) {
+                try {
+                    const bulkResponse = await AuthService.getUsersBulk(fromUserIds);
+                    usersData = bulkResponse.data?.users || [];
+                } catch (err) {
+                    console.warn('⚠️ Failed to fetch users in bulk:', err);
+                }
+            }
 
-            
-            const userDataPromises = fromUserIds.map((userId: string) =>
-                AuthService.getUserProfileById(userId).catch(err => {
-                    console.warn(`⚠️ Failed to fetch user ${userId}:`, err);
-                    return null;
-                })
-            );
-            const userDataResponses = await Promise.all(userDataPromises);
-            const usersData = userDataResponses
-                .filter(res => res !== null)
-                .map(res => res!.data);
-
-            
-
-            
             const profilePhotoIds = usersData
                 .map((user: any) => user.profilePhotoId)
                 .filter(Boolean);
 
-            
-
-            
             let profilePhotosMap: Record<string, string> = {};
             if (profilePhotoIds.length > 0) {
                 try {
@@ -83,44 +71,35 @@ export const useConnectionRequests = () => {
                         acc[photo.photoId] = photo.cloudinarySecureUrl;
                         return acc;
                     }, {});
-                    
                 } catch (error) {
                     console.warn('⚠️ Failed to fetch profile photos:', error);
                 }
             }
 
-            
             const headlineIds = usersData
                 .map((user: any) => user.headlineId)
                 .filter(Boolean);
 
-            
-
-            
+            // ✅ SINGLE BULK CALL (pehle yahan har headline ke liye alag call hota tha)
             let headlinesMap: Record<string, string> = {};
             if (headlineIds.length > 0) {
-                const headlinePromises = headlineIds.map(headlineId =>
-                    ProfileService.getHeadlineById(headlineId)
-                        .then(res => ({ headlineId, data: res?.data }))
-                        .catch(() => null)
-                );
-                const headlineResponses = await Promise.all(headlinePromises);
-                headlinesMap = headlineResponses
-                    .filter(res => res !== null && res?.data?.headlineId && res?.data?.title)
-                    .reduce((acc, res) => {
-                        acc[res!.data.headlineId] = res!.data.title;
+                try {
+                    const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+                    const headlines = headlinesResponse.data?.headlines || [];
+                    headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+                        acc[headline.headlineId] = headline.title;
                         return acc;
-                    }, {} as Record<string, string>);
-                
+                    }, {});
+                } catch (error) {
+                    console.warn('⚠️ Failed to fetch headlines:', error);
+                }
             }
 
-            
             const usersDataMap = usersData.reduce((acc, user: any) => {
                 acc[user.userId] = user;
                 return acc;
             }, {} as Record<string, any>);
 
-            
             const transformedRequests: ConnectionRequest[] = requestsArray.map((req: any) => {
                 const userData = usersDataMap[req.fromUserId];
 
@@ -133,18 +112,17 @@ export const useConnectionRequests = () => {
                     : null;
 
                 return {
-                    id: req.requestId, 
+                    id: req.requestId,
                     name: userData
                         ? `${userData.firstName} ${userData.lastName}`.trim()
                         : 'Unknown User',
                     title: headlineText || 'Professional',
-                    mutuals: '0 mutual connections', 
+                    mutuals: '0 mutual connections',
                     image: profileImageUrl || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s',
                     location: userData?.location || 'Unknown'
                 };
             });
 
-            
             setRequests(transformedRequests);
         } catch (error: any) {
             console.error('❌ Failed to fetch requests:', error.message);
@@ -167,25 +145,19 @@ export const useConnectionRequests = () => {
                 return;
             }
 
-            
+            const toUserIds = [...new Set(requestsArray.map((req: any) => req.toUserId))] as string[];
 
-            
-            const toUserIds = [...new Set(requestsArray.map((req: any) => req.toUserId))];
-            
+            // ✅ SINGLE BULK CALL
+            let usersData: any[] = [];
+            if (toUserIds.length > 0) {
+                try {
+                    const bulkResponse = await AuthService.getUsersBulk(toUserIds);
+                    usersData = bulkResponse.data?.users || [];
+                } catch (err) {
+                    console.warn('⚠️ Failed to fetch users in bulk:', err);
+                }
+            }
 
-            
-            const userDataPromises = toUserIds.map((userId: string) =>
-                AuthService.getUserProfileById(userId).catch(err => {
-                    console.warn(`⚠️ Failed to fetch user ${userId}:`, err);
-                    return null;
-                })
-            );
-            const userDataResponses = await Promise.all(userDataPromises);
-            const usersData = userDataResponses
-                .filter(res => res !== null)
-                .map(res => res!.data);
-
-            
             const profilePhotoIds = usersData
                 .map((user: any) => user.profilePhotoId)
                 .filter(Boolean);
@@ -203,34 +175,30 @@ export const useConnectionRequests = () => {
                 }
             }
 
-            
             const headlineIds = usersData
                 .map((user: any) => user.headlineId)
                 .filter(Boolean);
 
+            // ✅ SINGLE BULK CALL
             let headlinesMap: Record<string, string> = {};
             if (headlineIds.length > 0) {
-                const headlinePromises = headlineIds.map(headlineId =>
-                    ProfileService.getHeadlineById(headlineId)
-                        .then(res => ({ headlineId, data: res?.data }))
-                        .catch(() => null)
-                );
-                const headlineResponses = await Promise.all(headlinePromises);
-                headlinesMap = headlineResponses
-                    .filter(res => res !== null && res?.data?.headlineId && res?.data?.title)
-                    .reduce((acc, res) => {
-                        acc[res!.data.headlineId] = res!.data.title;
+                try {
+                    const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+                    const headlines = headlinesResponse.data?.headlines || [];
+                    headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+                        acc[headline.headlineId] = headline.title;
                         return acc;
-                    }, {} as Record<string, string>);
+                    }, {});
+                } catch (error) {
+                    console.warn('⚠️ Failed to fetch headlines:', error);
+                }
             }
 
-            
             const usersDataMap = usersData.reduce((acc, user: any) => {
                 acc[user.userId] = user;
                 return acc;
             }, {} as Record<string, any>);
 
-            
             const transformedSentRequests: SentRequest[] = requestsArray.map((req: any) => {
                 const userData = usersDataMap[req.toUserId];
 
@@ -243,7 +211,7 @@ export const useConnectionRequests = () => {
                     : null;
 
                 return {
-                    id: req.requestId, 
+                    id: req.requestId,
                     name: userData
                         ? `${userData.firstName} ${userData.lastName}`.trim()
                         : 'Unknown User',
@@ -252,7 +220,6 @@ export const useConnectionRequests = () => {
                 };
             });
 
-            
             setSentRequests(transformedSentRequests);
         } catch (error: any) {
             console.error('❌ Failed to fetch outgoing requests:', error.message);
@@ -266,49 +233,37 @@ export const useConnectionRequests = () => {
         setShowRequestsPanel(!showRequestsPanel);
     };
 
-    const handleAccept = async (requestId: string) => { 
+    const handleAccept = async (requestId: string) => {
         try {
             await ConnectionService.acceptConnectionRequest(requestId);
             setRequests(prev => prev.filter(req => req.id !== requestId));
-            
-            incrementFollowers(); 
-            incrementConnections(); 
-
-            
+            incrementFollowers();
+            incrementConnections();
         } catch (error: any) {
             console.error('❌ Failed to accept:', error.message);
             alert(error.message || 'Failed to accept request');
         }
     };
 
-    const handleIgnore = async (requestId: string) => { 
+    const handleIgnore = async (requestId: string) => {
         try {
             await ConnectionService.declineConnectionRequest(requestId);
             setRequests(prev => prev.filter(req => req.id !== requestId));
-            
         } catch (error: any) {
             console.error('❌ Failed to decline:', error.message);
             alert(error.message || 'Failed to decline request');
         }
     };
 
-    
     const handleWithdraw = async (requestId: string) => {
         try {
-            
-
             await ConnectionService.cancelConnectionRequest(requestId);
-
-            
             setSentRequests(prev => prev.filter(req => req.id !== requestId));
-
-            
         } catch (error: any) {
             console.error('❌ Failed to withdraw:', error.message);
             alert(error.message || 'Failed to withdraw request');
         }
     };
-
 
     return {
         requests,
@@ -326,81 +281,3 @@ export const useConnectionRequests = () => {
         refetchSent: fetchOutgoingRequests,
     };
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

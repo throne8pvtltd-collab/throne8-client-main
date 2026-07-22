@@ -1,4 +1,4 @@
-// lib/api/api.service.ts
+// lib/api/auth.service.ts
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import TokenStorage from '@/lib/store/token.storage';

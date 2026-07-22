@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import AuthService from '@/lib/api/auth.service';
-import ConnectionService from '@/lib/api/connection.service'; // ✅ ADD
+import ConnectionService from '@/lib/api/connection.service';
 import ProfileService from '@/lib/api/profile.service';
 
 export const useNetworkUsers = () => {
@@ -25,7 +25,6 @@ export const useNetworkUsers = () => {
             // ✅ STEP 2: Create Set of connected user IDs for fast lookup
             const connectedUserIds = new Set<string>();
             connections.forEach((conn: any) => {
-                // Add both fromUserId and toUserId (bidirectional connection)
                 if (conn.fromUserId !== userId) connectedUserIds.add(conn.fromUserId);
                 if (conn.toUserId !== userId) connectedUserIds.add(conn.toUserId);
             });
@@ -35,24 +34,26 @@ export const useNetworkUsers = () => {
                 .map((user: any) => user.userId)
                 .filter((id: string) => id !== userId && !connectedUserIds.has(id));
 
-            // ✅ STEP 4: Fetch detailed profile data
-            const usersDataPromises = userIds.map((userId: string) =>
-                AuthService.getUserProfileById(userId).catch(err => {
-                    console.warn(`⚠️ Failed to fetch user ${userId}:`, err);
-                    return null;
-                })
-            );
-            const usersDataResponses = await Promise.all(usersDataPromises);
-            const usersData = usersDataResponses
-                .filter(res => res !== null)
-                .map(res => res!.data);
+            // ✅ STEP 4: Fetch detailed profile data — SINGLE BULK CALL
+            // (pehle yahan har user ke liye alag getUserProfileById call hota tha,
+            // jisse 429 aata tha. Ab ek hi request mein sab fetch hote hain.)
+            let usersData: any[] = [];
+            if (userIds.length > 0) {
+                try {
+                    const bulkResponse = await AuthService.getUsersBulk(userIds);
+                    usersData = bulkResponse.data?.users || [];
+                } catch (err) {
+                    console.warn('⚠️ Failed to fetch users in bulk:', err);
+                    usersData = [];
+                }
+            }
 
             // ✅ STEP 5: Extract profile photo IDs
             const profilePhotoIds = usersData
                 .map((user: any) => user.profilePhotoId)
                 .filter(Boolean);
 
-            // ✅ STEP 6: Fetch all profile photos
+            // ✅ STEP 6: Fetch all profile photos (already bulk — no change)
             let profilePhotosMap: Record<string, string> = {};
             if (profilePhotoIds.length > 0) {
                 try {
@@ -61,7 +62,6 @@ export const useNetworkUsers = () => {
                         acc[photo.photoId] = photo.cloudinarySecureUrl;
                         return acc;
                     }, {});
-                   
                 } catch (error) {
                     console.warn('⚠️ Failed to fetch profile photos:', error);
                 }
@@ -72,22 +72,20 @@ export const useNetworkUsers = () => {
                 .map((user: any) => user.headlineId)
                 .filter(Boolean);
 
-
-            // ✅ STEP 8: Fetch all headlines
+            // ✅ STEP 8: Fetch all headlines — SINGLE BULK CALL
+            // (pehle yahan har headline ke liye alag getHeadlineById call hota tha)
             let headlinesMap: Record<string, string> = {};
             if (headlineIds.length > 0) {
-                const headlinePromises = headlineIds.map(headlineId =>
-                    ProfileService.getHeadlineById(headlineId)
-                        .then(res => ({ headlineId, data: res?.data }))
-                        .catch(() => null)
-                );
-                const headlineResponses = await Promise.all(headlinePromises);
-                headlinesMap = headlineResponses
-                    .filter(res => res !== null && res?.data?.headlineId && res?.data?.title)
-                    .reduce((acc, res) => {
-                        acc[res!.data.headlineId] = res!.data.title;
+                try {
+                    const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+                    const headlines = headlinesResponse.data?.headlines || [];
+                    headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+                        acc[headline.headlineId] = headline.title;
                         return acc;
-                    }, {} as Record<string, string>);
+                    }, {});
+                } catch (error) {
+                    console.warn('⚠️ Failed to fetch headlines:', error);
+                }
             }
 
             // ✅ STEP 9: Transform data for UI
@@ -111,9 +109,9 @@ export const useNetworkUsers = () => {
             });
 
             setNetworkUsers(transformedUsers);
-            
+
         } catch (error: any) {
-           setNetworkUsers([]);
+            setNetworkUsers([]);
         } finally {
             setIsLoadingUsers(false);
         }

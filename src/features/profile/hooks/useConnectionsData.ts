@@ -11,11 +11,8 @@ export const useConnectionsData = () => {
     const [totalConnections, setTotalConnections] = useState(0);
 
     const fetchConnectionsData = useCallback(async (currentUserId: string) => {
-            // yahan "currentUserId" actually target profile ka userId hai (parameter naam misleading hai)
-
         try {
             setIsLoadingConnections(true);
-
 
             // ✅ STEP 1: Get all connections
             const connectionsResponse = await ConnectionService.getUserConnections(currentUserId);
@@ -23,15 +20,7 @@ export const useConnectionsData = () => {
 
             setTotalConnections(connections.length);
 
-
-
-            // const connectionsResponse = await ConnectionService.getUserConnections(currentUserId);
-            // const connections = connectionsResponse.data.data || [];
-
-            // setTotalConnections(connectionsResponse.data.totalCount ?? connections.length);
-
-
-            // ✅ STEP 2: Separate following and followers based on fromUserId/toUserId and build connectionId map
+            // ✅ STEP 2: Separate following and followers, build connectionId map
             const followingUserIds: string[] = [];
             const followerUserIds: string[] = [];
             const connectionIdMap: Record<string, string> = {};
@@ -41,10 +30,8 @@ export const useConnectionsData = () => {
                 connectionIdMap[targetId] = conn.connectionId;
 
                 if (conn.fromUserId === currentUserId) {
-                    // Current user sent request = Following
                     followingUserIds.push(conn.toUserId);
                 } else if (conn.toUserId === currentUserId) {
-                    // Current user received request = Follower
                     followerUserIds.push(conn.fromUserId);
                 }
             });
@@ -67,19 +54,20 @@ export const useConnectionsData = () => {
         }
     }, []);
 
-    // ✅ Helper function to fetch user profiles
+    // ✅ Helper function to fetch user profiles — ab bulk mein
     const fetchUserProfiles = async (userIds: string[], connectionIdMap: Record<string, string> = {}) => {
         if (userIds.length === 0) return [];
 
         try {
-            // Fetch all user profiles
-            const profilePromises = userIds.map(userId =>
-                AuthService.getUserProfileById(userId).catch(() => null)
-            );
-            const profileResponses = await Promise.all(profilePromises);
-            const profiles = profileResponses
-                .filter(res => res !== null)
-                .map(res => res!.data);
+            // ✅ SINGLE BULK CALL (pehle yahan har userId ke liye alag call hota tha)
+            let profiles: any[] = [];
+            try {
+                const bulkResponse = await AuthService.getUsersBulk(userIds);
+                profiles = bulkResponse.data?.users || [];
+            } catch (err) {
+                console.warn('⚠️ Failed to fetch users in bulk:', err);
+                return [];
+            }
 
             // Extract profile photo IDs
             const profilePhotoIds = profiles
@@ -101,21 +89,19 @@ export const useConnectionsData = () => {
                 .map(user => user.headlineId)
                 .filter(Boolean);
 
-            // Fetch headlines
+            // ✅ SINGLE BULK CALL (pehle yahan har headline ke liye alag call hota tha)
             let headlinesMap: Record<string, string> = {};
             if (headlineIds.length > 0) {
-                const headlinePromises = headlineIds.map(headlineId =>
-                    ProfileService.getHeadlineById(headlineId)
-                        .then(res => ({ headlineId, data: res?.data }))
-                        .catch(() => null)
-                );
-                const headlineResponses = await Promise.all(headlinePromises);
-                headlinesMap = headlineResponses
-                    .filter(res => res !== null && res?.data?.headlineId && res?.data?.title)
-                    .reduce((acc, res) => {
-                        acc[res!.data.headlineId] = res!.data.title;
+                try {
+                    const headlinesResponse = await ProfileService.getMultipleHeadlinesByIds(headlineIds);
+                    const headlines = headlinesResponse.data?.headlines || [];
+                    headlinesMap = headlines.reduce((acc: Record<string, string>, headline: any) => {
+                        acc[headline.headlineId] = headline.title;
                         return acc;
-                    }, {} as Record<string, string>);
+                    }, {});
+                } catch (error) {
+                    console.warn('⚠️ Failed to fetch headlines:', error);
+                }
             }
 
             // Transform to UI format
@@ -127,7 +113,7 @@ export const useConnectionsData = () => {
                 image: user.profilePhotoId
                     ? profilePhotosMap[user.profilePhotoId] || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s'
                     : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdYRNQDghH1JvFXro2Yz3iWNmmFAubFZ-RGQ&s',
-                isFollowing: true, // Since these are all connections
+                isFollowing: true,
             }));
 
         } catch (error) {
