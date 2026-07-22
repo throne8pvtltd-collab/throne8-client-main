@@ -44,6 +44,8 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
     const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
     const [skillToDelete, setSkillToDelete] = useState<Skill | null>(null);
 
+    const [showAllSkills, setShowAllSkills] = useState(false);
+
     const {
         skillsList,
         isLoadingSkills,
@@ -249,6 +251,9 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
         );
     };
 
+    const visibleSkills = showAllSkills ? skillsList : skillsList.slice(0, 2);
+
+
     return (
         <>
             <div className="relative bg-[#f6ede8]/95 via-[#f6ede8]/85 to-[#e0d8cf]/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-[#e0d8cf]/50 mb-8 overflow-hidd group">
@@ -284,10 +289,12 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                             </div>
                         )}
                     </div>
+                    
 
                     <div className="space-y-6">
-                        {skillsList.map((skill) => {
-                            const isLoading = isPinningSkillId === skill.skillId ||
+                        
+                    {visibleSkills.map((skill) => {         
+                                const isLoading = isPinningSkillId === skill.skillId ||
                                 isArchivingSkillId === skill.skillId ||
                                 isDeletingSkillId === skill.skillId;
 
@@ -427,11 +434,11 @@ const SkillsSection: React.FC<SkillsSectionProps> = ({
                     <div className="mt-8 text-center">
                         {skillsList.length > 2 && (
                             <button
-                                onClick={() => setIsViewAllSkillsModalOpen(true)}
+                            onClick={() => setShowAllSkills(!showAllSkills)}
                                 className="group/btn relative inline-flex items-center gap-3 bg-gradient-to-r from-[#4a3728] to-[#7a5c3e] text-[#f6ede8] px-8 py-4 rounded-2xl font-semibold text-sm hover:shadow-2xl transition-all duration-300 overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#7a5c3e] to-[#4a3728] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-                                <span className="showAllSkills relative z-10">Show all {skillsList.length} skills</span>
+                                <span className="showAllSkills relative z-10">{showAllSkills ? 'Show less' : 'Show more'}</span>
                                 <svg className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                 </svg>

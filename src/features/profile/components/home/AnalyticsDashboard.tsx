@@ -19,26 +19,60 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
         searchAppearances: { total: 0, last7Days: 0, last30Days: 0 }
     });
 
+    // NEW: real % change values
+    const [changes, setChanges] = useState({
+        profileViews: 0,
+        postImpressions: 0,
+        searchAppearances: 0
+    });
+
     const [isLoading, setIsLoading] = useState(true);
+
+    // Helper: safe progress bar width (0-100), avoids divide-by-zero
+    const getProgressWidth = (part: number, total: number) => {
+        if (!total || total <= 0) return 0;
+        const pct = (part / total) * 100;
+        return Math.min(100, Math.max(0, pct));
+    };
+
+    // Helper: format change badge text with sign
+    const formatChange = (value: number) => {
+        const sign = value > 0 ? '+' : '';
+        return `${sign}${value}%`;
+    };
 
     useEffect(() => {
         const fetchAnalytics = async () => {
-
             try {
                 setIsLoading(true);
 
-                // Fetch all analytics data
-                const [profileViews, postImpressions, searchAppearances] = await Promise.all([
+                // Fetch counts + % change data together
+                const [
+                    profileViews,
+                    postImpressions,
+                    searchAppearances,
+                    profileViewsChange,
+                    postImpressionsChange,
+                    searchAppearancesChange
+                ] = await Promise.all([
                     AnalyticsService.getProfileViewsCount(30),
                     AnalyticsService.getPostImpressionsCount(20),
-                    AnalyticsService.getSearchAppearancesCount()
+                    AnalyticsService.getSearchAppearancesCount(),
+                    AnalyticsService.getProfileViewsChange(7),
+                    AnalyticsService.getPostImpressionsChange(7),
+                    AnalyticsService.getSearchAppearancesChange(7)
                 ]);
-
 
                 setAnalytics({
                     profileViews: profileViews.data || { total: 0, last7Days: 0, last30Days: 0 },
                     postImpressions: postImpressions.data || { total: 0, last7Days: 0, last30Days: 0 },
                     searchAppearances: searchAppearances.data || { total: 0, last7Days: 0, last30Days: 0 }
+                });
+
+                setChanges({
+                    profileViews: profileViewsChange?.data?.change?.percentage ?? 0,
+                    postImpressions: postImpressionsChange?.data?.change?.percentage ?? 0,
+                    searchAppearances: searchAppearancesChange?.data?.change?.percentage ?? 0
                 });
             } catch (error) {
                 console.error('Failed to fetch analytics:', error);
@@ -83,8 +117,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                             <Eye className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-xs font-semibold text-green-600">
-                            +12%
+                        <p className={`text-xs font-semibold ${changes.profileViews >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {formatChange(changes.profileViews)}
                         </p>
                     </div>
 
@@ -107,7 +141,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
                                 className="h-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-700"
-                                style={{ width: '70%' }}
+                                style={{ width: `${getProgressWidth(analytics.profileViews.last7Days, analytics.profileViews.total)}%` }}
                             ></div>
                         </div>
                     </div>
@@ -132,8 +166,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                             <TrendingUp className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-xs font-semibold text-green-600">
-                            +60%
+                        <p className={`text-xs font-semibold ${changes.postImpressions >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {formatChange(changes.postImpressions)}
                         </p>
                     </div>
 
@@ -156,7 +190,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
                                 className="h-1.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700"
-                                style={{ width: '85%' }}
+                                style={{ width: `${getProgressWidth(analytics.postImpressions.last7Days, analytics.postImpressions.total)}%` }}
                             ></div>
                         </div>
                     </div>
@@ -181,8 +215,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                             <Users className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-xs font-semibold text-green-600">
-                            +40%
+                        <p className={`text-xs font-semibold ${changes.searchAppearances >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {formatChange(changes.searchAppearances)}
                         </p>
                     </div>
 
@@ -205,7 +239,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userId }) => {
                         <div className="w-full h-1.5 bg-[#d1c5b9] rounded-full overflow-hidden">
                             <div
                                 className="h-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700"
-                                style={{ width: '60%' }}
+                                style={{ width: `${getProgressWidth(analytics.searchAppearances.last7Days, analytics.searchAppearances.total)}%` }}
                             ></div>
                         </div>
                     </div>
