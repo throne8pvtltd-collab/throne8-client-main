@@ -1802,6 +1802,16 @@ static async getAllExperiencesByUserId(userId: string): Promise<any> {
             throw new Error(error.response?.data?.message || 'Failed to fetch comments');
         }
     }
+// profile.service.ts me class ke andar, getCommentsByPostId ke baad add karo:
+
+static async getCommentsByUserId(userId: string): Promise<any> {
+    try {
+        const { data } = await api.get(`${config?.NEXT_PUBLIC_ACTIVITY_ENDPOINT || process.env.NEXT_PUBLIC_ACTIVITY_ENDPOINT}/comments/user/${userId}`);
+        return data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch user comments');
+    }
+}
 
     // ✅ 4. GET MY COMMENTS
     // Route: GET {NEXT_PUBLIC_ACTIVITY_ENDPOINT}/comments/my-comments

@@ -121,13 +121,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }
     };
 
+    // ✅ FIX: onDataRefresh() call REMOVED from here.
+    // Root cause of the "photo reverts after upload" bug: onProfileImageUpdate()
+    // already pushes the freshly-uploaded URL into Redux (setProfileImageUrl),
+    // so the UI was already correct at this point. But immediately after that,
+    // onDataRefresh() (= loadProfile()) used to fire too, which re-fetches the
+    // ENTIRE user profile from the backend, reads profilePhotoId from that
+    // response, and re-fetches the photo URL for that ID. If the backend's
+    // profilePhotoId hadn't fully propagated yet (or the fetch simply raced
+    // the just-set state), this second call would overwrite the correct new
+    // photo with a stale/previous one a split second later. Since the new URL
+    // is already set directly above, we don't need a full profile refetch here.
     const handleProfileImageUpdate = (newImageUrl: string) => {
         setCurrentProfileImage(newImageUrl);
         if (onProfileImageUpdate) {
             onProfileImageUpdate(newImageUrl);
-        }
-        if (onDataRefresh) {
-            onDataRefresh();
         }
     };
 
@@ -277,14 +285,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     </button>
 ) : incomingRequestId ? (
     <>
-        {/* <button
-            onClick={onAcceptRequest}
-            className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        >
-            Accept
-        </button> */}
-
-
 <button
     onClick={async () => {
         await onAcceptRequest?.();
@@ -312,29 +312,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {connectionPending ? 'Pending...' : 'Connect'}
     </button>
 )}
-                                        {/* {isConnected ? (
-                                            <button
-                                                onClick={onMessage}
-                                                className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                            >
-                                                Message
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={onConnect}
-                                                disabled={connectionPending}
-                                                className="px-5 py-2.5 bg-[#4a3728] text-white rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-60"
-                                            >
-                                                {connectionPending ? 'Pending...' : 'Connect'}
-                                            </button>
-                                        )} */}
-
-                                        {/* <button
-                                            onClick={onFollow}
-                                            className="px-5 py-2.5 bg-white text-[#4a3728] border border-[#4a3728] rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                        >
-                                            {isFollowing ? 'Following' : 'Follow'}
-                                        </button> */}
 
                                         <div className="relative">
                                             <button
@@ -350,12 +327,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                                         onClick={() => setIsMoreMenuOpen(false)}
                                                     ></div>
                                                    <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-[#e0d8cf] py-2 z-50">
-    {/* <button
-        onClick={() => { onFollow?.(); setIsMoreMenuOpen(false); }}
-        className="w-full text-left px-4 py-2.5 text-sm text-[#4a3728] hover:bg-[#f6ede8] transition-colors duration-200"
-    >
-        {isFollowing ? 'Unfollow' : 'Follow'}
-    </button> */}
     <button
     onClick={async () => {
         setIsMoreMenuOpen(false);

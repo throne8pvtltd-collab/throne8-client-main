@@ -14,7 +14,6 @@ const api: AxiosInstance = axios.create({
 });
 
 // ==================== REQUEST INTERCEPTOR ====================
-// Har request me access token lagao
 api.interceptors.request.use(
     (config) => {
         const token = TokenStorage.getAccessToken();
@@ -47,10 +46,8 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // 401 आया और पहले retry नहीं हुआ
         if (error.response?.status === 401 && !originalRequest._retry) {
 
-            // Refresh पहले से चल रहा है → queue में डालो
             if (isRefreshing) {
                 return new Promise<string>((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -65,7 +62,6 @@ api.interceptors.response.use(
 
             const refreshToken = TokenStorage.getRefreshToken();
 
-            // Refresh token नहीं है → logout
             if (!refreshToken) {
                 isRefreshing = false;
                 TokenStorage.clearAuthData();
@@ -74,7 +70,6 @@ api.interceptors.response.use(
             }
 
             try {
-                // नया token लो
                 const baseURL = config.NEXT_PUBLIC_API_BASE_URL ||
                     process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -87,19 +82,15 @@ api.interceptors.response.use(
                 const { accessToken, refreshToken: newRefreshToken, expiresIn } =
                     refreshResponse.data.data.tokens;
 
-                // Tokens save करो
                 TokenStorage.updateAccessToken(accessToken, expiresIn);
                 TokenStorage.updateRefreshToken(newRefreshToken);
 
-                // Queue में pending requests को नया token दो
                 processQueue(null, accessToken);
 
-                // Original request retry
                 originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                 return api(originalRequest);
 
             } catch (refreshError) {
-                // Refresh fail → सब clear करो, login पर भेजो
                 processQueue(refreshError, null);
                 TokenStorage.clearAuthData();
                 window.location.href = '/login';
