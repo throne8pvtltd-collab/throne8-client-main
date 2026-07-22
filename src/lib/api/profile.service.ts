@@ -466,6 +466,26 @@ class ProfileService {
             return null;
         }
     }
+    /**
+     * 📖 GET MULTIPLE HEADLINES BY IDs (bulk)
+     */
+    static async getMultipleHeadlinesByIds(headlineIds: string[]): Promise<any> {
+        try {
+            console.log('📖 [GET_MULTIPLE_HEADLINES] Fetching multiple headlines...', { count: headlineIds.length });
+
+            const { data } = await api.post(
+                `${config?.NEXT_PUBLIC_HEADLINE_ENDPOINT || process.env.NEXT_PUBLIC_HEADLINE_ENDPOINT}/get-multiple-headlines`,
+                { headlineIds }
+            );
+
+            console.log('✅ [GET_MULTIPLE_HEADLINES] Headlines fetched successfully', data.data);
+            return data;
+
+        } catch (error: any) {
+            console.error('❌ [GET_MULTIPLE_HEADLINES] Failed to fetch headlines', error);
+            return { data: { headlines: [] } };
+        }
+    }
 
     /**
     * 📝 CREATE ABOUT

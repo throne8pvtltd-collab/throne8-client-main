@@ -454,7 +454,22 @@ class AuthService {
             throw new Error('Failed to fetch user profile. Please try again.');
         }
     }
-
+static async getUsersBulk(userIds: string[]): Promise<any> {
+        try {
+            console.log('👥 [GET_USERS_BULK] Fetching users in bulk...', { count: userIds.length });
+            const { data } = await api.post(
+                `${config.NEXT_PUBLIC_GET_USERS_BULK_ENDPOINT || process.env.NEXT_PUBLIC_GET_USERS_BULK_ENDPOINT}`,
+                { userIds }
+            );
+            console.log('✅ [GET_USERS_BULK] Users fetched successfully', {
+                requested: userIds.length, found: data.data?.users?.length,
+            });
+            return data;
+        } catch (error: any) {
+            console.error('❌ [GET_USERS_BULK] Failed to fetch users', error);
+            throw new Error('Failed to fetch users. Please try again.');
+        }
+    }
     /**
      * 👥 Get All Users (for search)
      */
